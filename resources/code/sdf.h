@@ -20,7 +20,7 @@ private:
     GLuint display_shader;
     GLuint display_vao;
     GLuint display_vbo;
-
+    GLuint display_image2D;
 
 	void create_window();
 	void gl_setup();

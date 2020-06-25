@@ -23,10 +23,10 @@ imgui: resources/imgui/*
 
 
 utils.o: resources/code/sdf.h resources/code/sdf_utils.cc
-		g++ -c -o utils.o resources/code/sdf_utils.cc               ${VORALDO_FLAGS}
+		g++ -c -o utils.o resources/code/sdf_utils.cc                    ${VORALDO_FLAGS}
 
 sdf.o: resources/code/sdf.h resources/code/sdf.cc
-		g++ -c -o physarum.o resources/code/sdf.cc                  ${VORALDO_FLAGS}
+		g++ -c -o sdf.o resources/code/sdf.cc                            ${VORALDO_FLAGS}
 
 debug.o: resources/code/debug.cc
 		g++ -c -o debug.o resources/code/debug.cc                        ${VORALDO_FLAGS}

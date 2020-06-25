@@ -204,10 +204,35 @@ void sdf::gl_setup()
     glEnableVertexAttribArray(points_attrib);
     glVertexAttribPointer(points_attrib, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) (static_cast<const char*>(0) + (0)));
     cout << "done." << endl; 
-
-
-    // create the image textures
     
+
+   glGenTextures(1, &display_image2D);
+
+   std::vector<unsigned int> data;
+ 
+    /* PerlinNoise p; */
+   
+    long unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
+
+    std::default_random_engine engine{seed};
+    std::normal_distribution<GLfloat> ndistribution(0.5,0.3); 
+    ndistribution.reset(); 
+
+    for(unsigned int x = 0; x < 640; x++)
+        for(unsigned int y = 0; y < 400; y++)
+            for(unsigned int c = 0; c < 4; c++)
+            {
+                data.push_back(65535 * ndistribution(engine));
+                /* data.push_back((1<<18)*p.noise(0.01*x,0.01*y, 0.3*c)); */
+            }   
+
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, display_image2D);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16UI, 640, 400, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, &data[0]);
+    glBindImageTexture(0, display_image2D, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16UI);
+
+
     // compile the compute shader to do the raycasting
     
     // ...
