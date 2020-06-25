@@ -222,15 +222,16 @@ void sdf::gl_setup()
         for(unsigned int y = 0; y < 400; y++)
             for(unsigned int c = 0; c < 4; c++)
             {
-                data.push_back(65535 * ndistribution(engine));
+                data.push_back(256 * ndistribution(engine));
+                /* data.push_back(65535 * ndistribution(engine)); */
                 /* data.push_back((1<<18)*p.noise(0.01*x,0.01*y, 0.3*c)); */
             }   
 
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, display_image2D);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16UI, 640, 400, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, &data[0]);
-    glBindImageTexture(0, display_image2D, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16UI);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, 640, 400, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, &data[0]);
+    glBindImageTexture(0, display_image2D, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
 
 
     // compile the compute shader to do the raycasting
