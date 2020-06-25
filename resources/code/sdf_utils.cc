@@ -18,8 +18,8 @@ void sdf::create_window()
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-	// SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);  //gl_SamplePosition has to be used in my shader in order for this to
-	// SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 8);   //have any effect on the way my shader works (i.e. add to gl_FragCoord)
+	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
+	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 8);
 
 	// this is how you query the screen resolution
 	SDL_DisplayMode dm;
@@ -49,8 +49,17 @@ void sdf::create_window()
 	GLcontext = SDL_GL_CreateContext( window );
 
 	SDL_GL_MakeCurrent(window, GLcontext);
-	SDL_GL_SetSwapInterval(1); // Enable vsync -- questionable utility
+	SDL_GL_SetSwapInterval(1); // Enable vsync
 	// SDL_GL_SetSwapInterval(0); // explicitly disable vsync
+
+    // CONTINUUM REPRESENTATION POINTS
+
+
+
+
+
+
+
 
 
 	if (glewInit() != GLEW_OK)
@@ -59,7 +68,9 @@ void sdf::create_window()
 	}
 
 	glEnable(GL_DEPTH_TEST);
+    glEnable(GL_POINT_SMOOTH);
 
+    glPointSize(3.0);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
@@ -133,7 +144,157 @@ void sdf::create_window()
 	colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
 	colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 	colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+}
+
+void sdf::gl_setup()
+{
+	// some info on your current platform
+	const GLubyte *renderer = glGetString( GL_RENDERER ); // get renderer string
+	const GLubyte *version = glGetString( GL_VERSION );		// version as a string
+	printf( "Renderer: %s\n", renderer );
+	printf( "OpenGL version supported %s\n\n\n", version );
 	
+	
+	
+    // create the shader for the triangles to draw the pheremone field
+    display_shader = Shader("resources/code/shaders/blit.vs.glsl", "resources/code/shaders/blit.fs.glsl").Program;
+
+    // set up the points for the continuum
+    //  A---------------B
+    //  |          .    |
+    //  |       .       |
+    //  |    .          |
+    //  |               |
+    //  C---------------D
+
+    // diagonal runs from C to B
+    //  A is -1, 1
+    //  B is  1, 1
+    //  C is -1,-1
+    //  D is  1,-1
+    std::vector<glm::vec3> points;
+    
+    points.clear();
+    points.push_back(glm::vec3(-1, 1, 0.5));  //A
+    points.push_back(glm::vec3(-1,-1, 0.5));  //C
+    points.push_back(glm::vec3( 1, 1, 0.5));  //B
+
+    points.push_back(glm::vec3( 1, 1, 0.5));  //B
+    points.push_back(glm::vec3(-1,-1, 0.5));  //C
+    points.push_back(glm::vec3( 1,-1, 0.5));  //D
+
+    // vao, vbo
+    cout << "  setting up vao, vbo for display geometry...";
+    glGenVertexArrays( 1, &display_vao );
+    glBindVertexArray( display_vao );
+
+    glGenBuffers( 1, &display_vbo );
+    glBindBuffer( GL_ARRAY_BUFFER, display_vbo );
+    cout << "done." << endl;
+
+    // buffer the data
+    cout << "  buffering vertex data...";
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * points.size(), NULL, GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec3) * points.size(), &points[0]);
+    cout << "done." << endl;
+
+    // set up attributes
+    cout << "  setting up attributes in continuum shader...";
+    GLuint points_attrib = glGetAttribLocation(display_shader, "vPosition");
+    glEnableVertexAttribArray(points_attrib);
+    glVertexAttribPointer(points_attrib, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) (static_cast<const char*>(0) + (0)));
+    cout << "done." << endl; 
+
+
+
+
+/* 
+
+	// create the image2d object for the pheremone field
+        // 16-bit, one channel image texture with GL_R16UI or maybe 32 bit with GL_R32UI 
+	    // seed with all zero values or some data generated with std::random
+    
+    glGenTextures(2, &continuum_textures[0]);
+
+    std::vector<unsigned int> data;
+    
+    //for(unsigned int x = 0; x < 2048; x++)
+    //    for(unsigned int y = 0; y < 2048; y++)
+    //        data.push_back((x ^ y) << 16);
+
+    PerlinNoise p;
+
+    for(unsigned int x = 0; x < 2048; x++)
+        for(unsigned int y = 0; y < 2048; y++)
+            data.push_back((1<<18)*p.noise(0.01*x,0.01*y, 0.3));
+
+
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, continuum_textures[0]); // use the specified ID
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, DIM, DIM, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &data[0]); //pass non-null to initialize with some pheremone pattern
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, DIM, DIM, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL); //pass non-null to initialize with some pheremone pattern
+    glBindImageTexture(1, continuum_textures[0], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+
+    glActiveTexture(GL_TEXTURE2); 
+    glBindTexture(GL_TEXTURE_2D, continuum_textures[1]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, DIM, DIM, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+    glBindImageTexture(2, continuum_textures[1], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI); 	
+
+
+
+    // create the SSBO for the agent positions, directions
+        // only needs to be set up for the agent shader
+    std::vector<GLfloat> agent_data;
+
+    long unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
+
+    std::default_random_engine engine{seed};
+    std::uniform_real_distribution<GLfloat> udistribution{-1, 1};
+    std::normal_distribution<GLfloat> ndistribution(0.0,0.3); 
+    
+    udistribution.reset();
+    ndistribution.reset();
+
+    for (int i = 0; i <= NUM_AGENTS; i++)
+    {
+        glm::vec2 pos, dir;
+
+        if(!true)
+        {
+        pos.x = ndistribution(engine);
+        pos.y = ndistribution(engine);
+        }
+        else
+        {
+        pos.x = udistribution(engine);
+        pos.y = udistribution(engine);
+        }
+       
+        dir.x = udistribution(engine);
+        dir.y = udistribution(engine);
+
+        dir = glm::normalize(dir);  //we want unit length
+
+        agent_data.push_back(static_cast<GLfloat>(pos.x));
+        agent_data.push_back(static_cast<GLfloat>(pos.y));
+
+        agent_data.push_back(static_cast<GLfloat>(dir.x));
+        agent_data.push_back(static_cast<GLfloat>(dir.y));
+    }
+
+    glGenBuffers(1, &agent_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, agent_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat)*2*NUM_AGENTS, (GLvoid*)&agent_data[0],  GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, agent_ssbo); 
+
+	sense_angle = 2.4540f;
+	sense_distance = 0.0013f;
+	turn_angle = 1.250f;
+	step_size = 0.0006f;
+	deposit_amount = 1250;
+	decay_factor = 0.9875f;
+ */
 }
 
 
@@ -158,7 +319,14 @@ void sdf::draw_everything()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                     // clear the background
 
 	// draw the stuff on the GPU
-	// GPU_Data.display();
+
+    // continuum
+    glUseProgram(display_shader);
+    glBindVertexArray( display_vao );
+    glBindBuffer( GL_ARRAY_BUFFER, display_vbo );
+
+    glDrawArrays( GL_TRIANGLES, 0, 6 );
+
 
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
@@ -166,22 +334,16 @@ void sdf::draw_everything()
 	ImGui::NewFrame();
 
 	// show the demo window
-	static bool show_demo_window = true;
-	if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
-
+	// static bool show_demo_window = true;
+	// if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
 	// do my own window
 	ImGui::SetNextWindowPos(ImVec2(10,10));
-	ImGui::SetNextWindowSize(ImVec2(256,315));
+	ImGui::SetNextWindowSize(ImVec2(256,385));
 	ImGui::Begin("Controls", NULL, 0);
 
-	// widgets
-	ImGui::Text(" ");
 	
-	HelpMarker("USER:\nHold SHIFT or use mouse to select text.\n" "CTRL+Left/Right to word jump.\n" "CTRL+A or double-click to select all.\n" "CTRL+X,CTRL+C,CTRL+V clipboard.\n" "CTRL+Z,CTRL+Y undo/redo.\n" "ESCAPE to revert.");
 
-
-	
 	ImGui::End();
 	ImGui::Render();
 
@@ -195,16 +357,16 @@ void sdf::draw_everything()
 	while (SDL_PollEvent(&event))
 	{
 		ImGui_ImplSDL2_ProcessEvent(&event);
+
 		if (event.type == SDL_QUIT)
 			pquit = true;
+
 		if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
 			pquit = true;
 
 		if ((event.type == SDL_KEYUP  && event.key.keysym.sym == SDLK_ESCAPE) || (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_X1)) //x1 is browser back on the mouse
 			pquit = true;
-		
 	}
-	
 }
 
 
@@ -222,3 +384,4 @@ void sdf::quit()
   
   cout << "goodbye." << endl;
 }
+
