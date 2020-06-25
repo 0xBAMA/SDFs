@@ -206,95 +206,14 @@ void sdf::gl_setup()
     cout << "done." << endl; 
 
 
-
-
-/* 
-
-	// create the image2d object for the pheremone field
-        // 16-bit, one channel image texture with GL_R16UI or maybe 32 bit with GL_R32UI 
-	    // seed with all zero values or some data generated with std::random
+    // create the image textures
     
-    glGenTextures(2, &continuum_textures[0]);
-
-    std::vector<unsigned int> data;
+    // compile the compute shader to do the raycasting
     
-    //for(unsigned int x = 0; x < 2048; x++)
-    //    for(unsigned int y = 0; y < 2048; y++)
-    //        data.push_back((x ^ y) << 16);
-
-    PerlinNoise p;
-
-    for(unsigned int x = 0; x < 2048; x++)
-        for(unsigned int y = 0; y < 2048; y++)
-            data.push_back((1<<18)*p.noise(0.01*x,0.01*y, 0.3));
+    // ...
 
 
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, continuum_textures[0]); // use the specified ID
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, DIM, DIM, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &data[0]); //pass non-null to initialize with some pheremone pattern
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, DIM, DIM, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL); //pass non-null to initialize with some pheremone pattern
-    glBindImageTexture(1, continuum_textures[0], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
-
-    glActiveTexture(GL_TEXTURE2); 
-    glBindTexture(GL_TEXTURE_2D, continuum_textures[1]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, DIM, DIM, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
-    glBindImageTexture(2, continuum_textures[1], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI); 	
-
-
-
-    // create the SSBO for the agent positions, directions
-        // only needs to be set up for the agent shader
-    std::vector<GLfloat> agent_data;
-
-    long unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
-
-    std::default_random_engine engine{seed};
-    std::uniform_real_distribution<GLfloat> udistribution{-1, 1};
-    std::normal_distribution<GLfloat> ndistribution(0.0,0.3); 
-    
-    udistribution.reset();
-    ndistribution.reset();
-
-    for (int i = 0; i <= NUM_AGENTS; i++)
-    {
-        glm::vec2 pos, dir;
-
-        if(!true)
-        {
-        pos.x = ndistribution(engine);
-        pos.y = ndistribution(engine);
-        }
-        else
-        {
-        pos.x = udistribution(engine);
-        pos.y = udistribution(engine);
-        }
-       
-        dir.x = udistribution(engine);
-        dir.y = udistribution(engine);
-
-        dir = glm::normalize(dir);  //we want unit length
-
-        agent_data.push_back(static_cast<GLfloat>(pos.x));
-        agent_data.push_back(static_cast<GLfloat>(pos.y));
-
-        agent_data.push_back(static_cast<GLfloat>(dir.x));
-        agent_data.push_back(static_cast<GLfloat>(dir.y));
-    }
-
-    glGenBuffers(1, &agent_ssbo);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, agent_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat)*2*NUM_AGENTS, (GLvoid*)&agent_data[0],  GL_DYNAMIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, agent_ssbo); 
-
-	sense_angle = 2.4540f;
-	sense_distance = 0.0013f;
-	turn_angle = 1.250f;
-	step_size = 0.0006f;
-	deposit_amount = 1250;
-	decay_factor = 0.9875f;
- */
 }
 
 
@@ -314,6 +233,8 @@ static void HelpMarker(const char* desc)
 void sdf::draw_everything()
 {
 	ImGuiIO& io = ImGui::GetIO(); (void)io; // void cast prevents unused variable warning
+    //get the screen dimensions and pass in as uniforms
+    
 
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);   // from hsv picker
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                     // clear the background
@@ -342,7 +263,7 @@ void sdf::draw_everything()
 	ImGui::SetNextWindowSize(ImVec2(256,385));
 	ImGui::Begin("Controls", NULL, 0);
 
-	
+    //do the other widgets	
 
 	ImGui::End();
 	ImGui::Render();
@@ -384,4 +305,3 @@ void sdf::quit()
   
   cout << "goodbye." << endl;
 }
-
