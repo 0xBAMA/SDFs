@@ -222,12 +222,16 @@ void sdf::gl_setup()
 
                 
 
-                data.push_back(256 * ndistribution(engine));
-                data.push_back(256 * ndistribution(engine));
-                data.push_back(256 * ndistribution(engine));
+                /* data.push_back(256 * ndistribution(engine)); */
+                /* data.push_back(256 * ndistribution(engine)); */
+                /* data.push_back(256 * ndistribution(engine)); */
 
-                data.push_back(static_cast<unsigned char>((x%256) ^ (y%256)));
+                /* data.push_back(static_cast<unsigned char>((x%256) ^ (y%256))); */
 
+                data.push_back(x);
+                data.push_back(y);
+                data.push_back((x * y) % 256);
+                data.push_back(255);
         }   
 
     glGenTextures(1, &display_image2D);
