@@ -201,43 +201,10 @@ void sdf::gl_setup()
     
 
 
-    std::vector<unsigned char> data;
- 
-    PerlinNoise p;
-   
-    long unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
-
-    std::default_random_engine engine{seed};
-    std::normal_distribution<GLfloat> ndistribution(0.5,0.3); 
-    ndistribution.reset(); 
-
-    for(unsigned int x = 0; x < 256; x++)
-        for(unsigned int y = 0; y < 256; y++)
-        { 
-                
-                /* data.push_back(x^y); */
-                /* data.push_back(x^y); */
-                /* data.push_back(184); */
-                /* data.push_back(120); */
-
-                
-
-                /* data.push_back(256 * ndistribution(engine)); */
-                /* data.push_back(256 * ndistribution(engine)); */
-                /* data.push_back(256 * ndistribution(engine)); */
-
-                /* data.push_back(static_cast<unsigned char>((x%256) ^ (y%256))); */
-
-                data.push_back(x);
-                data.push_back(y);
-                data.push_back((x * y) % 256);
-                data.push_back(255);
-        }   
-
     glGenTextures(1, &display_image2D);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, display_image2D);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, 256, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &data[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, 256, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, NULL);
     glBindImageTexture(0, display_image2D, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
 
 

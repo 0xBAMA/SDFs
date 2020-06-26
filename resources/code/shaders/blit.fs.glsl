@@ -24,6 +24,6 @@ void main()
 			discard;
 	}
 	
-	fragment_output = vec4(float(s.r)/256.0,float(s.g)/1024.0,float(s.b)/256.0,float(s.a)/256.0);
+	fragment_output = vec4(float(s.r)/256.0,float(s.g)/256.0,float(s.b)/256.0,float(s.a)/256.0);
 
 }

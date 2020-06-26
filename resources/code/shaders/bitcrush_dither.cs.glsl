@@ -55,4 +55,6 @@ void main()
     /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(e.xyz, 255)); */
     /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(l.rgb, 255)); */
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), l);
+
+    /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255, 255, 255, 255)); */
 }
