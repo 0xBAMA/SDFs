@@ -11,5 +11,5 @@ void main()
     // get your pixel coords in the range [-1, 1] on x and y
     vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy)-vec2(128)) / vec2(128);
 
-    imageStore(current, ivec2(gl_GlobalInvocationID.xy),  uvec4(256*pixcoord.x, 256*pixcoord.y, 0, e.a));
+    imageStore(current, ivec2(gl_GlobalInvocationID.xy),  uvec4(256*pixcoord.x, 256*pixcoord.y, 256*pixcoord.x*pixcoord.y, e.a));
 }

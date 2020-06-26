@@ -33,7 +33,7 @@ void sdf::create_window()
 	cout << "creating window...";
 
 	/* window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS ); */
-	window = SDL_CreateWindow( "OpenGL Window", 150, 15, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL);
+	window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE );
 	
 	cout << "done." << endl;
 
@@ -79,7 +79,7 @@ void sdf::create_window()
 	ImGui_ImplSDL2_InitForOpenGL(window, GLcontext);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
-	clear_color = ImVec4(75.0f/255.0f, 75.0f/255.0f, 75.0f/255.0f, 0.5f); // initial value for clear color
+	clear_color = ImVec4(0.0, 0.0, 0.0, 0.0); // initial value for clear color
 
 	// really excited by the fact imgui has an hsv picker to set this
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
