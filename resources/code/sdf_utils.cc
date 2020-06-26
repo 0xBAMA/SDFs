@@ -272,9 +272,15 @@ void sdf::draw_everything()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                     // clear the background
 
 	// draw the stuff on the GPU
+    // raymarching
     glUseProgram(raymarch_shader); 
     glDispatchCompute( 256/8, 256/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
-
+    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+    
+    // bitcrush dither
+    glUseProgram(bitcrush_dither_shader); 
+    glDispatchCompute( 256/8, 256/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
+    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
     // show the texture
     glUseProgram(display_shader);

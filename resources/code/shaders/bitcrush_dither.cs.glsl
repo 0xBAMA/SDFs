@@ -6,5 +6,9 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 void main()
 {
+    uvec4 e = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
 
+    uvec4 col = (e>>6)<<6;
+
+    imageStore(current, ivec2(gl_GlobalInvocationID.xy), col);
 }

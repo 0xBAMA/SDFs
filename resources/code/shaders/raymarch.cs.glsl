@@ -6,6 +6,6 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 void main()
 {
-    vec4 e = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
+    uvec4 e = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255, 0, 0, e.a));
 }
