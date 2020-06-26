@@ -2,14 +2,15 @@
 
 in vec2 v_pos;
 
-//uniform bool show_trails;
 layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 out vec4 fragment_output;
 
 void main()
 {
-	uvec4 s = imageLoad(current, ivec2(imageSize(current)*(0.5*(v_pos+vec2(1)))));
+	vec2 lv_pos = v_pos/2.0f + vec2(0.5);
 	
-	fragment_output = vec4(s.r/255,s.g/255,s.b/255,1);
+	uvec4 s = imageLoad(current, ivec2(lv_pos.x*256, lv_pos.y*256));
+	
+	fragment_output = vec4(float(s.r)/256.0,float(s.g)/1024.0,float(s.b)/256.0,float(s.a)/256.0);
 }

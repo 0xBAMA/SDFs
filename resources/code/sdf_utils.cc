@@ -18,8 +18,8 @@ void sdf::create_window()
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 8);
+//	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
+//	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 8);
 
 	// this is how you query the screen resolution
 	SDL_DisplayMode dm;
@@ -32,9 +32,8 @@ void sdf::create_window()
 	
 	cout << "creating window...";
 
-	// window = SDL_CreateWindow( "OpenGL Window", 0, 0, total_screen_width, total_screen_height, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_BORDERLESS );
-	window = SDL_CreateWindow( "OpenGL Window", 0, 0, total_screen_width, total_screen_height, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE );
-  	SDL_ShowWindow(window);
+	/* window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS ); */
+	window = SDL_CreateWindow( "OpenGL Window", 150, 15, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL);
 	
 	cout << "done." << endl;
 
@@ -51,11 +50,6 @@ void sdf::create_window()
 	SDL_GL_MakeCurrent(window, GLcontext);
 	SDL_GL_SetSwapInterval(1); // Enable vsync
 	// SDL_GL_SetSwapInterval(0); // explicitly disable vsync
-
-    // CONTINUUM REPRESENTATION POINTS
-
-
-
 
 
 
@@ -206,11 +200,10 @@ void sdf::gl_setup()
     cout << "done." << endl; 
     
 
-   glGenTextures(1, &display_image2D);
 
-   std::vector<unsigned int> data;
+    std::vector<unsigned char> data;
  
-    /* PerlinNoise p; */
+    PerlinNoise p;
    
     long unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
 
@@ -218,19 +211,29 @@ void sdf::gl_setup()
     std::normal_distribution<GLfloat> ndistribution(0.5,0.3); 
     ndistribution.reset(); 
 
-    for(unsigned int x = 0; x < 640; x++)
-        for(unsigned int y = 0; y < 400; y++)
-            for(unsigned int c = 0; c < 4; c++)
-            {
+    for(unsigned int x = 0; x < 256; x++)
+        for(unsigned int y = 0; y < 256; y++)
+        { 
+                
+                /* data.push_back(x^y); */
+                /* data.push_back(x^y); */
+                /* data.push_back(184); */
+                /* data.push_back(120); */
+
+                
+
                 data.push_back(256 * ndistribution(engine));
-                /* data.push_back(65535 * ndistribution(engine)); */
-                /* data.push_back((1<<18)*p.noise(0.01*x,0.01*y, 0.3*c)); */
-            }   
+                data.push_back(256 * ndistribution(engine));
+                data.push_back(256 * ndistribution(engine));
 
+                data.push_back(static_cast<unsigned char>((x%256) ^ (y%256)));
 
+        }   
+
+    glGenTextures(1, &display_image2D);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, display_image2D);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, 640, 400, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, &data[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, 256, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &data[0]);
     glBindImageTexture(0, display_image2D, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
 
 
@@ -238,8 +241,11 @@ void sdf::gl_setup()
     
     // ...
 
+    CShader csraymarch("resources/code/shaders/raymarch.cs.glsl");
+    raymarch_shader = csraymarch.Program;
 
-
+    CShader csbitcrush("resources/code/shaders/bitcrush_dither.cs.glsl");
+    bitcrush_dither_shader = csbitcrush.Program;
 }
 
 
@@ -266,8 +272,11 @@ void sdf::draw_everything()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                     // clear the background
 
 	// draw the stuff on the GPU
+    glUseProgram(raymarch_shader); 
+    glDispatchCompute( 256/8, 256/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
 
-    // continuum
+
+    // show the texture
     glUseProgram(display_shader);
     glBindVertexArray( display_vao );
     glBindBuffer( GL_ARRAY_BUFFER, display_vbo );
@@ -295,7 +304,8 @@ void sdf::draw_everything()
 	ImGui::Render();
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());   // put imgui data into the framebuffer
-	
+    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);	
+
 	SDL_GL_SwapWindow(window);			// swap the double buffers 
 	
 	// handle events
