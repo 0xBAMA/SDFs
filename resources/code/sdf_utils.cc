@@ -33,7 +33,7 @@ void sdf::create_window()
 	cout << "creating window...";
 
 	/* window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS ); */
-	window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE );
+	window = SDL_CreateWindow( "OpenGL Window", 150, 50, 768, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE );
 	
 	cout << "done." << endl;
 

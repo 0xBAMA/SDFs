@@ -40,8 +40,6 @@ void main()
     uvec4 e = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
     uvec4 l = uvec4(255);
 
-    uvec4 tmp = e;
-
     l.xyz = e.xyz & uvec3(0xFU); // low bits
     e.xyz = (e.xyz>>4)<<4;      // high bits
 
