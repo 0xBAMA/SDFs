@@ -8,7 +8,7 @@ void main()
 {
     uvec4 e = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
 
-    uvec4 col = (e>>6)<<6;
+    /* e = (e>>6)<<6; */
 
-    imageStore(current, ivec2(gl_GlobalInvocationID.xy), col);
+    imageStore(current, ivec2(gl_GlobalInvocationID.xy), e);
 }
