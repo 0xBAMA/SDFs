@@ -299,6 +299,8 @@ void sdf::draw_everything()
 	ImGui::Begin("Controls", NULL, 0);
 
     //do the other widgets	
+    ImGui::SetCursorPosX(45);
+    ImGui::ColorEdit3("", (float*)&clear_color); // Edit 3 floats representing a color
 
 	ImGui::End();
 	ImGui::Render();
