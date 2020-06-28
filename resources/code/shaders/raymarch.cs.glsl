@@ -11,6 +11,8 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 
 uniform vec3 lightPos;
+uniform vec3 lightPos2;
+uniform vec3 lightPos3;
 
 
 //-------------------------------
@@ -111,6 +113,40 @@ float GetLight(vec3 p)
 }
 
 
+float GetLight2(vec3 p)
+{
+    vec3 l = normalize(lightPos2-p);
+    vec3 n = GetNormal(p);
+
+    float dif = clamp( dot( n, l), 0.0, 1.0);
+
+    float d = RayMarch(p+n*SURFACE_DISTANCE*2.0, l);
+
+    if(d < length(lightPos2 - p))
+        dif *= 0.1;
+
+    return dif;
+}
+
+
+float GetLight3(vec3 p)
+{
+    vec3 l = normalize(lightPos3-p);
+    vec3 n = GetNormal(p);
+
+    float dif = clamp( dot( n, l), 0.0, 1.0);
+
+    float d = RayMarch(p+n*SURFACE_DISTANCE*2.0, l);
+
+    if(d < length(lightPos3 - p))
+        dif *= 0.1;
+
+    return dif;
+}
+
+
+
+
 void main()
 {
     uvec4 e = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
@@ -129,10 +165,16 @@ void main()
 
     vec3 p = ro + rd * d;
 
-    float dif = GetLight(p);
-    col = vec3(dif);
+    float dif1 = GetLight(p);
+    float dif2 = GetLight2(p);
+    float dif3 = GetLight3(p);
 
+    col = vec3(dif1);
+    col += vec3(0.6*dif2, 0.3*dif2, 0);
+    col += vec3(0.1*dif3, 0.3*dif3, 0.5*dif3);
 
     /* imageStore(current, ivec2(gl_GlobalInvocationID.xy),  uvec4(256*pixcoord.x, 256*pixcoord.y, 256*pixcoord.x*pixcoord.y, e.a)); */
-    imageStore(current, ivec2(gl_GlobalInvocationID.xy),  uvec4(256*col.r, 256*col.g, 256*col.b, 255));
+    imageStore(current, ivec2(gl_GlobalInvocationID.xy),  uvec4(255*col.r, 255*col.g, 255*col.b, 255));
+    /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255, 255, 255, 255)); */
+    /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(0, 0, 0, 255)); */
 }

@@ -26,6 +26,9 @@ private:
 
     GLuint bitcrush_dither_shader;
 
+
+    glm::quat rotation;
+
 	void create_window();
 	void gl_setup();
 	void draw_everything();
