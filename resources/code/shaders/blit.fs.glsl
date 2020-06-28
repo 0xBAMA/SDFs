@@ -10,7 +10,7 @@ void main()
 {
 	vec2 lv_pos = v_pos/2.0f + vec2(0.5);
 	
-	uvec4 s = imageLoad(current, ivec2(lv_pos.x*256, lv_pos.y*256));
+	uvec4 s = imageLoad(current, ivec2(lv_pos.x*imageSize(current).x, lv_pos.y*imageSize(current).y));
 	
 	bool do_scanlines = false;
 	

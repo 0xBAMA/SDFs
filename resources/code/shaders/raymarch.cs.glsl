@@ -152,7 +152,7 @@ void main()
     uvec4 e = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
 
     // get your pixel coords in the range [-1, 1] on x and y
-    vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy)-vec2(128)) / vec2(128);
+    vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy)-vec2(imageSize(current).x/2)) / vec2(imageSize(current).x/2);
 
     vec3 col = vec3(0);
 

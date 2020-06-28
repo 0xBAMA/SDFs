@@ -204,7 +204,7 @@ void sdf::gl_setup()
     glGenTextures(1, &display_image2D);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, display_image2D);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, 256, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, DIM, DIM, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, NULL);
     glBindImageTexture(0, display_image2D, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
 
 
@@ -237,22 +237,13 @@ void sdf::draw_everything()
 {
 	ImGuiIO& io = ImGui::GetIO(); (void)io; // void cast prevents unused variable warning
     //get the screen dimensions and pass in as uniforms
-    
-
-
-
-    /* static glm::vec3 light_position = glm::vec3(2,5,6); */
-    /* glm::vec3 light_position = glm::rotateY(glm::vec3(2,6+sin(0.001*SDL_GetTicks()),6), 0.0007f*SDL_GetTicks()); */
-    glm::vec3 light_position = glm::vec3(0+sin(0.001*SDL_GetTicks()), 4 + 3 * sin(0.0003*SDL_GetTicks()), 6+cos(0.001*SDL_GetTicks()));
-    glm::vec3 light_position2 = glm::vec3(0+5*sin(0.0005*SDL_GetTicks()), 4 + 3 * sin(0.0001*SDL_GetTicks()), 6+4*cos(0.0005*SDL_GetTicks()));
-    glm::vec3 light_position3 = glm::vec3(0+5*sin(0.0003*SDL_GetTicks()), 4 + 3 * sin(0.0002*SDL_GetTicks()), 6+4*cos(0.0003*SDL_GetTicks()));
-
+   
+    static bool animate_lighting = true;
+    static bool dither = true;
 
 
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);   // from hsv picker
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                     // clear the background
-
-	
 
 
 
@@ -261,17 +252,30 @@ void sdf::draw_everything()
     glUseProgram(raymarch_shader); 
     
     // send the light position
-    glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos"), light_position.x, light_position.y, light_position.z);
-    glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), light_position2.x, light_position2.y, light_position2.z);
-    glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos3"), light_position3.x, light_position3.y, light_position3.z);
-
-    glDispatchCompute( 256/8, 256/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
-    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+    if(animate_lighting)
+    {
+        glm::vec3 light_position = glm::vec3(0+sin(0.001*SDL_GetTicks()), 4 + 3 * sin(0.0003*SDL_GetTicks()), 6+cos(0.001*SDL_GetTicks()));
+        glm::vec3 light_position2 = glm::vec3(0+5*sin(0.0005*SDL_GetTicks()), 4 + 3 * sin(0.0001*SDL_GetTicks()), 6+4*cos(0.0005*SDL_GetTicks()));
+        glm::vec3 light_position3 = glm::vec3(0+5*sin(0.0003*SDL_GetTicks()), 4 + 3 * sin(0.0002*SDL_GetTicks()), 6+4*cos(0.0003*SDL_GetTicks()));
+        
+        glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos"), light_position.x, light_position.y, light_position.z);
+        glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), light_position2.x, light_position2.y, light_position2.z);
+        glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos3"), light_position3.x, light_position3.y, light_position3.z);
+    }
     
-    // bitcrush dither
-    glUseProgram(bitcrush_dither_shader); 
-    glDispatchCompute( 256/8, 256/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
+    glDispatchCompute( DIM/8, DIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+   
+
+    if(dither)
+    {
+        // bitcrush dither
+        glUseProgram(bitcrush_dither_shader); 
+    
+        glDispatchCompute( DIM/8, DIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
+        glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+    }
 
     // show the texture
     glUseProgram(display_shader);
@@ -300,7 +304,8 @@ void sdf::draw_everything()
     /* ImGui::SliderFloat("light pos y", &light_position.y, -10.0f, 10.0f, "%.2f"); */
     /* ImGui::SliderFloat("light pos z", &light_position.z, -10.0f, 10.0f, "%.2f"); */
 
-
+    ImGui::Checkbox("Dither", &dither);
+    ImGui::Checkbox("Animate Lights", &animate_lighting);
 
     //do the other widgets	
     ImGui::SetCursorPosX(45);

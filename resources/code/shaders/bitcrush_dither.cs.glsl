@@ -45,37 +45,9 @@ void main()
     l.xyz = e.xyz & uvec3(0x0FU);   // low bits
     e.xyz = e.xyz & uvec3(0xF0U);  // high bits
    
-
-    bool correction = false;
-
-    if(correction) // there's a weird edge case here, but I don't like the look of the correction
-    {
-        // get the red
-        if(temp.r == 255)
-            l.r = 0xF0U;
-        else
-            l.r = (indexValue4() >= l.r) ? e.r : e.r + 0x10U;
-
-        // get the green
-        if(temp.g == 255)
-            l.g = 0xF0U;
-        else
-            l.g = (indexValue4() >= l.g) ? e.g : e.g + 0x10U;
-    
-        // get the blue
-        if(temp.b == 255)
-            l.b = 0xF0U;
-        else
-            l.b = (indexValue4() >= l.b) ? e.b : e.b + 0x10U;
-    }
-    else
-    {
-        l.r = (indexValue4() >= l.r) ? e.r : e.r + 0x10U;
-        l.g = (indexValue4() >= l.g) ? e.g : e.g + 0x10U;
-        l.b = (indexValue4() >= l.b) ? e.b : e.b + 0x10U;
-    }
+    l.r = (indexValue4() >= l.r) ? e.r : e.r + 0x10U;
+    l.g = (indexValue4() >= l.g) ? e.g : e.g + 0x10U;
+    l.b = (indexValue4() >= l.b) ? e.b : e.b + 0x10U;
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(l.rgb, e.a));
-    /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp); */
-
 }
