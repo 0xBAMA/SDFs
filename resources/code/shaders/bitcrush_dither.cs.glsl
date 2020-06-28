@@ -40,21 +40,21 @@ void main()
     uvec4 e = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
     uvec4 l = uvec4(255);
 
+    uvec4 temp = e;
+
     l.xyz = e.xyz & uvec3(0xFU); // low bits
     e.xyz = (e.xyz>>4)<<4;      // high bits
 
     // get the red
-    l.r = (indexValue4() >= l.r) ? e.r : e.r + 0x10U;
+    l.r = (indexValue4() >= l.r) ? e.r : e.r + 0x0fU;
 
     // get the green
-    l.g = (indexValue4() >= l.g) ? e.g : e.g + 0x10U;
+    l.g = (indexValue4() >= l.g) ? e.g : e.g + 0x0fU;
     
     // get the blue
-    l.b = (indexValue4() >= l.b) ? e.b : e.b + 0x10U;
+    l.b = (indexValue4() >= l.b) ? e.b : e.b + 0x0fU;
     
-    /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(e.xyz, 255)); */
-    /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(l.rgb, 255)); */
-    imageStore(current, ivec2(gl_GlobalInvocationID.xy), l);
+    imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(l.rgb, e.a));
+    /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp); */
 
-    /* imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255, 255, 255, 255)); */
 }

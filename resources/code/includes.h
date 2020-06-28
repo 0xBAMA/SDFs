@@ -35,6 +35,7 @@ using std::endl;
 #include "../glm/gtc/matrix_transform.hpp" // for glm::ortho
 #include "../glm/gtc/type_ptr.hpp" //to send matricies gpu-side
 #include "../glm/gtx/transform.hpp"
+#include "../glm/gtx/rotate_vector.hpp"
 
 //not sure as to the utility of this
 #define GL_GLEXT_PROTOTYPES

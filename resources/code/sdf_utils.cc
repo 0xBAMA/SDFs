@@ -239,12 +239,28 @@ void sdf::draw_everything()
     //get the screen dimensions and pass in as uniforms
     
 
+
+
+    /* static glm::vec3 light_position = glm::vec3(2,5,6); */
+    /* glm::vec3 light_position = glm::rotateY(glm::vec3(2,6+sin(0.001*SDL_GetTicks()),6), 0.0007f*SDL_GetTicks()); */
+    glm::vec3 light_position = glm::vec3(0+sin(0.001*SDL_GetTicks()), 4 + 3 * sin(0.0003*SDL_GetTicks()), 6+cos(0.001*SDL_GetTicks()));
+
+
+
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);   // from hsv picker
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                     // clear the background
 
-	// draw the stuff on the GPU
+	
+
+
+
+    // draw the stuff on the GPU
     // raymarching
     glUseProgram(raymarch_shader); 
+    
+    // send the light position
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos"), light_position.x, light_position.y, light_position.z);
+
     glDispatchCompute( 256/8, 256/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
     
@@ -274,6 +290,13 @@ void sdf::draw_everything()
 	ImGui::SetNextWindowPos(ImVec2(10,10));
 	ImGui::SetNextWindowSize(ImVec2(256,385));
 	ImGui::Begin("Controls", NULL, 0);
+
+
+    /* ImGui::SliderFloat("light pos x", &light_position.x, -10.0f, 10.0f, "%.2f"); */
+    /* ImGui::SliderFloat("light pos y", &light_position.y, -10.0f, 10.0f, "%.2f"); */
+    /* ImGui::SliderFloat("light pos z", &light_position.z, -10.0f, 10.0f, "%.2f"); */
+
+
 
     //do the other widgets	
     ImGui::SetCursorPosX(45);
