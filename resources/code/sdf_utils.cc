@@ -29,7 +29,9 @@ void sdf::create_window()
 	// the window, in a way that's flexible on different resolution screens
 	int total_screen_width = dm.w;
 	int total_screen_height = dm.h;
-	
+
+    cout << "environment is " << total_screen_width << " x " << total_screen_height << endl;
+
 	cout << "creating window...";
 
 	/* window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS ); */
@@ -217,6 +219,14 @@ void sdf::gl_setup()
 
     CShader csbitcrush("resources/code/shaders/bitcrush_dither.cs.glsl");
     bitcrush_dither_shader = csbitcrush.Program;
+
+    dither = true;
+    animate_lighting = true;
+
+
+    rotation_about_x = 0;
+    rotation_about_y = 0;
+    rotation_about_z = 0;
 }
 
 
@@ -236,15 +246,13 @@ static void HelpMarker(const char* desc)
 void sdf::draw_everything()
 {
 	ImGuiIO& io = ImGui::GetIO(); (void)io; // void cast prevents unused variable warning
-    //get the screen dimensions and pass in as uniforms
-   
-    static bool animate_lighting = true;
-    static bool dither = true;
+    // get the screen dimensions and pass in as uniforms
 
+    static glm::mat4 rotation;
+   
 
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);   // from hsv picker
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                     // clear the background
-
 
 
     // draw the stuff on the GPU
@@ -262,7 +270,18 @@ void sdf::draw_everything()
         glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), light_position2.x, light_position2.y, light_position2.z);
         glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos3"), light_position3.x, light_position3.y, light_position3.z);
     }
+   
+
+    // basis vectors
+    glm::vec3 basis_x = (rotation*glm::vec4(1,0,0,0)).xyz();
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_x"), basis_x.x, basis_x.y, basis_x.z);
     
+    glm::vec3 basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_y"), basis_y.x, basis_y.y, basis_y.z);
+    
+    glm::vec3 basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_z"), basis_z.x, basis_z.y, basis_z.z);
+
     glDispatchCompute( DIM/8, DIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
@@ -299,10 +318,20 @@ void sdf::draw_everything()
 	ImGui::SetNextWindowSize(ImVec2(256,385));
 	ImGui::Begin("Controls", NULL, 0);
 
+    rotation = glm::mat4(1.0);
+    
 
-    /* ImGui::SliderFloat("light pos x", &light_position.x, -10.0f, 10.0f, "%.2f"); */
-    /* ImGui::SliderFloat("light pos y", &light_position.y, -10.0f, 10.0f, "%.2f"); */
-    /* ImGui::SliderFloat("light pos z", &light_position.z, -10.0f, 10.0f, "%.2f"); */
+    rotation *= glm::toMat4(glm::angleAxis(rotation_about_x, glm::vec3(1,0,0)));
+    rotation *= glm::toMat4(glm::angleAxis(rotation_about_y, glm::vec3(rotation*glm::vec4(0,1,0,0))));
+    rotation *= glm::toMat4(glm::angleAxis(rotation_about_z, glm::vec3(rotation*glm::vec4(0,0,1,0))));
+
+    ImGui::SliderFloat("rotation about x", &rotation_about_x, -10.0f, 10.0f, "%.2f");
+    ImGui::SliderFloat("rotation about y", &rotation_about_y, -10.0f, 10.0f, "%.2f");
+    ImGui::SliderFloat("rotation about z", &rotation_about_z, -10.0f, 10.0f, "%.2f");
+
+
+    /* cout << glm::to_string(rotation) << endl << endl; */
+
 
     ImGui::Checkbox("Dither", &dither);
     ImGui::Checkbox("Animate Lights", &animate_lighting);
@@ -310,6 +339,8 @@ void sdf::draw_everything()
     //do the other widgets	
     ImGui::SetCursorPosX(45);
     ImGui::ColorEdit3("", (float*)&clear_color); // Edit 3 floats representing a color
+    ImGui::SameLine();
+    HelpMarker("OpenGL Clear Color");
 
 	ImGui::End();
 	ImGui::Render();

@@ -23,11 +23,14 @@ private:
     GLuint display_image2D;
 
     GLuint raymarch_shader;
+    bool animate_lighting;
 
     GLuint bitcrush_dither_shader;
+    bool dither;
 
-
-    glm::quat rotation;
+    float rotation_about_y;
+    float rotation_about_x;
+    float rotation_about_z;
 
 	void create_window();
 	void gl_setup();

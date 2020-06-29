@@ -15,6 +15,11 @@ uniform vec3 lightPos2;
 uniform vec3 lightPos3;
 
 
+uniform vec3 basis_x;
+uniform vec3 basis_y;
+uniform vec3 basis_z;
+
+
 //-------------------------------
 
 float sdSphere( vec3 p, float s )
@@ -157,7 +162,10 @@ void main()
     vec3 col = vec3(0);
 
     vec3 ro = vec3(0,4,0);
-    vec3 rd = normalize(vec3(1.5*pixcoord.x, pixcoord.y, 1));
+    /* vec3 rd = normalize(vec3(1.5*pixcoord.x, pixcoord.y, 1)); */
+    vec3 rd = normalize(1.5*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
+
+
 
     float d = RayMarch(ro, rd);
 
