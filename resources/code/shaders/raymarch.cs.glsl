@@ -20,6 +20,8 @@ uniform vec3 basis_y;
 uniform vec3 basis_z;
 
 
+uniform vec3 ray_origin;
+
 //-------------------------------
 
 float sdSphere( vec3 p, float s )
@@ -161,8 +163,10 @@ void main()
 
     vec3 col = vec3(0);
 
-    vec3 ro = vec3(0,4,0);
+    /* vec3 ro = vec3(0,4,0); */
     /* vec3 rd = normalize(vec3(1.5*pixcoord.x, pixcoord.y, 1)); */
+    
+    vec3 ro = ray_origin;
     vec3 rd = normalize(1.5*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
 
 

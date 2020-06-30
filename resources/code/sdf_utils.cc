@@ -249,6 +249,7 @@ void sdf::draw_everything()
     // get the screen dimensions and pass in as uniforms
 
     static glm::mat4 rotation;
+    static glm::vec3 position = glm::vec3(0,4,0);
    
 
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);   // from hsv picker
@@ -281,6 +282,9 @@ void sdf::draw_everything()
     
     glm::vec3 basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
     glUniform3f(glGetUniformLocation(raymarch_shader, "basis_z"), basis_z.x, basis_z.y, basis_z.z);
+
+    // ray origin
+    glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);
 
     glDispatchCompute( DIM/8, DIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
@@ -318,16 +322,16 @@ void sdf::draw_everything()
 	ImGui::SetNextWindowSize(ImVec2(256,385));
 	ImGui::Begin("Controls", NULL, 0);
 
-    rotation = glm::mat4(1.0);
     
 
-    rotation *= glm::toMat4(glm::angleAxis(rotation_about_x, glm::vec3(1,0,0)));
-    rotation *= glm::toMat4(glm::angleAxis(rotation_about_y, glm::vec3(rotation*glm::vec4(0,1,0,0))));
-    rotation *= glm::toMat4(glm::angleAxis(rotation_about_z, glm::vec3(rotation*glm::vec4(0,0,1,0))));
+    glm::quat rotationx = glm::angleAxis(rotation_about_x, glm::vec3(1,0,0));
+    glm::quat rotationy = glm::angleAxis(rotation_about_y, glm::vec3(0,1,0));
+    glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1));
+    rotation = glm::toMat4(rotationx * rotationy * rotationz);
 
-    ImGui::SliderFloat("rotation about x", &rotation_about_x, -10.0f, 10.0f, "%.2f");
-    ImGui::SliderFloat("rotation about y", &rotation_about_y, -10.0f, 10.0f, "%.2f");
-    ImGui::SliderFloat("rotation about z", &rotation_about_z, -10.0f, 10.0f, "%.2f");
+    ImGui::SliderFloat("rotation about x", &rotation_about_x, -4.0f, 4.0f, "%.2f");
+    ImGui::SliderFloat("rotation about y", &rotation_about_y, -4.0f, 4.0f, "%.2f");
+    ImGui::SliderFloat("rotation about z", &rotation_about_z, -4.0f, 4.0f, "%.2f");
 
 
     /* cout << glm::to_string(rotation) << endl << endl; */
@@ -365,7 +369,47 @@ void sdf::draw_everything()
 
 		if ((event.type == SDL_KEYUP  && event.key.keysym.sym == SDLK_ESCAPE) || (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_X1)) //x1 is browser back on the mouse
 			pquit = true;
-	}
+	
+
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w)
+            rotation_about_x -= 0.03;
+
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_s)
+            rotation_about_x += 0.03;
+
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a)
+            rotation_about_y -= 0.03;
+        
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_d)
+            rotation_about_y += 0.03;
+
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_e)
+            rotation_about_z -= 0.03;
+
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q)
+            rotation_about_z += 0.03;
+
+
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_UP)
+            position += 0.07f * basis_z;
+
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DOWN)
+            position -= 0.07f * basis_z;
+    
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RIGHT)
+            position += 0.07f * basis_x;
+        
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_LEFT)
+            position -= 0.07f * basis_x;
+
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEUP)
+            position += 0.07f * basis_y;
+        
+        if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEDOWN)
+            position -= 0.07f * basis_y;
+
+    
+    }
 }
 
 
