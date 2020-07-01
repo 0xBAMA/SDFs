@@ -57,7 +57,7 @@ float GetDist(vec3 p)
     vec4 s = vec4( 0, 4, 6, 1);
     vec4 s2 = vec4( 0, 1, 6, 1);
 
-    float sphereDist = min(max(-sdSphere(p-s.xyz, s.w), sdCylinder(p-s.xyz, vec2(0.5, 1.5))), sdSphere(p-s.xyz, 0.75*s.w));
+    float sphereDist = min(max(-sdSphere(p-s.xyz, s.w), sdCylinder(p-s.xyz, vec2(0.5, 1.5))), sdSphere(vec3(mod(p.x, 2), mod(p.y, 3), mod(p.z, 4))-s.xyz, 0.75*s.w));
     float torusDist = sdTorus(vec3(p.x, mod(p.y, 2), p.z)-s2.xyz, vec2(3, 0.25));
     float planeDist = p.y;
 

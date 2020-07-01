@@ -34,8 +34,8 @@ void sdf::create_window()
 
 	cout << "creating window...";
 
-	/* window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS ); */
-	window = SDL_CreateWindow( "OpenGL Window", 150, 50, 768, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE );
+	window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_RESIZABLE);
+	/* window = SDL_CreateWindow( "OpenGL Window", 150, 50, 768, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE ); */
 	
 	cout << "done." << endl;
 
@@ -51,7 +51,7 @@ void sdf::create_window()
 
 	SDL_GL_MakeCurrent(window, GLcontext);
 	SDL_GL_SetSwapInterval(1); // Enable vsync
-	// SDL_GL_SetSwapInterval(0); // explicitly disable vsync
+	/* SDL_GL_SetSwapInterval(0); // explicitly disable vsync */
 
 
 
@@ -326,12 +326,12 @@ void sdf::draw_everything()
 
     glm::quat rotationx = glm::angleAxis(rotation_about_x, glm::vec3(1,0,0));
     glm::quat rotationy = glm::angleAxis(rotation_about_y, glm::vec3(0,1,0));
-    glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1));
-    rotation = glm::toMat4(rotationx * rotationy * rotationz);
+    /* glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1)); */
+    rotation = glm::toMat4(rotationy * rotationx);
 
     ImGui::SliderFloat("rotation about x", &rotation_about_x, -4.0f, 4.0f, "%.2f");
     ImGui::SliderFloat("rotation about y", &rotation_about_y, -4.0f, 4.0f, "%.2f");
-    ImGui::SliderFloat("rotation about z", &rotation_about_z, -4.0f, 4.0f, "%.2f");
+    /* ImGui::SliderFloat("rotation about z", &rotation_about_z, -4.0f, 4.0f, "%.2f"); */
 
 
     /* cout << glm::to_string(rotation) << endl << endl; */
@@ -345,6 +345,11 @@ void sdf::draw_everything()
     ImGui::ColorEdit3("", (float*)&clear_color); // Edit 3 floats representing a color
     ImGui::SameLine();
     HelpMarker("OpenGL Clear Color");
+
+
+    ImGui::SetCursorPosX(60);
+    ImGui::Text(" %.2f ms (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate); 
+
 
 	ImGui::End();
 	ImGui::Render();
