@@ -244,7 +244,10 @@ void sdf::gl_setup()
     CShader csbitcrushYCbCr("resources/code/shaders/bitcrush_ditherYCbCr.cs.glsl");
     bitcrush_dither_shaderYCbCr = csbitcrushYCbCr.Program;
 
-    dither = NONE;
+    CShader csbitcrushFUCKUP("resources/code/shaders/bitcrush_ditherFUCKUP.cs.glsl");
+    bitcrush_dither_shaderFUCKUP = csbitcrushFUCKUP.Program;
+
+    dither = FUCKUP;
     animate_lighting = true;
 
 
@@ -349,6 +352,9 @@ void sdf::draw_everything()
             case YCbCr:
                 glUseProgram(bitcrush_dither_shaderYCbCr); 
                 break;
+            case FUCKUP:
+                glUseProgram(bitcrush_dither_shaderFUCKUP);
+                break;
             default:
                 break;
         }
@@ -397,7 +403,7 @@ void sdf::draw_everything()
     /* cout << glm::to_string(rotation) << endl << endl; */
 
     // dither method selection
-    const char* items[] = { "NONE", "HSL", "HSV", "RGB", "YUV", "sRGB", "XYZ", "xyY", "HCY", "YCbCr"};
+    const char* items[] = { "NONE", "HSL", "HSV", "RGB", "YUV", "sRGB", "XYZ", "xyY", "HCY", "YCbCr", "FUCKUP"};
     static int item_current = dither;
     ImGui::Combo("Dither", &item_current, items, IM_ARRAYSIZE(items));
     dither = dithertype(item_current);

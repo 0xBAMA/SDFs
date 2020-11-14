@@ -14,7 +14,8 @@ sRGB  = 5,
 XYZ   = 6,
 xyY   = 7,
 HCY   = 8,
-YCbCr = 9
+YCbCr = 9,
+FUCKUP = 10
 };
 
 class sdf
@@ -48,6 +49,7 @@ private:
     GLuint bitcrush_dither_shaderxyY;
     GLuint bitcrush_dither_shaderHCY;
     GLuint bitcrush_dither_shaderYCbCr;
+    GLuint bitcrush_dither_shaderFUCKUP;
     dithertype dither;
 
     float rotation_about_y;
