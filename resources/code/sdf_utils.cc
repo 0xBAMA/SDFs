@@ -34,8 +34,8 @@ void sdf::create_window()
 
 	cout << "creating window...";
 
-	window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_RESIZABLE);
-	/* window = SDL_CreateWindow( "OpenGL Window", 150, 50, 768, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE ); */
+	// window = SDL_CreateWindow( "OpenGL Window", 150, 50, total_screen_width-300, total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_RESIZABLE);
+	window = SDL_CreateWindow( "OpenGL Window", 150, 50, 768, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE );
 	
 	cout << "done." << endl;
 
@@ -217,10 +217,34 @@ void sdf::gl_setup()
     CShader csraymarch("resources/code/shaders/raymarch.cs.glsl");
     raymarch_shader = csraymarch.Program;
 
-    CShader csbitcrush("resources/code/shaders/bitcrush_dither.cs.glsl");
-    bitcrush_dither_shader = csbitcrush.Program;
+    CShader csbitcrushRGB("resources/code/shaders/bitcrush_ditherRGB.cs.glsl");
+    bitcrush_dither_shaderRGB = csbitcrushRGB.Program;
 
-    dither = true;
+    CShader csbitcrushHSV("resources/code/shaders/bitcrush_ditherHSV.cs.glsl");
+    bitcrush_dither_shaderHSV = csbitcrushHSV.Program;
+
+    CShader csbitcrushHSL("resources/code/shaders/bitcrush_ditherHSL.cs.glsl");
+    bitcrush_dither_shaderHSL = csbitcrushHSL.Program;
+
+    CShader csbitcrushYUV("resources/code/shaders/bitcrush_ditherYUV.cs.glsl");
+    bitcrush_dither_shaderYUV = csbitcrushYUV.Program;
+
+    CShader csbitcrushsRGB("resources/code/shaders/bitcrush_dithersRGB.cs.glsl");
+    bitcrush_dither_shadersRGB = csbitcrushsRGB.Program;
+
+    CShader csbitcrushXYZ("resources/code/shaders/bitcrush_ditherXYZ.cs.glsl");
+    bitcrush_dither_shaderXYZ = csbitcrushXYZ.Program;
+
+    CShader csbitcrushxyY("resources/code/shaders/bitcrush_ditherxyY.cs.glsl");
+    bitcrush_dither_shaderxyY = csbitcrushxyY.Program;
+
+    CShader csbitcrushHCY("resources/code/shaders/bitcrush_ditherHCY.cs.glsl");
+    bitcrush_dither_shaderHCY = csbitcrushHCY.Program;
+
+    CShader csbitcrushYCbCr("resources/code/shaders/bitcrush_ditherYCbCr.cs.glsl");
+    bitcrush_dither_shaderYCbCr = csbitcrushYCbCr.Program;
+
+    dither = NONE;
     animate_lighting = true;
 
 
@@ -293,11 +317,47 @@ void sdf::draw_everything()
 
     if(dither)
     {
-        // bitcrush dither
-        glUseProgram(bitcrush_dither_shader); 
-    
-        glDispatchCompute( DIM/8, DIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
-        glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+        // Select color space, or none
+        switch(dither)
+        {
+            case NONE:
+                break;
+            case RGB: 
+                glUseProgram(bitcrush_dither_shaderRGB); 
+                break;
+            case HSL: 
+                glUseProgram(bitcrush_dither_shaderHSL); 
+                break;
+            case HSV: 
+                glUseProgram(bitcrush_dither_shaderHSV); 
+                break;
+            case YUV: 
+                glUseProgram(bitcrush_dither_shaderYUV); 
+                break;
+            case sRGB:
+                glUseProgram(bitcrush_dither_shadersRGB); 
+                break;
+            case XYZ:
+                glUseProgram(bitcrush_dither_shaderXYZ); 
+                break;
+            case xyY:
+                glUseProgram(bitcrush_dither_shaderxyY); 
+                break;
+            case HCY:
+                glUseProgram(bitcrush_dither_shaderHCY); 
+                break;
+            case YCbCr:
+                glUseProgram(bitcrush_dither_shaderYCbCr); 
+                break;
+            default:
+                break;
+        }
+        
+        if(dither != NONE)
+        {
+            glDispatchCompute( DIM/8, DIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
+            glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+        }
     }
 
     // show the texture
@@ -336,8 +396,12 @@ void sdf::draw_everything()
 
     /* cout << glm::to_string(rotation) << endl << endl; */
 
-
-    ImGui::Checkbox("Dither", &dither);
+    // dither method selection
+    const char* items[] = { "NONE", "HSL", "HSV", "RGB", "YUV", "sRGB", "XYZ", "xyY", "HCY", "YCbCr"};
+    static int item_current = dither;
+    ImGui::Combo("Dither", &item_current, items, IM_ARRAYSIZE(items));
+    dither = dithertype(item_current);
+    
     ImGui::Checkbox("Animate Lights", &animate_lighting);
 
     //do the other widgets	
