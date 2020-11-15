@@ -205,13 +205,12 @@ void sdf::gl_setup()
 
     glGenTextures(1, &display_image2D);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, display_image2D);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, DIM, DIM, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, NULL);
+    glBindTexture(GL_TEXTURE_RECTANGLE, display_image2D);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, XDIM, YDIM, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, NULL);
     glBindImageTexture(0, display_image2D, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
 
 
     // compile the compute shader to do the raycasting
-    
     // ...
 
     CShader csraymarch("resources/code/shaders/raymarch.cs.glsl");
@@ -249,7 +248,6 @@ void sdf::gl_setup()
 
     dither = FUCKUP;
     animate_lighting = true;
-
 
     rotation_about_x = 0;
     rotation_about_y = 0;
@@ -313,7 +311,7 @@ void sdf::draw_everything()
     // ray origin
     glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);
 
-    glDispatchCompute( DIM/8, DIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
+    glDispatchCompute( XDIM/8, YDIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
    
@@ -361,7 +359,7 @@ void sdf::draw_everything()
         
         if(dither != NONE)
         {
-            glDispatchCompute( DIM/8, DIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
+            glDispatchCompute( XDIM/8, YDIM/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8 
             glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
         }
     }

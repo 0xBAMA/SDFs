@@ -377,23 +377,23 @@ void main()
     uvec4 temp = e;
 
 
-    // get the normalized values of the YCbCr representation
-    vec4 normalizedYCbCr = vec4(hsv_to_hcy(rgb_to_xyY(vec3(e.rgb/256.))), e.a/256.);
+    // get the normalized values of the floating point representation
+    vec4 normalizedfloat = vec4((rgb_to_hsv(vec3(e.rgb/256.))), e.a/256.);
 
     // get the uint representation of the normalized
-    e = uvec4(normalizedYCbCr*256);
+    e = uvec4(normalizedfloat*256);
 
     // bitcrush
     l.xyz = e.xyz & uvec3(0x0FU);   // low bits
     e.xyz = e.xyz & uvec3(0xF0U);  // high bits
 
     // dither
-    l.r = (indexValue4() >= l.r) ? e.r : e.r + 0x10U;
-    l.g = (indexValue4() >= l.g) ? e.g : e.g + 0x10U;
-    l.b = (indexValue4() >= l.b) ? e.b : e.b + 0x10U;
+    l.r = (indexValue8() >= l.r) ? e.r : e.r + 0x10U;
+    l.g = (indexValue8() >= l.g) ? e.g : e.g + 0x10U;
+    l.b = (indexValue8() >= l.b) ? e.b : e.b + 0x10U;
 
     // convert back
-    vec4 normalizedRGB = vec4(rgb_to_ycbcr(hcy_to_hsv(vec3(l.rgb/256.))), l.a/256.);
+    vec4 normalizedRGB = vec4(rgb_to_xyY(ycbcr_to_hcy(vec3(l.rgb/256.))), l.a/256.);
 
     // again, the uint representation
     l = uvec4(normalizedRGB*256);

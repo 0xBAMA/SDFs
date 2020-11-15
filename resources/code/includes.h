@@ -70,6 +70,7 @@ using std::endl;
 //diamond square heightmap generation
 #include "diamond_square.h"
 
-#define DIM 256
+#define XDIM 320
+#define YDIM 240
 
 #endif
