@@ -8,7 +8,7 @@ Experimenting with SDFs - Built on NQAE
 ### Plans for part 3:
 This has been a little while coming. I've been thinking a lot about what I want to do with it, while dealing with the ongoing feature creep of Voraldo 1.2. 
 
-- dithering in even more color spaces
+- dithering in even more color spaces, perhaps blending a few different results together?
 - soft shadows
 - maybe higher resolution
 - multisampling the initial raymarching result
