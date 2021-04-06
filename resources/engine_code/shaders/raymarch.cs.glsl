@@ -6,12 +6,6 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 void main()
 {
-    if(int(gl_GlobalInvocationID.y) % 3 == 0)
-    {
-        imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( 255, 255,   0, 255 ));
-    }
-    else
-    {
-        imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(   0,   0,  0, 255 ));
-    }
+    bvec2 mod_result = bvec2(gl_GlobalInvocationID.x%2==0, gl_GlobalInvocationID.y%2==0);
+    imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(mod_result.x ? 0:255, mod_result.y ? 0:255,   0, 255 ));
 }

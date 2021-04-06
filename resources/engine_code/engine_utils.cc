@@ -142,11 +142,8 @@ void engine::create_window() {
 
   cout << "creating window...";
 
-  // window = SDL_CreateWindow( "OpenGL Window", 50, 50, total_screen_width-100,
-  // total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN |
-  // SDL_WINDOW_BORDERLESS );
   window = SDL_CreateWindow(
-      "OpenGL Window", 0, 0, WIDTH*2, HEIGHT*2,
+      "Raymarcher", 0, 0, WIDTH*3, HEIGHT*3,
       SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
   SDL_ShowWindow(window);
 
@@ -164,11 +161,6 @@ void engine::create_window() {
   SDL_GL_MakeCurrent(window, GLcontext);
   SDL_GL_SetSwapInterval(1); // Enable vsync
   // SDL_GL_SetSwapInterval(0); // explicitly disable vsync
-
-  /*    if (glewInit() != GLEW_OK)
-      {
-          fprintf(stderr, "Failed to initialize OpenGL loader!\n");
-      }*/
 
   if (gl3wInit() != 0)
     fprintf(stderr, "Failed to initialize OpenGL loader!\n");
@@ -214,7 +206,7 @@ void engine::create_window() {
   ImVec4 *colors = ImGui::GetStyle().Colors;
   colors[ImGuiCol_Text] = ImVec4(0.67f, 0.50f, 0.16f, 1.00f);
   colors[ImGuiCol_TextDisabled] = ImVec4(0.33f, 0.27f, 0.16f, 1.00f);
-  colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.05f, 0.00f, 0.5f);
+  colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.05f, 0.00f, 0.85f);
   colors[ImGuiCol_ChildBg] = ImVec4(0.23f, 0.17f, 0.02f, 0.05f);
   colors[ImGuiCol_PopupBg] = ImVec4(0.30f, 0.12f, 0.06f, 0.94f);
   colors[ImGuiCol_Border] = ImVec4(0.25f, 0.18f, 0.09f, 0.33f);

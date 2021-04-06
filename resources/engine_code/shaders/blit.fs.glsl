@@ -3,6 +3,7 @@
 // fragment shader, samples from current color buffer
 // uniform sampler2DRect image_data;
 
+// render texture, which is read from by this shader
 layout( binding = 0, rgba8ui ) uniform uimage2D image_data;
 
 uniform vec2 resolution;
