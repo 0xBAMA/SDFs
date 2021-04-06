@@ -460,9 +460,11 @@ void engine::draw_everything() {
 
   // do the controls window
   ImGui::Begin("Controls", NULL, 0);
-  ImGui::Text("This is some text");
+  ImGui::Text("BAYER PATTERN");
   // ImGui::Image((ImTextureID)(intptr_t)display_texture, ImVec2(255,255));
   ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(255,255));
+
+  ImGui::Text("BLUE NOISE PATTERN");
   ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(255,255));
   ImGui::End();
 
