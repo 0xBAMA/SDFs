@@ -16,30 +16,38 @@ private:
 	SDL_GLContext GLcontext;
 
 	ImVec4 clear_color;
-
+	int total_screen_width, total_screen_height;
 
     GLuint display_texture;
     GLuint display_shader;
 	GLuint display_vao;
 	GLuint display_vbo;
 
-	int total_screen_width, total_screen_height;
+	// dither patterns
+	GLuint dither_bayer;
+	GLuint dither_blue;
 
+	// compute shaders
+	GLuint dither_shader;
+	GLuint raymarch_shader;
+
+	// main functions
 	void create_window();
 	void gl_setup();
 	void draw_everything();
 
-	void load_OBJ(std::string filename);
-
-	void quit();
-	void quit_conf(bool *open);
-		
+	// to confirm quit
 	bool quitconfirm = false;
+	void quit_conf(bool *open);
+
+	// main loop control
+	void quit();
 	bool pquit = false;
 
 public:
-//placeholder
-// OBJ data (per mesh)	
+// OBJ data (per mesh)
+	void load_OBJ(std::string filename);
+
 	// this may vary in length
 	std::vector<glm::vec4> vertices;
 	std::vector<glm::vec3> normals;

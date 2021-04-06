@@ -146,7 +146,7 @@ void engine::create_window() {
   // total_screen_height-100, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN |
   // SDL_WINDOW_BORDERLESS );
   window = SDL_CreateWindow(
-      "OpenGL Window", 0, 0, total_screen_width, total_screen_height,
+      "OpenGL Window", 0, 0, WIDTH*2, HEIGHT*2,
       SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
   SDL_ShowWindow(window);
 
@@ -202,8 +202,7 @@ void engine::create_window() {
   ImGui_ImplSDL2_InitForOpenGL(window, GLcontext);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  clear_color = ImVec4(75.0f / 255.0f, 75.0f / 255.0f, 75.0f / 255.0f,
-                       0.5f); // initial value for clear color
+  clear_color = ImVec4(75.0f / 255.0f, 75.0f / 255.0f, 75.0f / 255.0f, 1.0f); // initial value for clear color
 
   // really excited by the fact imgui has an hsv picker to set this
   glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -215,7 +214,7 @@ void engine::create_window() {
   ImVec4 *colors = ImGui::GetStyle().Colors;
   colors[ImGuiCol_Text] = ImVec4(0.67f, 0.50f, 0.16f, 1.00f);
   colors[ImGuiCol_TextDisabled] = ImVec4(0.33f, 0.27f, 0.16f, 1.00f);
-  colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.05f, 0.00f, 1.00f);
+  colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.05f, 0.00f, 0.5f);
   colors[ImGuiCol_ChildBg] = ImVec4(0.23f, 0.17f, 0.02f, 0.05f);
   colors[ImGuiCol_PopupBg] = ImVec4(0.30f, 0.12f, 0.06f, 0.94f);
   colors[ImGuiCol_Border] = ImVec4(0.25f, 0.18f, 0.09f, 0.33f);
@@ -273,6 +272,7 @@ void engine::create_window() {
   style.IndentSpacing = 8;
   style.WindowRounding = 3;
   style.ScrollbarSize = 10;
+
 }
 
 void engine::quit_conf(bool *open) {
@@ -281,13 +281,13 @@ void engine::quit_conf(bool *open) {
 
     // create centered window
     ImGui::SetNextWindowPos(
-        ImVec2(total_screen_width / 2 - 120, total_screen_height / 2 - 25));
+        ImVec2(WIDTH - 115, HEIGHT - 20));
     ImGui::SetNextWindowSize(ImVec2(230, 35));
     ImGui::Begin("quit", open, flags);
 
     ImGui::Text("  Are you sure you want to quit?  ");
 
-    ImGui::Text("  ");
+    ImGui::Text("    ");
     ImGui::SameLine();
 
     // button to cancel -> set this window's bool to false
@@ -295,11 +295,11 @@ void engine::quit_conf(bool *open) {
       *open = false;
 
     ImGui::SameLine();
-    ImGui::Text("      ");
+    ImGui::Text("    ");
     ImGui::SameLine();
 
     // button to quit -> set pquit to true
-    if (ImGui::Button(" Quit "))
+    if (ImGui::Button("  Quit  "))
       pquit = true;
 
     ImGui::End();
@@ -313,119 +313,100 @@ void engine::gl_setup() {
   printf("Renderer: %s\n", renderer);
   printf("OpenGL version supported %s\n\n\n", version);
 
-  // create the shader for the triangles to cover the screen
-  display_shader = Shader("resources/engine_code/shaders/blit.vs.glsl",
-                          "resources/engine_code/shaders/blit.fs.glsl")
-                       .Program;
-
+//  ╔╦╗┬─┐┬┌─┐┌┐┌┌─┐┬  ┌─┐  ╔═╗┌─┐┌─┐┌┬┐┌─┐┌┬┐┬─┐┬ ┬
+//   ║ ├┬┘│├─┤││││ ┬│  ├┤   ║ ╦├┤ │ ││││├┤  │ ├┬┘└┬┘
+//   ╩ ┴└─┴┴ ┴┘└┘└─┘┴─┘└─┘  ╚═╝└─┘└─┘┴ ┴└─┘ ┴ ┴└─ ┴
   std::vector<glm::vec3> points;
   points.clear();
 
   // based on this, one triangle is significantly faster than two
   // https://michaldrobot.com/2014/04/01/gcn-execution-patterns-in-full-screen-passes/
+  // main idea is that there is coherency along the diagonal
   points.push_back(glm::vec3(-1, -1, 0.5)); // A
   points.push_back(glm::vec3(3, -1, 0.5));  // B
   points.push_back(glm::vec3(-1, 3, 0.5));  // C
 
+//  ╔╦╗┌─┐┬┌┐┌  ╔═╗┬ ┬┌─┐┌┬┐┌─┐┬─┐   ┬   ╔╗ ┬ ┬┌─┐┌─┐┌─┐┬─┐┌─┐
+//  ║║║├─┤││││  ╚═╗├─┤├─┤ ││├┤ ├┬┘  ┌┼─  ╠╩╗│ │├┤ ├┤ ├┤ ├┬┘└─┐
+//  ╩ ╩┴ ┴┴┘└┘  ╚═╝┴ ┴┴ ┴─┴┘└─┘┴└─  └┘   ╚═╝└─┘└  └  └─┘┴└─└─┘
+  // create the shader for the triangles to cover the screen
+  display_shader = Shader("resources/engine_code/shaders/blit.vs.glsl", "resources/engine_code/shaders/blit.fs.glsl").Program;
+
   // vao, vbo
-  cout << "  setting up vao, vbo for display geometry...........";
   glGenVertexArrays(1, &display_vao);
   glBindVertexArray(display_vao);
-
   glGenBuffers(1, &display_vbo);
   glBindBuffer(GL_ARRAY_BUFFER, display_vbo);
-  cout << "done." << endl;
 
   // buffer the data
-  cout << "  buffering vertex data..............................";
-  glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * points.size(), NULL,
-               GL_DYNAMIC_DRAW);
-  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec3) * points.size(),
-                  &points[0]);
-  cout << "done." << endl;
+  glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * points.size(), &points[0], GL_DYNAMIC_DRAW);
 
   // set up attributes
-  cout << "  setting up attributes in display shader............";
   GLuint points_attrib = glGetAttribLocation(display_shader, "vPosition");
   glEnableVertexAttribArray(points_attrib);
-  glVertexAttribPointer(points_attrib, 3, GL_FLOAT, GL_FALSE, 0,
-                        (GLvoid *)(static_cast<const char *>(0) + (0)));
-  cout << "done." << endl;
+  glVertexAttribPointer(points_attrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
   // replace this with real image data
   std::vector<unsigned char> image_data;
-  image_data.resize(WIDTH * HEIGHT * 4);
+  image_data.resize(WIDTH * HEIGHT * 4, 127);
 
-  // fill with random values
-  std::default_random_engine gen;
-  std::uniform_int_distribution<unsigned char> dist(150, 255);
-  std::uniform_int_distribution<unsigned char> dist2(12, 45);
-  PerlinNoise p;
-
-  for (auto it = image_data.begin(); it != image_data.end(); it++) {
-    int index = (it - image_data.begin());
-    float noise =
-        std::clamp(std::abs(p.noise((index / (WIDTH)) * 0.003,
-                                    (index % (4 * WIDTH)) * 0.003, 0.0) -
-                            0.3 +
-                            p.noise((index / (WIDTH)) * 0.006,
-                                    (index % (4 * WIDTH)) * 0.006, 0.2) -
-                            0.25 +
-                            p.noise((index / (WIDTH)) * 0.012,
-                                    (index % (4 * WIDTH)) * 0.012, 0.25) -
-                            0.15) /
-                       1.618,
-                   0., 1.);
-
-    unsigned char rxor = (unsigned char)((index / (WIDTH)) % 256) ^
-                         (unsigned char)((index % (4 * WIDTH)) % 256);
-
-    switch ((index) % 4) {
-    case 3:
-      *it = 255; // alpha channels
-      break;
-
-    case 2:
-      *it = (index % (WIDTH * 3) < WIDTH) ? 36 - dist2(gen) : 0;
-      break;
-
-    case 1:
-      *it = noise > 0.35 ? noise * 0.2 * (rxor) : noise * dist(gen);
-      break;
-
-    case 0:
-      *it = noise < 0.54 ? noise * 0.75 * (rxor) : noise * dist(gen);
-      break;
-
-    default:
-      break;
-    }
-
-    // *it = ((index) % 4 == 3) ? 255 : noise < 0.56 ? noise * 0.75 *
-    // (3-(index%4)) * rxor : noise*dist(gen); // alpha channels get 255, other
-    // colors get random
-  }
-
-  // create the image textures
+  // create the render texture used in the compute shaders
   glGenTextures(1, &display_texture);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_RECTANGLE, display_texture);
+  // glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image_data[0]);
+  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, WIDTH, HEIGHT, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &image_data[0]);
+  glBindImageTexture(0, display_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
 
-  // texture parameters
-  glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//  ╔╦╗┬┌┬┐┬ ┬┌─┐┬─┐  ╔╦╗┌─┐─┐ ┬┌┬┐┬ ┬┬─┐┌─┐┌─┐
+//   ║║│ │ ├─┤├┤ ├┬┘   ║ ├┤ ┌┴┬┘ │ │ │├┬┘├┤ └─┐
+//  ═╩╝┴ ┴ ┴ ┴└─┘┴└─   ╩ └─┘┴ └─ ┴ └─┘┴└─└─┘└─┘
+  //  bayer dither pattern, from https://www.anisopteragames.com/how-to-fix-color-banding-with-dithering/
+  std::vector<uint8_t> pattern = {
+   0, 32,  8, 40,  2, 34, 10, 42,   /* 8x8 Bayer ordered dithering  */
+  48, 16, 56, 24, 50, 18, 58, 26,  /* pattern.  Each input pixel   */
+  12, 44,  4, 36, 14, 46,  6, 38,  /* starts scaled to the 0..63 range */
+  60, 28, 52, 20, 62, 30, 54, 22,  /* before looking in this table */
+   3, 35, 11, 43,  1, 33,  9, 41,   /* to determine the action.     */
+  51, 19, 59, 27, 49, 17, 57, 25,
+  15, 47,  7, 39, 13, 45,  5, 37,
+  63, 31, 55, 23, 61, 29, 53, 21 };
 
-  // buffer the image data to the GPU
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_RECTANGLE, display_texture);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, WIDTH, HEIGHT, 0,
-               GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &image_data[0]);
-  glBindImageTexture(0, display_texture, 0, GL_FALSE, 0, GL_READ_WRITE,
-                     GL_RGBA8UI);
+  for(auto &x : pattern)
+    x *= 4; // use the whole range 0-255, so I don't have to abuse the existing blue noise algorithm to match ranges
 
-  // compute shaders, etc...
+  // send it - known 8x8 dimension
+  glGenTextures(1, &dither_bayer);
+  glActiveTexture(GL_TEXTURE0+1);
+  glBindTexture(GL_TEXTURE_2D, dither_bayer);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 8, 8, 0, GL_RED, GL_UNSIGNED_BYTE, &pattern[0]);
+
+  //  blue noise dither pattern, adapted from https://gist.github.com/kajott/d9f9bb93043040bfe2f48f4f499903d8
+  pattern.clear(); // zero it out
+  pattern = gen_blue_noise(); // values in the range 0-255
+
+  // send it - variable size possible, but starting off just using 64x64 dimension
+  glGenTextures(1, &dither_blue);
+  glActiveTexture(GL_TEXTURE0+2);
+  glBindTexture(GL_TEXTURE_2D, dither_blue);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 64, 64, 0, GL_RED, GL_UNSIGNED_BYTE, &pattern[0]);
+
+//  ╔═╗┌─┐┌┬┐┌─┐┬ ┬┌┬┐┌─┐  ╔═╗┬ ┬┌─┐┌┬┐┌─┐┬─┐┌─┐
+//  ║  │ ││││├─┘│ │ │ ├┤   ╚═╗├─┤├─┤ ││├┤ ├┬┘└─┐
+//  ╚═╝└─┘┴ ┴┴  └─┘ ┴ └─┘  ╚═╝┴ ┴┴ ┴─┴┘└─┘┴└─└─┘
+  // raymarch shader
+  raymarch_shader = CShader("resources/engine_code/shaders/raymarch.cs.glsl").Program;
+
+  // monolithicc dither shader
+  dither_shader = CShader("resources/engine_code/shaders/dither.cs.glsl").Program;
 }
 
 static void HelpMarker(const char *desc) {
@@ -441,22 +422,30 @@ static void HelpMarker(const char *desc) {
 
 void engine::draw_everything() {
   ImGuiIO &io = ImGui::GetIO();
-  (void)io; // void cast prevents unused variable warning
-  // get the screen dimensions and pass in as uniforms
+  (void)io; // void cast to prevent unused variable
 
-  glClearColor(clear_color.x, clear_color.y, clear_color.z,
-               clear_color.w);                        // from hsv picker
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the background
+  // this function feels vaguely psychotic - https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glViewport.xhtml
+  // glViewport(0, 0, WIDTH*2, HEIGHT*2); // but this gets me what I want, 2x pixel scaling
 
-  // draw the stuff on the GPU
+  glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w); // from hsv picker
+  glClear(GL_COLOR_BUFFER_BIT); // clear the background
+
+  // raymarch shader
+  glUseProgram(raymarch_shader);
+  glDispatchCompute( WIDTH/8, HEIGHT/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8
+  glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+  // dither shader
 
   // texture display
   glUseProgram(display_shader);
   glBindVertexArray(display_vao);
   glBindBuffer(GL_ARRAY_BUFFER, display_vbo);
 
-  glUniform2f(glGetUniformLocation(display_shader, "resolution"),
-              io.DisplaySize.x, io.DisplaySize.y);
+  // first frame has erroneous values
+  if(io.DisplaySize.x != -1)
+    glViewport( 0, 0, io.DisplaySize.x, io.DisplaySize.y);
+  glUniform2f(glGetUniformLocation(display_shader, "resolution"), io.DisplaySize.x, io.DisplaySize.y);
   glDrawArrays(GL_TRIANGLES, 0, 3);
 
   // Start the Dear ImGui frame
@@ -464,57 +453,22 @@ void engine::draw_everything() {
   ImGui_ImplSDL2_NewFrame(window);
   ImGui::NewFrame();
 
-
-  // show quit confirm window
+  // show quit confirm window, if relevant
   quit_conf(&quitconfirm);
 
-  // show the demo window
-  // static bool show_demo_window = true;
-  // if (show_demo_window)
-  //   ImGui::ShowDemoWindow(&show_demo_window);
+  // ImGui::ShowDemoWindow();
 
-  // do my own windows
+  // do the controls window
   ImGui::Begin("Controls", NULL, 0);
   ImGui::Text("This is some text");
-  ImGui::End();
-
-  // ImGui::Begin("Editor", NULL, 0);
-  // static TextEditor editor;
-  // // static auto lang = TextEditor::LanguageDefinition::CPlusPlus();
-  // static auto lang = TextEditor::LanguageDefinition::GLSL();
-  // editor.SetLanguageDefinition(lang);
-
-  // auto cpos = editor.GetCursorPosition();
-  // // editor.SetPalette(TextEditor::GetLightPalette());
-  // editor.SetPalette(TextEditor::GetDarkPalette());
-  // // editor.SetPalette(TextEditor::GetRetroBluePalette());
-
-  // static const char *fileToEdit = "resources/engine_code/shaders/blit.vs.glsl";
-  // std::ifstream t(fileToEdit);
-  // static bool loaded = false;
-  // if (!loaded) {
-  //   editor.SetLanguageDefinition(lang);
-  //   if (t.good()) {
-  //     editor.SetText(std::string((std::istreambuf_iterator<char>(t)),
-  //                                std::istreambuf_iterator<char>()));
-  //     loaded = true;
-  //   }
-  // }
-
-  // ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1,
-  //             cpos.mColumn + 1, editor.GetTotalLines(),
-  //             editor.IsOverwrite() ? "Ovr" : "Ins",
-  //             editor.CanUndo() ? "*" : " ",
-  //             editor.GetLanguageDefinition().mName.c_str(), fileToEdit);
-
-  // editor.Render("TextEditor");
+  // ImGui::Image((ImTextureID)(intptr_t)display_texture, ImVec2(255,255));
+  ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(255,255));
+  ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(255,255));
   ImGui::End();
 
   // get it ready to put on the screen
   ImGui::Render();
-
-  ImGui_ImplOpenGL3_RenderDrawData(
-      ImGui::GetDrawData()); // put imgui data into the framebuffer
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData()); // put imgui data into the framebuffer
 
   SDL_GL_SwapWindow(window); // swap the double buffers
 
