@@ -40,6 +40,7 @@ constexpr double pi = 3.14159265358979323846;
 #include "../glm/gtc/type_ptr.hpp"         //to send matricies gpu-side
 #include "../glm/gtx/rotate_vector.hpp"
 #include "../glm/gtx/transform.hpp"
+#include "../glm/gtx/quaternion.hpp"
 
 // not sure as to the utility of this
 #define GLX_GLEXT_PROTOTYPES

@@ -18,6 +18,7 @@ private:
 	ImVec4 clear_color;
 	int total_screen_width, total_screen_height;
 
+// OpenGL Handles
     GLuint display_texture;
     GLuint display_shader;
 	GLuint display_vao;
@@ -31,10 +32,23 @@ private:
 	GLuint dither_shader;
 	GLuint raymarch_shader;
 
-	// main functions
+// raymarcher state
+	// rotation
+	float rotation_about_x = 0;
+	float rotation_about_y = 0;
+	float rotation_about_z = 0;
+
+	// position
+	glm::vec3 position = glm::vec3(0,4,0);
+
+
+// main loop functions
 	void create_window();
 	void gl_setup();
 	void draw_everything();
+	void start_imgui();
+	void end_imgui();
+	void control_window();
 
 	// to confirm quit
 	bool quitconfirm = false;

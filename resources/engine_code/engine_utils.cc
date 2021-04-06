@@ -354,7 +354,7 @@ void engine::gl_setup() {
 //   ║║│ │ ├─┤├┤ ├┬┘   ║ ├┤ ┌┴┬┘ │ │ │├┬┘├┤ └─┐
 //  ═╩╝┴ ┴ ┴ ┴└─┘┴└─   ╩ └─┘┴ └─ ┴ └─┘┴└─└─┘└─┘
   //  bayer dither pattern, from https://www.anisopteragames.com/how-to-fix-color-banding-with-dithering/
-  std::vector<uint8_t> pattern = {
+  std::vector<uint8_t> bayerpattern = {
    0, 32,  8, 40,  2, 34, 10, 42,   /* 8x8 Bayer ordered dithering  */
   48, 16, 56, 24, 50, 18, 58, 26,  /* pattern.  Each input pixel   */
   12, 44,  4, 36, 14, 46,  6, 38,  /* starts scaled to the 0..63 range */
@@ -364,8 +364,15 @@ void engine::gl_setup() {
   15, 47,  7, 39, 13, 45,  5, 37,
   63, 31, 55, 23, 61, 29, 53, 21 };
 
-  for(auto &x : pattern)
-    x *= 4; // use the whole range 0-255, so I don't have to abuse the existing blue noise algorithm to match ranges
+  std::vector<uint8_t> pattern;
+
+  for(auto x : bayerpattern)
+  {
+// use the whole range 0-255, so I don't have to abuse the existing blue noise algorithm to match ranges
+    pattern.push_back(x * 4);
+    pattern.push_back(x * 4);
+    pattern.push_back(x * 4);
+  }
 
   // send it - known 8x8 dimension
   glGenTextures(1, &dither_bayer);
@@ -375,11 +382,22 @@ void engine::gl_setup() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 8, 8, 0, GL_RED, GL_UNSIGNED_BYTE, &pattern[0]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 8, 8, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
 
   //  blue noise dither pattern, adapted from https://gist.github.com/kajott/d9f9bb93043040bfe2f48f4f499903d8
   pattern.clear(); // zero it out
-  pattern = gen_blue_noise(); // values in the range 0-255
+
+  // values in the range 0-255
+  std::vector<uint8_t> bluepatternr = gen_blue_noise();
+  std::vector<uint8_t> bluepatterng = gen_blue_noise();
+  std::vector<uint8_t> bluepatternb = gen_blue_noise();
+
+  for(size_t i = 0; i < 64*64; i++)
+  {
+    pattern.push_back(bluepatternr[i]);
+    pattern.push_back(bluepatterng[i]);
+    pattern.push_back(bluepatternb[i]);
+  }
 
   // send it - variable size possible, but starting off just using 64x64 dimension
   glGenTextures(1, &dither_blue);
@@ -389,16 +407,23 @@ void engine::gl_setup() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 64, 64, 0, GL_RED, GL_UNSIGNED_BYTE, &pattern[0]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
 
 //  ╔═╗┌─┐┌┬┐┌─┐┬ ┬┌┬┐┌─┐  ╔═╗┬ ┬┌─┐┌┬┐┌─┐┬─┐┌─┐
 //  ║  │ ││││├─┘│ │ │ ├┤   ╚═╗├─┤├─┤ ││├┤ ├┬┘└─┐
 //  ╚═╝└─┘┴ ┴┴  └─┘ ┴ └─┘  ╚═╝┴ ┴┴ ┴─┴┘└─┘┴└─└─┘
   // raymarch shader
+  cout << "compiling raymarch shader... " << std::flush;
   raymarch_shader = CShader("resources/engine_code/shaders/raymarch.cs.glsl").Program;
+  cout << "done." << endl << std::flush;
 
   // monolithicc dither shader
+  cout << "compiling dither shader... " << std::flush;
   dither_shader = CShader("resources/engine_code/shaders/dither.cs.glsl").Program;
+  cout << "done." << endl << std::flush;
+
+  // blue noise cycle shader
+  // uses the golden ratio to 'increment' the value, based on https://www.shadertoy.com/view/wlGfWG
 }
 
 static void HelpMarker(const char *desc) {
@@ -412,66 +437,116 @@ static void HelpMarker(const char *desc) {
   }
 }
 
+void engine::start_imgui()
+{
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplSDL2_NewFrame(window);
+  ImGui::NewFrame();
+}
+
+void engine::end_imgui()
+{
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData()); // put imgui data into the framebuffer
+}
+
+
+void engine::control_window()
+{
+  ImGui::Begin("Controls", NULL, 0);
+
+  ImGui::Text("BAYER PATTERN");
+  ImGui::SameLine();
+  HelpMarker("This is used for ordered dithering. It is a static dither pattern, with identifiable artifacts.");
+  ImGui::Text("  ");
+  ImGui::SameLine();
+  ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(128,128));
+
+  ImGui::Text("BLUE NOISE PATTERN");
+  ImGui::SameLine();
+  HelpMarker("This uses blue noise generated during the initialization, cycled over time using the golden ratio.");
+  ImGui::Text("  ");
+  ImGui::SameLine();
+  ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(128,128));
+
+  ImGui::End();
+}
+
+
+
 void engine::draw_everything() {
-  ImGuiIO &io = ImGui::GetIO();
-  (void)io; // void cast to prevent unused variable
 
-  // this function feels vaguely psychotic - https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glViewport.xhtml
-  // glViewport(0, 0, WIDTH*2, HEIGHT*2); // but this gets me what I want, 2x pixel scaling
+  // update rotation matrix
+  glm::quat rotationx = glm::angleAxis(rotation_about_x, glm::vec3(1,0,0));
+  glm::quat rotationy = glm::angleAxis(rotation_about_y, glm::vec3(0,1,0));
+  /* glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1)); */
+  glm::mat4 rotation = glm::toMat4(rotationy * rotationx);
 
+  // create the basis vectors
+  glm::vec3 basis_x = (rotation*glm::vec4(1,0,0,0)).xyz();
+  glm::vec3 basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
+  glm::vec3 basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
+
+  // clear the screen - fog color? opacity falloff with depth?
   glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w); // from hsv picker
   glClear(GL_COLOR_BUFFER_BIT); // clear the background
 
-  // raymarch shader
+  // using the raymarch shader
   glUseProgram(raymarch_shader);
+
+  // send basis vectors to the raymarch shader
+  glUniform3f(glGetUniformLocation(raymarch_shader, "basis_x"), basis_x.x, basis_x.y, basis_x.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "basis_y"), basis_y.x, basis_y.y, basis_y.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "basis_z"), basis_z.x, basis_z.y, basis_z.z);
+
+  // send position to the raymarch shader
+  glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);
+
+  // invoke the shader on the GPU
   glDispatchCompute( WIDTH/8, HEIGHT/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8
+
+  // sync to ensure image is in the texture
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
-  // dither shader
+  // cycle the blue noise
+  // invoke the dither shader
 
   // texture display
   glUseProgram(display_shader);
   glBindVertexArray(display_vao);
   glBindBuffer(GL_ARRAY_BUFFER, display_vbo);
 
-  // first frame has erroneous values
+  // screen dimension query - first frame has erroneous values
+  ImGuiIO &io = ImGui::GetIO();
   if(io.DisplaySize.x != -1)
     glViewport( 0, 0, io.DisplaySize.x, io.DisplaySize.y);
   glUniform2f(glGetUniformLocation(display_shader, "resolution"), io.DisplaySize.x, io.DisplaySize.y);
+
+  // blit to the screen
   glDrawArrays(GL_TRIANGLES, 0, 3);
 
   // Start the Dear ImGui frame
-  ImGui_ImplOpenGL3_NewFrame();
-  ImGui_ImplSDL2_NewFrame(window);
-  ImGui::NewFrame();
+  start_imgui();
 
+  // in this scope, everything related to imgui happens
+  {
   // show quit confirm window, if relevant
-  quit_conf(&quitconfirm);
-
-  // ImGui::ShowDemoWindow();
+    quit_conf(&quitconfirm);
 
   // do the controls window
-  ImGui::Begin("Controls", NULL, 0);
-  ImGui::Text("BAYER PATTERN");
-  // ImGui::Image((ImTextureID)(intptr_t)display_texture, ImVec2(255,255));
-  ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(255,255));
+    control_window();
+  }
 
-  ImGui::Text("BLUE NOISE PATTERN");
-  ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(255,255));
-  ImGui::End();
+  // put ImGui stuff in the back buffer
+  end_imgui();
 
-  // get it ready to put on the screen
-  ImGui::Render();
-  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData()); // put imgui data into the framebuffer
-
-  SDL_GL_SwapWindow(window); // swap the double buffers
+  // swap the double buffers to present
+  SDL_GL_SwapWindow(window);
 
   // handle events
-
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     ImGui_ImplSDL2_ProcessEvent(&event);
-
     if (event.type == SDL_QUIT)
       pquit = true;
 

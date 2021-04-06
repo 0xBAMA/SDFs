@@ -1,7 +1,7 @@
 #version 430 core
 
 // fragment shader, samples from current color buffer
-// uniform sampler2DRect image_data;
+// layout( binding = 0 ) uniform sampler2DRect image_data;
 
 // render texture, which is read from by this shader
 layout( binding = 0, rgba8ui ) uniform uimage2D image_data;
@@ -15,5 +15,5 @@ void main()
 	// fragment_output = imageLoad(image_data, ivec2(gl_FragCoord.xy));
 
 	ivec2 position = ivec2((gl_FragCoord.xy / resolution.xy) * imageSize(image_data));
-	fragment_output = imageLoad(image_data, position);
+	fragment_output = imageLoad(image_data, position) / 255.;
 }
