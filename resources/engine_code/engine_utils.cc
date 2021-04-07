@@ -394,6 +394,7 @@ void engine::gl_setup() {
     // values in the range 0-255
     std::vector<uint8_t> bluepatternr = gen_blue_noise();
     std::vector<uint8_t> bluepatterng = gen_blue_noise();
+    // need to fix this in the header, green and blue channels have the same values
     std::vector<uint8_t> bluepatternb = gen_blue_noise();
 
     for(size_t i = 0; i < 64*64; i++)

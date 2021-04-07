@@ -1,5 +1,6 @@
 #version 430 core
 
+// need to study Voraldo's simultaneous use of image/texture bindings of the render texture
 // fragment shader, samples from current color buffer
 // layout( binding = 0 ) uniform sampler2DRect image_data;
 

@@ -4,7 +4,9 @@ layout( local_size_x = 8, local_size_y = 8, local_size_z = 1 ) in;
 // render texture, this is written to by this shader
 layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
-#define EPSILON 0.001 // closest surface distance
+#define MAX_STEPS 255
+#define MAX_DIST  300
+#define EPSILON   0.001 // closest surface distance
 
 uniform vec3 lightPos1;
 uniform vec3 lightPos2;
@@ -31,6 +33,21 @@ float sdCylinder( vec3 p, vec2  h ) {
 float de( vec3 p ) { // distance estimator for the scene
     // todo
     return 0.;
+}
+
+// global state tracking
+uint num_steps = 0; // how many steps taken by the raymarch function
+float dmin = 1e10; // minimum distance initially large
+
+float raymarch(vec3 ro, vec3 rd) {
+    float d0 = 0.0, d1 = 0.0;
+    for(int i = 0; i < MAX_STEPS; i++) {
+        vec3 p = ro + rd * d0;      // point for distance query from parametric form
+        d1 = de(p); d0 += d1;       // increment distance by de evaluated at p
+        dmin = min( dmin, d1);      // tracking minimum distance
+        num_steps++;                // increment step count
+        if(d0 > MAX_DIST || d1 < EPSILON) return d0; // return the final ray distance
+    }
 }
 
 vec3 norm(vec3 p) {
