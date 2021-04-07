@@ -321,109 +321,116 @@ void engine::gl_setup() {
 //  ╔╦╗┌─┐┬┌┐┌  ╔═╗┬ ┬┌─┐┌┬┐┌─┐┬─┐   ┬   ╔╗ ┬ ┬┌─┐┌─┐┌─┐┬─┐┌─┐
 //  ║║║├─┤││││  ╚═╗├─┤├─┤ ││├┤ ├┬┘  ┌┼─  ╠╩╗│ │├┤ ├┤ ├┤ ├┬┘└─┐
 //  ╩ ╩┴ ┴┴┘└┘  ╚═╝┴ ┴┴ ┴─┴┘└─┘┴└─  └┘   ╚═╝└─┘└  └  └─┘┴└─└─┘
-  // create the shader for the triangles to cover the screen
-  display_shader = Shader("resources/engine_code/shaders/blit.vs.glsl", "resources/engine_code/shaders/blit.fs.glsl").Program;
+  {// create the shader for the triangles to cover the screen
+    display_shader = Shader("resources/engine_code/shaders/blit.vs.glsl", "resources/engine_code/shaders/blit.fs.glsl").Program;
 
-  // vao, vbo
-  glGenVertexArrays(1, &display_vao);
-  glBindVertexArray(display_vao);
-  glGenBuffers(1, &display_vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, display_vbo);
+    // vao, vbo
+    glGenVertexArrays(1, &display_vao);
+    glBindVertexArray(display_vao);
+    glGenBuffers(1, &display_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, display_vbo);
 
-  // buffer the data
-  glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * points.size(), &points[0], GL_DYNAMIC_DRAW);
+    // buffer the data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * points.size(), &points[0], GL_DYNAMIC_DRAW);
 
-  // set up attributes
-  GLuint points_attrib = glGetAttribLocation(display_shader, "vPosition");
-  glEnableVertexAttribArray(points_attrib);
-  glVertexAttribPointer(points_attrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    // set up the attribute pointer
+    GLuint points_attrib = glGetAttribLocation(display_shader, "vPosition");
+    glEnableVertexAttribArray(points_attrib);
+    glVertexAttribPointer(points_attrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  }
 
-  // replace this with real image data
-  std::vector<unsigned char> image_data;
-  image_data.resize(WIDTH * HEIGHT * 4, 127);
+  {// initialize image data for the render texture
+    std::vector<uint8_t> image_data;
+    image_data.resize(WIDTH * HEIGHT * 4, 127);
 
-  // create the render texture used in the compute shaders
-  glGenTextures(1, &display_texture);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_RECTANGLE, display_texture);
-  // glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image_data[0]);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, WIDTH, HEIGHT, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &image_data[0]);
-  glBindImageTexture(0, display_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    // create the render texture used in the compute shaders
+    glGenTextures(1, &display_texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_RECTANGLE, display_texture);
+    // glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image_data[0]);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, WIDTH, HEIGHT, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &image_data[0]);
+    glBindImageTexture(0, display_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
+  }
 
 //  ╔╦╗┬┌┬┐┬ ┬┌─┐┬─┐  ╔╦╗┌─┐─┐ ┬┌┬┐┬ ┬┬─┐┌─┐┌─┐
 //   ║║│ │ ├─┤├┤ ├┬┘   ║ ├┤ ┌┴┬┘ │ │ │├┬┘├┤ └─┐
 //  ═╩╝┴ ┴ ┴ ┴└─┘┴└─   ╩ └─┘┴ └─ ┴ └─┘┴└─└─┘└─┘
-  //  bayer dither pattern, from https://www.anisopteragames.com/how-to-fix-color-banding-with-dithering/
-  std::vector<uint8_t> bayerpattern = {
-   0, 32,  8, 40,  2, 34, 10, 42,   /* 8x8 Bayer ordered dithering  */
-  48, 16, 56, 24, 50, 18, 58, 26,  /* pattern.  Each input pixel   */
-  12, 44,  4, 36, 14, 46,  6, 38,  /* starts scaled to the 0..63 range */
-  60, 28, 52, 20, 62, 30, 54, 22,  /* before looking in this table */
-   3, 35, 11, 43,  1, 33,  9, 41,   /* to determine the action.     */
-  51, 19, 59, 27, 49, 17, 57, 25,
-  15, 47,  7, 39, 13, 45,  5, 37,
-  63, 31, 55, 23, 61, 29, 53, 21 };
-
   std::vector<uint8_t> pattern;
+  //  bayer dither pattern, from https://www.anisopteragames.com/how-to-fix-color-banding-with-dithering/
 
-  for(auto x : bayerpattern)
-  {
-// use the whole range 0-255, so I don't have to abuse the existing blue noise algorithm to match ranges
-    pattern.push_back(x * 4);
-    pattern.push_back(x * 4);
-    pattern.push_back(x * 4);
+  {// scoped because why not
+    std::vector<uint8_t> bayerpattern = {
+     0, 32,  8, 40,  2, 34, 10, 42,   /* 8x8 Bayer ordered dithering  */
+    48, 16, 56, 24, 50, 18, 58, 26,  /* pattern.  Each input pixel   */
+    12, 44,  4, 36, 14, 46,  6, 38,  /* starts scaled to the 0..63 range */
+    60, 28, 52, 20, 62, 30, 54, 22,  /* before looking in this table */
+     3, 35, 11, 43,  1, 33,  9, 41,   /* to determine the action.     */
+    51, 19, 59, 27, 49, 17, 57, 25,
+    15, 47,  7, 39, 13, 45,  5, 37,
+    63, 31, 55, 23, 61, 29, 53, 21 };
+
+
+    for(auto x : bayerpattern)
+    { // use the whole range 0-255, so I don't have to abuse the existing blue noise algorithm to match ranges
+      pattern.push_back(x * 4);
+      pattern.push_back(x * 4);
+      pattern.push_back(x * 4);
+    }
+
+    // send it - known 8x8 dimension
+    glGenTextures(1, &dither_bayer);
+    glActiveTexture(GL_TEXTURE0+1);
+    glBindTexture(GL_TEXTURE_2D, dither_bayer);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 8, 8, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
   }
 
-  // send it - known 8x8 dimension
-  glGenTextures(1, &dither_bayer);
-  glActiveTexture(GL_TEXTURE0+1);
-  glBindTexture(GL_TEXTURE_2D, dither_bayer);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 8, 8, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
+  pattern.clear(); // zero out
 
-  //  blue noise dither pattern, adapted from https://gist.github.com/kajott/d9f9bb93043040bfe2f48f4f499903d8
-  pattern.clear(); // zero it out
+  {//  blue noise dither pattern, adapted from https://gist.github.com/kajott/d9f9bb93043040bfe2f48f4f499903d8
+    // values in the range 0-255
+    std::vector<uint8_t> bluepatternr = gen_blue_noise();
+    std::vector<uint8_t> bluepatterng = gen_blue_noise();
+    std::vector<uint8_t> bluepatternb = gen_blue_noise();
 
-  // values in the range 0-255
-  std::vector<uint8_t> bluepatternr = gen_blue_noise();
-  std::vector<uint8_t> bluepatterng = gen_blue_noise();
-  std::vector<uint8_t> bluepatternb = gen_blue_noise();
+    for(size_t i = 0; i < 64*64; i++)
+    {
+      pattern.push_back(bluepatternr[i]);
+      pattern.push_back(bluepatterng[i]);
+      pattern.push_back(bluepatternb[i]);
+    }
 
-  for(size_t i = 0; i < 64*64; i++)
-  {
-    pattern.push_back(bluepatternr[i]);
-    pattern.push_back(bluepatterng[i]);
-    pattern.push_back(bluepatternb[i]);
+    // send it - variable size possible, but starting off just using 64x64 dimension
+    glGenTextures(1, &dither_blue);
+    glActiveTexture(GL_TEXTURE0+2);
+    glBindTexture(GL_TEXTURE_2D, dither_blue);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
   }
-
-  // send it - variable size possible, but starting off just using 64x64 dimension
-  glGenTextures(1, &dither_blue);
-  glActiveTexture(GL_TEXTURE0+2);
-  glBindTexture(GL_TEXTURE_2D, dither_blue);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
 
 //  ╔═╗┌─┐┌┬┐┌─┐┬ ┬┌┬┐┌─┐  ╔═╗┬ ┬┌─┐┌┬┐┌─┐┬─┐┌─┐
 //  ║  │ ││││├─┘│ │ │ ├┤   ╚═╗├─┤├─┤ ││├┤ ├┬┘└─┐
 //  ╚═╝└─┘┴ ┴┴  └─┘ ┴ └─┘  ╚═╝┴ ┴┴ ┴─┴┘└─┘┴└─└─┘
-  // raymarch shader
-  cout << "compiling raymarch shader... " << std::flush;
-  raymarch_shader = CShader("resources/engine_code/shaders/raymarch.cs.glsl").Program;
-  cout << "done." << endl << std::flush;
+  {// raymarch shader
+    cout << "compiling raymarch shader... " << std::flush;
+    raymarch_shader = CShader("resources/engine_code/shaders/raymarch.cs.glsl").Program;
+    cout << "done." << endl << std::flush;
 
-  // monolithicc dither shader
-  cout << "compiling dither shader... " << std::flush;
-  dither_shader = CShader("resources/engine_code/shaders/dither.cs.glsl").Program;
-  cout << "done." << endl << std::flush;
+    // monolithicc dither shader
+    // contains all color space conversions, and the bitcrush logic
+    cout << "compiling dither shader... " << std::flush;
+    dither_shader = CShader("resources/engine_code/shaders/dither.cs.glsl").Program;
+    cout << "done." << endl << std::flush;
 
-  // blue noise cycle shader
-  // uses the golden ratio to 'increment' the value, based on https://www.shadertoy.com/view/wlGfWG
+    // blue noise cycle shader
+    // uses the golden ratio to 'increment' the value, based on https://www.shadertoy.com/view/wlGfWG
+  }
 }
 
 static void HelpMarker(const char *desc) {
@@ -460,14 +467,14 @@ void engine::control_window()
   HelpMarker("This is used for ordered dithering. It is a static dither pattern, with identifiable artifacts.");
   ImGui::Text("  ");
   ImGui::SameLine();
-  ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(128,128));
+  ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(256,256));
 
   ImGui::Text("BLUE NOISE PATTERN");
   ImGui::SameLine();
   HelpMarker("This uses blue noise generated during the initialization, cycled over time using the golden ratio.");
   ImGui::Text("  ");
   ImGui::SameLine();
-  ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(128,128));
+  ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(256,256));
 
   ImGui::End();
 }
@@ -508,7 +515,8 @@ void engine::draw_everything() {
   // sync to ensure image is in the texture
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
-  // cycle the blue noise
+  // cycle the blue noise using the blue_cycle compute shader
+
   // invoke the dither shader
 
   // texture display

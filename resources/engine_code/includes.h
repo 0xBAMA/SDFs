@@ -41,6 +41,7 @@ constexpr double pi = 3.14159265358979323846;
 #include "../glm/gtx/rotate_vector.hpp"
 #include "../glm/gtx/transform.hpp"
 #include "../glm/gtx/quaternion.hpp"
+#include "../glm/gtx/string_cast.hpp"
 
 // not sure as to the utility of this
 #define GLX_GLEXT_PROTOTYPES
