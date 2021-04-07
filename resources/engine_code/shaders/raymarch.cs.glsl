@@ -5,7 +5,7 @@ layout( local_size_x = 8, local_size_y = 8, local_size_z = 1 ) in;
 layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 #define MAX_STEPS 255
-#define MAX_DIST  300
+#define MAX_DIST  300.
 #define EPSILON   0.001 // closest surface distance
 
 uniform vec3 lightPos1;
@@ -31,8 +31,14 @@ float sdCylinder( vec3 p, vec2  h ) {
 }
 
 float de( vec3 p ) { // distance estimator for the scene
-    // todo
-    return 0.;
+    vec4 s = vec4( 0, 4, 6, 1.4);
+    vec4 s2 = vec4( 0, 1, 6, 1);
+
+    float sphereDist = min(max(-sdSphere(p-s.xyz, s.w), sdCylinder(p-s.xyz, vec2(0.5, 1.5))), sdSphere(p-s.xyz, 0.75*s.w));
+    float torusDist = sdTorus(vec3(p.x, mod(p.y, 2), p.z)-s2.xyz, vec2(3, 0.25));
+    float planeDist = p.y;
+
+    return min(sphereDist, min(torusDist, planeDist));
 }
 
 // global state tracking
@@ -58,5 +64,20 @@ vec3 norm(vec3 p) { // to get the normal vector for a point in space, this funct
 
 void main()
 {
-    imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( 120, 45, 12, 255 ));
+
+    // imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( 120, 45, 12, 255 ));
+
+    vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy)-vec2(imageSize(current)/2.)) / vec2(imageSize(current)/2.);
+
+    vec3 ro = ray_origin;
+    vec3 rd = normalize(1.5*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
+
+    vec3 col = vec3(0);
+
+    float dresult = raymarch(ro, rd);
+
+    col = (norm(ro+dresult*rd)/2.)+vec3(0.5);
+
+    imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, 255 ));
+
 }

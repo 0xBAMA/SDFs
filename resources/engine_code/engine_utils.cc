@@ -604,6 +604,10 @@ void engine::draw_everything() {
 
     if(!ImGui::GetIO().WantCaptureKeyboard)
     {// imgui doesn't want the input, so we should use it
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_f)
+        cout << "position: " << to_string(position) << endl;
+
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w)
         rotation_about_x -= 0.03;
 
