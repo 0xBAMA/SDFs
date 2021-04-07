@@ -6,11 +6,11 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 #define EPSILON 0.001 // closest surface distance
 
-uniform vec3 lightPos;
+uniform vec3 lightPos1;
 uniform vec3 lightPos2;
 uniform vec3 lightPos3;
 
-uniform vec3 lightCol;
+uniform vec3 lightCol1;
 uniform vec3 lightCol2;
 uniform vec3 lightCol3;
 

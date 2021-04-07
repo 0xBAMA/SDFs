@@ -273,7 +273,7 @@ void engine::quit_conf(bool *open) {
 
     // create centered window
     ImGui::SetNextWindowPos(
-        ImVec2(WIDTH - 115, HEIGHT - 20));
+        ImVec2((WIDTH*1.5) - 115, (HEIGHT*1.5) - 20));
     ImGui::SetNextWindowSize(ImVec2(230, 35));
     ImGui::Begin("quit", open, flags);
 
@@ -460,21 +460,35 @@ void engine::end_imgui()
 
 void engine::control_window()
 {
+
+
   ImGui::Begin("Controls", NULL, 0);
+  ImGui::BeginTabBar("", ImGuiTabBarFlags_TabListPopupButton | ImGuiTabBarFlags_FittingPolicyScroll );
 
-  ImGui::Text("BAYER PATTERN");
-  ImGui::SameLine();
-  HelpMarker("This is used for ordered dithering. It is a static dither pattern, with identifiable artifacts.");
-  ImGui::Text("  ");
-  ImGui::SameLine();
-  ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(256,256));
+  if(ImGui::BeginTabItem("Controls"))
+  {
+    ImGui::ColorEdit3("Clear Color", (float*)&clear_color);
+    ImGui::EndTabItem();
+  }
 
-  ImGui::Text("BLUE NOISE PATTERN");
-  ImGui::SameLine();
-  HelpMarker("This uses blue noise generated during the initialization, cycled over time using the golden ratio.");
-  ImGui::Text("  ");
-  ImGui::SameLine();
-  ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(256,256));
+  if(ImGui::BeginTabItem("Dither Patterns"))
+  {
+    ImGui::Text(" BAYER PATTERN");
+    ImGui::SameLine();
+    HelpMarker("This is used for ordered dithering. It is a static dither pattern, with identifiable artifacts.");
+    ImGui::Text("  ");
+    ImGui::SameLine();
+    ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(256,256));
+
+    ImGui::Text(" BLUE NOISE PATTERN");
+    ImGui::SameLine();
+    HelpMarker("This uses blue noise generated during the initialization, cycled over time using the golden ratio.");
+    ImGui::Text("  ");
+    ImGui::SameLine();
+    ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(256,256));
+
+    ImGui::EndTabItem();
+  }
 
   ImGui::End();
 }
@@ -572,6 +586,46 @@ void engine::draw_everything() {
     if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE &&
         SDL_GetModState() & KMOD_SHIFT)
       pquit = true; // force quit
+
+    if(!ImGui::GetIO().WantCaptureKeyboard)
+    {// imgui doesn't want the input, so we should use it
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w)
+        rotation_about_x -= 0.03;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_s)
+        rotation_about_x += 0.03;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a)
+        rotation_about_y -= 0.03;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_d)
+        rotation_about_y += 0.03;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_e)
+        rotation_about_z -= 0.03;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q)
+        rotation_about_z += 0.03;
+
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_UP)
+        position += 0.07f * basis_z;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DOWN)
+        position -= 0.07f * basis_z;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RIGHT)
+        position += 0.07f * basis_x;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_LEFT)
+        position -= 0.07f * basis_x;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEUP)
+        position += 0.07f * basis_y;
+
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEDOWN)
+        position -= 0.07f * basis_y;
+    }
   }
 }
 

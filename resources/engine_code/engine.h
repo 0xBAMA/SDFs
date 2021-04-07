@@ -34,9 +34,19 @@ private:
 
 // raymarcher state
 	// rotation
-	float rotation_about_x = 0;
-	float rotation_about_y = 0;
-	float rotation_about_z = 0;
+	float rotation_about_x = 0.;
+	float rotation_about_y = 0.;
+	float rotation_about_z = 0.;
+
+	// light colors
+	glm::vec3 lightCol1 = glm::vec3(0);
+	glm::vec3 lightCol2 = glm::vec3(0);
+	glm::vec3 lightCol3 = glm::vec3(0);
+
+	// light positions
+	glm::vec3 lightPos1 = glm::vec3(0);
+	glm::vec3 lightPos2 = glm::vec3(0);
+	glm::vec3 lightPos3 = glm::vec3(0);
 
 	// position
 	glm::vec3 position = glm::vec3(0,4,0);
