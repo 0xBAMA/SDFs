@@ -392,17 +392,19 @@ void engine::gl_setup() {
 
   {//  blue noise dither pattern, adapted from https://gist.github.com/kajott/d9f9bb93043040bfe2f48f4f499903d8
     // values in the range 0-255
-    std::vector<uint8_t> bluepatternr = gen_blue_noise();
-    std::vector<uint8_t> bluepatterng = gen_blue_noise();
-    // need to fix this in the header, green and blue channels have the same values
-    std::vector<uint8_t> bluepatternb = gen_blue_noise();
+    std::vector<uint8_t> bluepatternbig = gen_blue_noise();
 
-    for(size_t i = 0; i < 64*64; i++)
-    {
-      pattern.push_back(bluepatternr[i]);
-      pattern.push_back(bluepatterng[i]);
-      pattern.push_back(bluepatternb[i]);
-    }
+    #define map(x,y) bluepatternbig[x+(128*y)]
+
+    for(size_t x = 0; x < 64; x++)
+      for(size_t y = 0; y < 64; y++)
+      {
+        pattern.push_back(map(x,y));
+        pattern.push_back(map(x+64,y));
+        pattern.push_back(map(x+64,y+64));
+      }
+
+    #undef map
 
     // send it - variable size possible, but starting off just using 64x64 dimension
     glGenTextures(1, &dither_blue);
@@ -428,9 +430,6 @@ void engine::gl_setup() {
     cout << "compiling dither shader... " << std::flush;
     dither_shader = CShader("resources/engine_code/shaders/dither.cs.glsl").Program;
     cout << "done." << endl << std::flush;
-
-    // blue noise cycle shader
-    // uses the golden ratio to 'increment' the value, based on https://www.shadertoy.com/view/wlGfWG
   }
 }
 
@@ -468,7 +467,13 @@ void engine::control_window()
 
   if(ImGui::BeginTabItem("Controls"))
   {
+    ImGui::Text("");
     ImGui::ColorEdit3("Clear Color", (float*)&clear_color);
+    ImGui::Text("");
+    ImGui::Text("Lights");
+    ImGui::ColorEdit3("Light 1 Color", (float*)&lightCol1);
+    ImGui::ColorEdit3("Light 2 Color", (float*)&lightCol2);
+    ImGui::ColorEdit3("Light 3 Color", (float*)&lightCol3);
     ImGui::EndTabItem();
   }
 
@@ -483,7 +488,7 @@ void engine::control_window()
 
     ImGui::Text(" BLUE NOISE PATTERN");
     ImGui::SameLine();
-    HelpMarker("This uses blue noise generated during the initialization, cycled over time using the golden ratio.");
+    HelpMarker("This uses blue noise generated during the initialization, and the use in the shader is cycled over time using the golden ratio.");
     ImGui::Text("  ");
     ImGui::SameLine();
     ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(256,256));
@@ -494,10 +499,10 @@ void engine::control_window()
   ImGui::End();
 }
 
-
-
 void engine::draw_everything() {
-
+  //  ╦ ╦┌─┐┌┬┐┌─┐┌┬┐┌─┐  ╔═╗┌┬┐┌─┐┌┬┐┌─┐
+  //  ║ ║├─┘ ││├─┤ │ ├┤   ╚═╗ │ ├─┤ │ ├┤
+  //  ╚═╝┴  ─┴┘┴ ┴ ┴ └─┘  ╚═╝ ┴ ┴ ┴ ┴ └─┘
   // update rotation matrix
   glm::quat rotationx = glm::angleAxis(rotation_about_x, glm::vec3(1,0,0));
   glm::quat rotationy = glm::angleAxis(rotation_about_y, glm::vec3(0,1,0));
@@ -509,10 +514,9 @@ void engine::draw_everything() {
   glm::vec3 basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
   glm::vec3 basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
 
-  // clear the screen - fog color? opacity falloff with depth?
-  glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w); // from hsv picker
-  glClear(GL_COLOR_BUFFER_BIT); // clear the background
-
+  //  ╦═╗┌─┐┬ ┬┌┬┐┌─┐┬─┐┌─┐┬ ┬
+  //  ╠╦╝├─┤└┬┘│││├─┤├┬┘│  ├─┤
+  //  ╩╚═┴ ┴ ┴ ┴ ┴┴ ┴┴└─└─┘┴ ┴
   // using the raymarch shader
   glUseProgram(raymarch_shader);
 
@@ -527,17 +531,29 @@ void engine::draw_everything() {
   // invoke the shader on the GPU
   glDispatchCompute( WIDTH/8, HEIGHT/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8
 
-  // sync to ensure image is in the texture
+  // sync to ensure the raymarched image is in the texture
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
-  // cycle the blue noise using the blue_cycle compute shader
-
+  //  ╔╦╗┬┌┬┐┬ ┬┌─┐┬─┐
+  //   ║║│ │ ├─┤├┤ ├┬┘
+  //  ═╩╝┴ ┴ ┴ ┴└─┘┴└─
   // invoke the dither shader
+  //  - needs to know mode, and also frame number to cycle the blue noise
 
+  // sync to ensure the dithered image is in the texture
+  glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+  //  ╔╦╗┬┌─┐┌─┐┬  ┌─┐┬ ┬
+  //   ║║│└─┐├─┘│  ├─┤└┬┘
+  //  ═╩╝┴└─┘┴  ┴─┘┴ ┴ ┴
   // texture display
   glUseProgram(display_shader);
   glBindVertexArray(display_vao);
   glBindBuffer(GL_ARRAY_BUFFER, display_vbo);
+
+  // clear the screen - fog color? opacity falloff with depth?
+  glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w); // from hsv picker
+  glClear(GL_COLOR_BUFFER_BIT); // clear the background
 
   // screen dimension query - first frame has erroneous values
   ImGuiIO &io = ImGui::GetIO();
@@ -545,30 +561,28 @@ void engine::draw_everything() {
     glViewport( 0, 0, io.DisplaySize.x, io.DisplaySize.y);
   glUniform2f(glGetUniformLocation(display_shader, "resolution"), io.DisplaySize.x, io.DisplaySize.y);
 
-  // blit to the screen
+  // blit dithered raymarch result to the screen
   glDrawArrays(GL_TRIANGLES, 0, 3);
 
-  // Start the Dear ImGui frame
-  start_imgui();
-
-  // in this scope, everything related to imgui happens
-  {
-  // show quit confirm window, if relevant
-    quit_conf(&quitconfirm);
-
-  // do the controls window
-    control_window();
+  //  ╦┌┬┐╔═╗┬ ┬┬
+  //  ║│││║ ╦│ ││
+  //  ╩┴ ┴╚═╝└─┘┴
+  start_imgui(); // Start the Dear ImGui frame
+  {// in this scope, everything related to imgui happens
+    quit_conf(&quitconfirm); // show quit confirm window, if relevant
+    control_window(); // do the controls window
   }
+  end_imgui(); // put ImGui stuff in the back buffer
 
-  // put ImGui stuff in the back buffer
-  end_imgui();
 
-  // swap the double buffers to present
+  // swap the double buffers to present everything for this frame
   SDL_GL_SwapWindow(window);
 
-  // handle events
+  //  ╔═╗┬  ┬┌─┐┌┐┌┌┬┐┌─┐
+  //  ║╣ └┐┌┘├┤ │││ │ └─┐
+  //  ╚═╝ └┘ └─┘┘└┘ ┴ └─┘
   SDL_Event event;
-  while (SDL_PollEvent(&event)) {
+  while (SDL_PollEvent(&event)) {  // handle events
     ImGui_ImplSDL2_ProcessEvent(&event);
     if (event.type == SDL_QUIT)
       pquit = true;

@@ -23,7 +23,7 @@ exec time ./a.out
 #include <vector>
 
 // <parameter> log2 image size; 8 = 256x256 pixels
-#define LOG2_SIZE 6
+#define LOG2_SIZE 7
 
 // <parameter> energy function falloff (Gaussian sigma value)
 #define SIGMA 1.9

@@ -30,6 +30,7 @@ private:
 
 	// compute shaders
 	GLuint dither_shader;
+	GLuint blue_cycle_shader;
 	GLuint raymarch_shader;
 
 // raymarcher state
@@ -39,14 +40,14 @@ private:
 	float rotation_about_z = 0.;
 
 	// light colors
-	glm::vec3 lightCol1 = glm::vec3(0);
-	glm::vec3 lightCol2 = glm::vec3(0);
-	glm::vec3 lightCol3 = glm::vec3(0);
+	glm::vec3 lightCol1 = glm::vec3(115./255.,  28./255.,  28./255.);
+	glm::vec3 lightCol2 = glm::vec3( 30./255., 150./255.,  82./255.);
+	glm::vec3 lightCol3 = glm::vec3( 72./255.,  18./255., 122./255.);
 
 	// light positions
-	glm::vec3 lightPos1 = glm::vec3(0);
-	glm::vec3 lightPos2 = glm::vec3(0);
-	glm::vec3 lightPos3 = glm::vec3(0);
+	glm::vec3 lightPos1 = glm::vec3(0,0,0);
+	glm::vec3 lightPos2 = glm::vec3(0,0,0);
+	glm::vec3 lightPos3 = glm::vec3(0,0,0);
 
 	// position
 	glm::vec3 position = glm::vec3(0,4,0);

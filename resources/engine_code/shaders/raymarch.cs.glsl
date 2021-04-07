@@ -50,8 +50,8 @@ float raymarch(vec3 ro, vec3 rd) {
     }
 }
 
-vec3 norm(vec3 p) {
-    vec2 e = vec2( EPSILON, 0.);
+vec3 norm(vec3 p) { // to get the normal vector for a point in space, this function
+    vec2 e = vec2( EPSILON, 0.); // computes the gradient of the estimator function
     return normalize( vec3(de(p)) - vec3( de(p-e.xyy), de(p-e.yxy), de(p-e.yyx) ));
 }
 
