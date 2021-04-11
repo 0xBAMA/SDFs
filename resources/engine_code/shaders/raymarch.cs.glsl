@@ -8,6 +8,8 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 #define MAX_DIST  300.
 #define EPSILON   0.001 // closest surface distance
 
+#define AA 2
+
 uniform vec3 lightPos1;
 uniform vec3 lightPos2;
 uniform vec3 lightPos3;
@@ -902,18 +904,31 @@ float de( vec3 porig ) { // distance estimator for the scene
 
     p = pmod(p, vec3(2.95,0.65,2.8));
 
+		// sphereFold(p);
+		// mengerFold(p);
+
     float tfactor = abs(pow(abs(cos(time/2.)), 6.)) * 2 - 1;
 
-    float pillarz = smin_op(sdTorus(p, vec2(1.3, 0.1 + 0.05 * cos(time/5.))),
-                sdSphere(p, 0.8 + 0.25*tfactor), 0.9);
+    float pillarz = smin_op(sdTorus(p, vec2(1.3, 0.08 + 0.05 * cos(time/5.))),
+                sdSphere(p, 0.8 + 0.25*tfactor*(sin(time*5+porig.y*4.65)+1.)), 0.9);
 
-    // p = pmod(p*0.2, vec3(2.4,1.2,1.6));
-    p = porig * (1./6.);
-    pR(p.yz, time);
+		float dplane = fPlane(porig, vec3(0,1,0), 4.);
+
+		// p = pmod(p*0.2, vec3(2.4,1.2,1.6));
+		p = porig * (1./6.);
+
+		pR(p.yz, time*0.35);
+		pR(p.xy, time*0.11);
 
     float dtorus = fTorus( p, 0.2, 1.1);
 
-    return smin_op(max(pillarz, sdSphere(porig, 8.5)), dtorus, 0.2);
+		float dfinal = smin_op(
+											smin_op(
+												max(pillarz, sdSphere(porig, 8.5)),
+													dtorus, 0.2),
+														dplane, 0.685);
+
+		return dfinal;
 }
 
 // global state tracking
@@ -942,18 +957,26 @@ void main()
 
     // imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( 120, 45, 12, 255 ));
 
-    vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy)-vec2(imageSize(current)/2.)) / vec2(imageSize(current)/2.);
 
-    vec3 ro = ray_origin;
-    vec3 rd = normalize(1.5*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
+		vec4 col = vec4(0, 0, 0, 1);
 
-    vec4 col = vec4(0, 0, 0, 1);
+		for(int x = 0; x < AA; x++)
+		for(int y = 0; y < AA; y++)
+		{
+			vec2 o = vec2(float(x), float(y)) / float(AA) - 0.5;
 
-    float dresult = raymarch(ro, rd);
+			vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy + o)-vec2(imageSize(current)/2.)) / vec2(imageSize(current)/2.);
+			vec3 ro = ray_origin;
 
-    col.rgb = (norm(ro+dresult*rd)/2.)+vec3(0.5);
-    // col.rgb *= (1 - (dresult / 10));
+			vec3 rd = normalize(1.5*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
 
-    imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
+			float dresult = raymarch(ro, rd);
 
+			col.rgb += ((norm(ro+dresult*rd)/2.)+vec3(0.5));
+			col.rgb *= (1 - (dresult / 10));
+		}
+
+		col /= float(AA*AA);
+
+		imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }
