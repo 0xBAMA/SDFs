@@ -339,9 +339,12 @@ void engine::gl_setup() {
     glVertexAttribPointer(points_attrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
   }
 
+//  ╦═╗┌─┐┌┐┌┌┬┐┌─┐┬─┐  ╔╦╗┌─┐─┐ ┬┌┬┐┬ ┬┬─┐┌─┐
+//  ╠╦╝├┤ │││ ││├┤ ├┬┘   ║ ├┤ ┌┴┬┘ │ │ │├┬┘├┤
+//  ╩╚═└─┘┘└┘─┴┘└─┘┴└─   ╩ └─┘┴ └─ ┴ └─┘┴└─└─┘
   {// initialize image data for the render texture
     std::vector<uint8_t> image_data;
-    image_data.resize(WIDTH * HEIGHT * 4, 127);
+    image_data.resize(WIDTH * HEIGHT * 4, 0);
 
     // create the render texture used in the compute shaders
     glGenTextures(1, &display_texture);
@@ -528,6 +531,9 @@ void engine::draw_everything() {
   // send position to the raymarch shader
   glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);
 
+  // send a quantitiy representing time
+  glUniform1f(glGetUniformLocation(raymarch_shader, "time"), SDL_GetTicks() * 0.001);
+
   // invoke the shader on the GPU
   glDispatchCompute( WIDTH/8, HEIGHT/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8
 
@@ -606,7 +612,11 @@ void engine::draw_everything() {
     {// imgui doesn't want the input, so we should use it
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_f)
+      {
+        cout << endl;
         cout << "position: " << to_string(position) << endl;
+        cout << "rotation: " << rotation_about_x << " " << rotation_about_y << " " << rotation_about_z << endl;
+      }
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w)
         rotation_about_x -= 0.03;
