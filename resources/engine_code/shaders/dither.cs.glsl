@@ -14,7 +14,9 @@ uniform float time;    // used to cycle the blue noise values over time
 
 // key thing is to have RGB->colorspace and colorspace->RGB for each colorspace to be used
 // need to refer to the old code, as well as a few shadertoy examples for different spaces
-// trying a new dithering method now based on the above linked shadertoy example
+// trying a new dithering method now based on the above linked shadertoy example (exponential)
+
+
 
 void main()
 {
