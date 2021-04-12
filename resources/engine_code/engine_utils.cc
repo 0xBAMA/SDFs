@@ -528,6 +528,11 @@ void engine::draw_everything() {
   glUniform3f(glGetUniformLocation(raymarch_shader, "basis_y"), basis_y.x, basis_y.y, basis_y.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "basis_z"), basis_z.x, basis_z.y, basis_z.z);
 
+  // send light information to the raymarch shader
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1"), lightCol1.x, lightCol1.y, lightCol1.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2"), lightCol2.x, lightCol2.y, lightCol2.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3"), lightCol3.x, lightCol3.y, lightCol3.z);
+
   // send position to the raymarch shader
   glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);
 

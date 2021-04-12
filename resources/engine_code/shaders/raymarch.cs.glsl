@@ -8,7 +8,7 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 #define MAX_DIST  300.
 #define EPSILON   0.001 // closest surface distance
 
-#define AA 2
+#define AA 1
 
 uniform vec3 lightPos1;
 uniform vec3 lightPos2;
@@ -902,16 +902,20 @@ float sdCylinder( vec3 p, vec2  h ) {
 float de( vec3 porig ) { // distance estimator for the scene
     vec3 p = porig;
 
-    p = pmod(p, vec3(3.85,0.65,3.617));
+    // p = pmod(p, vec3(3.85,0.65,3.617));
+		pModMirror2(p.xz, vec2(3.85, 3.617));
+		pModMirror1(p.y, 0.685);
 
 		// sphereFold(p);
 		// mengerFold(p);
 
     float tfactor = abs(pow(abs(cos(time/2.)), 6.)) * 2 - 1;
 
-		float drings = sdTorus(p, vec2(1.182, 0.08 + 0.05 * cos(time/5.+0.5*porig.x+0.8*porig.z)));
+		// float drings = sdTorus(p, vec2(1.182, 0.08 + 0.05 * cos(time/5.+0.5*porig.x+0.8*porig.z)));
+		float drings = sdTorus(p, vec2(1.182, 0.08 ));
 
-		float dballz = sdSphere(p, 0.8 + 0.25*tfactor*(sin(time*2.1+porig.x*2.18+porig.z*2.7+porig.y*3.14)+1.));
+		// float dballz = sdSphere(p, 0.8 + 0.25*tfactor*(sin(time*2.1+porig.x*2.18+porig.z*2.7+porig.y*3.14)+1.));
+		float dballz = sdSphere(p, 0.8 + 0.25*tfactor);
 
     float pillarz = smin_op(drings, dballz, 0.9);
 
@@ -920,7 +924,7 @@ float de( vec3 porig ) { // distance estimator for the scene
 		// p = pmod(p*0.2, vec3(2.4,1.2,1.6));
 		p = porig;
 
-		pR(p.yz, time*0.5);
+		pR(p.yz, time/3.14);
 		// pR(p.xy, time*0.3);
 
     float dtorus = fTorus( p, 1.2, 6.6);
@@ -928,7 +932,7 @@ float de( vec3 porig ) { // distance estimator for the scene
 		float dfinal = smin_op(
 											smin_op(
 												max(pillarz, sdSphere(porig, 8.5)),
-													dtorus, 0.2),
+													dtorus, 0.385),
 														dplane, 0.685);
 
 		return dfinal;
@@ -983,6 +987,20 @@ float soft_shadow( in vec3 ro, in vec3 rd, float mint, float maxt, float k /*hig
 		return res*res*(3.0-2.0*res);
 }
 
+float calcAO( in vec3 pos, in vec3 nor )
+{
+		float occ = 0.0;
+    float sca = 1.0;
+    for( int i=0; i<5; i++ )
+    {
+        float h = 0.001 + 0.15*float(i)/4.0;
+        float d = de( pos + h*nor );
+        occ += (h-d)*sca;
+        sca *= 0.95;
+    }
+    return clamp( 1.0 - 1.5*occ, 0.0, 1.0 );
+}
+
 void main()
 {
 
@@ -1001,7 +1019,9 @@ void main()
 
 			float dresult = raymarch(ro, rd);
 
-			vec3 lightpos = vec3(8.);
+			// vec3 lightpos = vec3(8.); pR(lightpos.xz, time);
+			vec3 lightpos = vec3(2*sin(time), 2., 2*cos(time));
+
 			vec3 hitpos = ro+dresult*rd;
 			vec3 normal = norm(hitpos);
 
@@ -1010,10 +1030,13 @@ void main()
 			float shadow_mint = EPSILON;
 			float shadow_maxt = distance(hitpos, lightpos);
 
-			// float sresult = sharp_shadow(shadow_ro, shadow_rd, shadow_mint, shadow_maxt) + 0.2;
-			float sresult = soft_shadow(shadow_ro, shadow_rd, shadow_mint, shadow_maxt, 16) + 0.2;
+			float sresult1 = sharp_shadow(shadow_ro, shadow_rd, shadow_mint, shadow_maxt) + 0.2;
+			float sresult2 = soft_shadow(shadow_ro, shadow_rd, shadow_mint, shadow_maxt, 16) + 0.2;
 
-			col.rgb += ((norm(hitpos)/2.)+vec3(0.5))*(1 - (dresult / 25))*sresult;
+			float aoresult = calcAO(shadow_ro, normal);
+
+			// col.rgb += ((norm(hitpos)/2.)+vec3(0.5))*(1 - (dresult / 25))*sresult;
+			col.rgb += vec3(0.18, 0.25, 0.345) * aoresult * (1-dresult/15) + sresult1 * lightCol1 + sresult2 * lightCol2;
 		}
 
 		col.rgb /= float(AA*AA);
