@@ -82,8 +82,9 @@ constexpr double pi = 3.14159265358979323846;
 #include "../nlohmann_JSON/json.hpp"
 using json = nlohmann::json;
 
-// #define WIDTH 640
-// #define HEIGHT 480
+// #define WIDTH 400
+// #define HEIGHT 240
+
 #define WIDTH 512
 #define HEIGHT 256
 

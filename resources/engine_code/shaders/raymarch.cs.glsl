@@ -1015,7 +1015,9 @@ void main()
 
 			vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy + offset)-vec2(imageSize(current)/2.)) / vec2(imageSize(current)/2.);
 			vec3 ro = ray_origin;
-			vec3 rd = normalize(2.*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
+			// vec3 rd = normalize(2.*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // 'correct' based on 512x256
+			// vec3 rd = normalize((5./3.)*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // 'correct' based on 400x240
+			vec3 rd = normalize(1.618*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // kinda like this better
 
 			float dresult = raymarch(ro, rd);
 
@@ -1026,17 +1028,25 @@ void main()
 			vec3 normal = norm(hitpos);
 
 			vec3 shadow_ro = hitpos+normal*EPSILON*2.;
-			vec3 shadow_rd = normalize(lightpos-hitpos);
+			vec3 shadow_rd1 = normalize(lightpos-hitpos);
+			vec3 shadow_rd2 = normalize(lightpos-hitpos);
 			float shadow_mint = EPSILON;
 			float shadow_maxt = distance(hitpos, lightpos);
 
-			float sresult1 = sharp_shadow(shadow_ro, shadow_rd, shadow_mint, shadow_maxt) + 0.2;
-			float sresult2 = soft_shadow(shadow_ro, shadow_rd, shadow_mint, shadow_maxt, 16) + 0.2;
+			float sresult1 = sharp_shadow(shadow_ro, shadow_rd1, shadow_mint, shadow_maxt) + 0.2;
+			float sresult2 = soft_shadow(shadow_ro, shadow_rd2, shadow_mint, shadow_maxt, 20) + 0.2;
 
 			float aoresult = calcAO(shadow_ro, normal);
 
 			// col.rgb += ((norm(hitpos)/2.)+vec3(0.5))*(1 - (dresult / 25))*sresult;
-			col.rgb += vec3(0.18, 0.25, 0.345) * aoresult * (1-dresult/15) + sresult1 * lightCol1 + sresult2 * lightCol2;
+			vec3 temp = vec3(0.18, 0.25, 0.345) + sresult1 * lightCol1 + sresult2 * lightCol2;
+
+			// temp *= exp( -0.002 * dresult * dresult * dresult ); // not a big fan of this for fog
+
+			temp *= (1-pow(dresult/25., 1.618));
+			temp *= aoresult; // ambient occlusion calculation
+
+			col.rgb += temp;
 		}
 
 		col.rgb /= float(AA*AA);
