@@ -35,8 +35,8 @@ private:
 
 // raymarcher state
 	// rotation
-	float rotation_about_x = 0.69;
-	float rotation_about_y = -2.61;
+	float rotation_about_x = 0.15;
+	float rotation_about_y = -3.45;
 	float rotation_about_z = 0.;
 
 	// light colors
@@ -50,7 +50,7 @@ private:
 	glm::vec3 lightPos3 = glm::vec3(0,0,0);
 
 	// position
-	glm::vec3 position = glm::vec3(2.95, 2.5, 2.5);
+	glm::vec3 position = glm::vec3(-2.677870, 0.987425, 9.705327);
 
 
 // main loop functions
@@ -82,7 +82,7 @@ public:
 	std::vector<glm::ivec3> triangle_indices;
 	std::vector<glm::ivec3> normal_indices;
 	std::vector<glm::ivec3> texcoord_indices;
-		
+
 };
 
 #endif

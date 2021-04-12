@@ -902,25 +902,28 @@ float sdCylinder( vec3 p, vec2  h ) {
 float de( vec3 porig ) { // distance estimator for the scene
     vec3 p = porig;
 
-    p = pmod(p, vec3(2.95,0.65,2.8));
+    p = pmod(p, vec3(3.85,0.65,3.617));
 
 		// sphereFold(p);
 		// mengerFold(p);
 
     float tfactor = abs(pow(abs(cos(time/2.)), 6.)) * 2 - 1;
 
-    float pillarz = smin_op(sdTorus(p, vec2(1.3, 0.08 + 0.05 * cos(time/5.))),
-                sdSphere(p, 0.8 + 0.25*tfactor*(sin(time*5+porig.y*4.65)+1.)), 0.9);
+		float drings = sdTorus(p, vec2(1.182, 0.08 + 0.05 * cos(time/5.+0.5*porig.x+0.8*porig.z)));
 
-		float dplane = fPlane(porig, vec3(0,1,0), 4.);
+		float dballz = sdSphere(p, 0.8 + 0.25*tfactor*(sin(time*2.1+porig.x*2.18+porig.z*2.7+porig.y*3.14)+1.));
+
+    float pillarz = smin_op(drings, dballz, 0.9);
+
+		float dplane = fPlane(porig, vec3(0,1,0), 5.);
 
 		// p = pmod(p*0.2, vec3(2.4,1.2,1.6));
-		p = porig * (1./6.);
+		p = porig;
 
-		pR(p.yz, time*0.35);
-		pR(p.xy, time*0.11);
+		pR(p.yz, time*0.5);
+		// pR(p.xy, time*0.3);
 
-    float dtorus = fTorus( p, 0.2, 1.1);
+    float dtorus = fTorus( p, 1.2, 6.6);
 
 		float dfinal = smin_op(
 											smin_op(
@@ -951,32 +954,69 @@ vec3 norm(vec3 p) { // to get the normal vector for a point in space, this funct
     return normalize( vec3(de(p)) - vec3( de(p-e.xyy), de(p-e.yxy), de(p-e.yyx) ));
 }
 
+float sharp_shadow( in vec3 ro, in vec3 rd, float mint, float maxt ){
+    for( float t=mint; t<maxt; )    {
+        float h = de(ro + rd*t);
+        if( h<0.001 )
+            return 0.0;
+        t += h;
+    }
+    return 1.0;
+}
+
+float soft_shadow( in vec3 ro, in vec3 rd, float mint, float maxt, float k /*higher is sharper*/ ){
+    float res = 1.0;
+    float ph = 1e20;
+    for( float t=mint; t<maxt; )
+    {
+        float h = de(ro + rd*t);
+        if( h<EPSILON )
+            return 0.0;
+        float y = h*h/(2.0*ph);
+        float d = sqrt(h*h-y*y);
+        res = min( res, k*d/max(0.0,t-y) );
+        ph = h;
+        t += h;
+    }
+    // return res;
+		res = clamp( res, 0.0, 1.0 );
+		return res*res*(3.0-2.0*res);
+}
 
 void main()
 {
 
     // imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( 120, 45, 12, 255 ));
 
-
 		vec4 col = vec4(0, 0, 0, 1);
 
 		for(int x = 0; x < AA; x++)
 		for(int y = 0; y < AA; y++)
 		{
-			vec2 o = vec2(float(x), float(y)) / float(AA) - 0.5;
+			vec2 offset = vec2(float(x), float(y)) / float(AA) - 0.5;
 
-			vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy + o)-vec2(imageSize(current)/2.)) / vec2(imageSize(current)/2.);
+			vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy + offset)-vec2(imageSize(current)/2.)) / vec2(imageSize(current)/2.);
 			vec3 ro = ray_origin;
-
-			vec3 rd = normalize(1.5*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
+			vec3 rd = normalize(2.*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
 
 			float dresult = raymarch(ro, rd);
 
-			col.rgb += ((norm(ro+dresult*rd)/2.)+vec3(0.5));
-			col.rgb *= (1 - (dresult / 10));
+			vec3 lightpos = vec3(8.);
+			vec3 hitpos = ro+dresult*rd;
+			vec3 normal = norm(hitpos);
+
+			vec3 shadow_ro = hitpos+normal*EPSILON*2.;
+			vec3 shadow_rd = normalize(lightpos-hitpos);
+			float shadow_mint = EPSILON;
+			float shadow_maxt = distance(hitpos, lightpos);
+
+			// float sresult = sharp_shadow(shadow_ro, shadow_rd, shadow_mint, shadow_maxt) + 0.2;
+			float sresult = soft_shadow(shadow_ro, shadow_rd, shadow_mint, shadow_maxt, 16) + 0.2;
+
+			col.rgb += ((norm(hitpos)/2.)+vec3(0.5))*(1 - (dresult / 25))*sresult;
 		}
 
-		col /= float(AA*AA);
+		col.rgb /= float(AA*AA);
 
 		imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }
