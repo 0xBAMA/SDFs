@@ -59,8 +59,14 @@ vec3 convert_back(vec3 value){
 void main()
 {
   // read the old value
-  // convert it (relies on global state - spaceswitch)
+  uvec4 temp = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
+
+  // convert it (relies on global state of spaceswitch)
+
   // reduce precision in the selected manner
+
   // convert back (again using spaceswitch)
+
   // store back to the image
+  imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp);
 }

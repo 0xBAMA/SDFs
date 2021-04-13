@@ -550,6 +550,10 @@ void engine::draw_everything() {
   //  ═╩╝┴ ┴ ┴ ┴└─┘┴└─
   // invoke the dither shader
   //  - needs to know mode, and also frame number to cycle the blue noise
+  glUseProgram(dither_shader);
+
+  // invoke on the GPU
+  glDispatchCompute( WIDTH/8, HEIGHT/8, 1 );
 
   // sync to ensure the dithered image is in the texture
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
