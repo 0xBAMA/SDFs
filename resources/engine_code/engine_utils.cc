@@ -375,6 +375,7 @@ void engine::gl_setup() {
 
     for(auto x : bayerpattern)
     { // use the whole range 0-255, so I don't have to abuse the existing blue noise algorithm to match ranges
+      pattern.push_back(x * 4); // bump up by two bits to make this happen
       pattern.push_back(x * 4);
       pattern.push_back(x * 4);
       pattern.push_back(x * 4);
@@ -388,28 +389,39 @@ void engine::gl_setup() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 8, 8, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, &pattern[0]);
+    glBindImageTexture(1, dither_bayer, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
   }
 
   pattern.clear(); // zero out
 
   {//  blue noise dither pattern, adapted from https://gist.github.com/kajott/d9f9bb93043040bfe2f48f4f499903d8
     // values in the range 0-255
-    std::vector<uint8_t> bluepatternbig = gen_blue_noise();
+    // std::vector<uint8_t> bluepatternbig = gen_blue_noise();
 
-    #define map(x,y) bluepatternbig[x+(128*y)]
+    std::vector<uint8_t> bluepatternr = gen_blue_noise();
+    std::vector<uint8_t> bluepatterng = gen_blue_noise();
+    std::vector<uint8_t> bluepatternb = gen_blue_noise();
+    std::vector<uint8_t> bluepatterna = gen_blue_noise();
+
+    // #define map(x,y) bluepatternbig[x+(128*y)]
+    #define map(x,y,pattern) pattern[x+(128*y)]
 
     for(size_t x = 0; x < 64; x++)
       for(size_t y = 0; y < 64; y++)
       {
-        pattern.push_back(map(x,y));
-        pattern.push_back(map(x+64,y));
-        pattern.push_back(map(x+64,y+64));
+        // pattern.push_back(map(x,y));
+        // pattern.push_back(map(x+64,y));
+        // pattern.push_back(map(x+64,y+64));
+        pattern.push_back(map(x,y,bluepatternr));
+        pattern.push_back(map(x,y,bluepatterng));
+        pattern.push_back(map(x,y,bluepatternb));
+        pattern.push_back(map(x,y,bluepatterna));
       }
 
     #undef map
 
-    // send it - variable size possible, but starting off just using 64x64 dimension
+    // send it - variable size possible in the header, but here trying to just extract 64x64 RGB
     glGenTextures(1, &dither_blue);
     glActiveTexture(GL_TEXTURE0+2);
     glBindTexture(GL_TEXTURE_2D, dither_blue);
@@ -417,7 +429,8 @@ void engine::gl_setup() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, &pattern[0]);
+    glBindImageTexture(1, dither_bayer, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
   }
 
 //  ╔═╗┌─┐┌┬┐┌─┐┬ ┬┌┬┐┌─┐  ╔═╗┬ ┬┌─┐┌┬┐┌─┐┬─┐┌─┐
