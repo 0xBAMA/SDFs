@@ -12,29 +12,33 @@ uniform int spaceswitch; // what color space
 uniform int dithermode; // methodology (bitcrush blue, bitcrush bayer, exponential blue, exponential bayer)
 uniform float time;    // used to cycle the blue noise values over time
 
+//  ╔═╗┌─┐┬  ┌─┐┬─┐┌─┐┌─┐┌─┐┌─┐┌─┐  ╔═╗┬ ┬┌┐┌┌─┐┌┬┐┬┌─┐┌┐┌┌─┐
+//  ║  │ ││  │ │├┬┘└─┐├─┘├─┤│  ├┤   ╠╣ │ │││││   │ ││ ││││└─┐
+//  ╚═╝└─┘┴─┘└─┘┴└─└─┘┴  ┴ ┴└─┘└─┘  ╚  └─┘┘└┘└─┘ ┴ ┴└─┘┘└┘└─┘
 // key thing is to have RGB->colorspace and colorspace->RGB for each colorspace to be used
 // need to refer to the old code, as well as a few shadertoy examples for different spaces
-// trying a new dithering method now based on the above linked shadertoy example (exponential)
 
-vec3 get_bayer(){
+
+vec4 get_bayer(){
   // return texture()
-  return vec3(0);
+  return vec4(0);
 }
 
-vec3 get_blue(){
-  return vec3(0);
+vec4 get_blue(){
+  return vec4(0);
 }
 
-vec3 bitcrush_reduce(){
-  return vec3(0);
+vec4 bitcrush_reduce(vec4 value){
+  return vec4(0);
 }
 
-vec3 exponential_reduce(){
-  return vec3(0);
+// trying a new dithering method now based on the above linked shadertoy example (exponential)
+vec4 exponential_reduce(vec4 value){
+  return vec4(0);
 }
 
 // these two functions rely on global state (spaceswitch)
-vec3 convert(vec3 value){
+vec4 convert(uvec4 value){
   switch(spaceswitch)
   {
     case 0: // blah
@@ -42,10 +46,12 @@ vec3 convert(vec3 value){
     default:
       break;
   }
-  return vec3(0);
+  return vec4(0);
 }
 
-vec3 convert_back(vec3 value){
+// takes in a value in the globally indicated colorspace
+// returns a uvec4 which is ready to be written as 8-bit RGBA
+uvec4 convert_back(vec4 value){
   switch(spaceswitch)
   {
     case 0: // blah
@@ -53,20 +59,30 @@ vec3 convert_back(vec3 value){
     default:
       break;
   }
-  return vec3(0);
+  return uvec4(0);
+}
+
+vec4 process(vec4 value){
+  // take in converted value (at least one color space uses all four channels)
+  // reduce the precision, just numerically (maybe shift up by 0.5 for ycbcr?)
+  // processed value ready to be converted from chosen color space back to RGBA
+  return vec4(0);
 }
 
 void main()
 {
   // read the old value
-  uvec4 temp = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
+  uvec4 read = imageLoad(current, ivec2(gl_GlobalInvocationID.xy));
 
   // convert it (relies on global state of spaceswitch)
+  vec4 converted = convert(read);
 
-  // reduce precision in the selected manner
+  // reduce precision in the selected manner (colorspace, pattern, method)
+  vec4 processed = process(converted);
 
   // convert back (again using spaceswitch)
+  uvec4 write = convert_back(processed);
 
-  // store back to the image
-  imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp);
+  // store the processed result back to the image
+  imageStore(current, ivec2(gl_GlobalInvocationID.xy), write);
 }
