@@ -19,13 +19,14 @@ uniform float time;    // used to cycle the blue noise values over time
 // need to refer to the old code, as well as a few shadertoy examples for different spaces
 
 
+
+
 vec4 get_bayer(){
-  // return texture()
-  return vec4(0);
+  return texture(bayer_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(bayer_dither_pattern, 0).r));
 }
 
 vec4 get_blue(){
-  return vec4(0);
+  return texture(blue_noise_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(blue_noise_dither_pattern, 0).r));
 }
 
 vec4 bitcrush_reduce(vec4 value){
@@ -84,5 +85,7 @@ void main()
   uvec4 write = convert_back(processed);
 
   // store the processed result back to the image
-  imageStore(current, ivec2(gl_GlobalInvocationID.xy), write);
+  // imageStore(current, ivec2(gl_GlobalInvocationID.xy), write); // this is what will be used once the rest is implemented
+  imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
+  // imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp);
 }

@@ -91,7 +91,7 @@ inline void update_map(int index, float sign) {
 inline std::vector<uint8_t> gen_blue_noise() {
     srand(time(NULL));
     //FILE *f;
-    
+
     // initialize the noise image to white (saves us 1/256th of the work, yay!)
     memset(noise, 0xFF, AREA);
 
@@ -209,10 +209,10 @@ inline std::vector<uint8_t> gen_blue_noise() {
     //fprintf(f, "P5\n%d %d\n255\n", SIZE, SIZE);
     //fwrite(noise, SIZE, SIZE, f);
     //fclose(f);
-    
+
     std::vector<uint8_t> data;
     //data.resize(SIZE*SIZE);
-    
+
   	 for(int x = 0; x < SIZE; x++)
   	 {
   	 	for(int y = 0; y < SIZE; y++)
@@ -220,7 +220,7 @@ inline std::vector<uint8_t> gen_blue_noise() {
   	 		data.push_back(noise[0+x*SIZE+y]);
   	 	}
   	 }
-  	 
+
     return data;
 }
 

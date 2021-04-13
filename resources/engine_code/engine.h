@@ -50,8 +50,7 @@ private:
 	glm::vec3 lightPos3 = glm::vec3(0,0,0);
 
 	// position
-	glm::vec3 position = glm::vec3(-2.677870, 0.987425, 9.705327);
-
+	glm::vec3 position = glm::vec3(-4.232554, 1.761511, 14.585515);
 
 // main loop functions
 	void create_window();

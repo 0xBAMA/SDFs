@@ -378,7 +378,6 @@ void engine::gl_setup() {
       pattern.push_back(x * 4);
       pattern.push_back(x * 4);
       pattern.push_back(x * 4);
-      pattern.push_back(x * 4);
     }
 
     // send it - known 8x8 dimension
@@ -389,7 +388,7 @@ void engine::gl_setup() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, &pattern[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 8, 8, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
   }
 
   pattern.clear(); // zero out
@@ -405,7 +404,6 @@ void engine::gl_setup() {
       {
         pattern.push_back(map(x,y));
         pattern.push_back(map(x+64,y));
-        pattern.push_back(map(x,y+64));
         pattern.push_back(map(x+64,y+64));
       }
 
@@ -419,7 +417,7 @@ void engine::gl_setup() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, &pattern[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
   }
 
 //  ╔═╗┌─┐┌┬┐┌─┐┬ ┬┌┬┐┌─┐  ╔═╗┬ ┬┌─┐┌┬┐┌─┐┬─┐┌─┐
