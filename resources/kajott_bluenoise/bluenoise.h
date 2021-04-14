@@ -23,7 +23,7 @@ exec time ./a.out
 #include <vector>
 
 // <parameter> log2 image size; 8 = 256x256 pixels
-#define LOG2_SIZE 5
+#define LOG2_SIZE 7
 
 // <parameter> energy function falloff (Gaussian sigma value)
 #define SIGMA 1.9
@@ -94,6 +94,8 @@ inline std::vector<uint8_t> gen_blue_noise() {
 
     // initialize the noise image to white (saves us 1/256th of the work, yay!)
     memset(noise, 0xFF, AREA);
+    /* memset(&state1, 0x00, sizeof(map_state)); */
+    /* memset(&state2, 0x00, sizeof(map_state)); */
     // memset(etab, 0x00, (SIZE * 2) * (SIZE * 2) * sizeof(float)); // creates a neat pattern, but not desired
 
     // prepare energy look-up table, using symmetries and repetitions:

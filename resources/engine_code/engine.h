@@ -39,15 +39,18 @@ private:
 	float rotation_about_y = -3.45;
 	float rotation_about_z = 0.;
 
+	// base color
+	glm::vec3 basic_diffuse = glm::vec3(0.1, 0., 0.);
+
 	// light colors
-	glm::vec3 lightCol1 = glm::vec3(115./255.,  28./255.,  28./255.);
-	glm::vec3 lightCol2 = glm::vec3( 30./255., 150./255.,  82./255.);
+	glm::vec3 lightCol1 = glm::vec3(174./255.,   0./255.,   0./255.);
+	glm::vec3 lightCol2 = glm::vec3(134./255., 150./255.,  30./255.);
 	glm::vec3 lightCol3 = glm::vec3( 72./255.,  18./255., 122./255.);
 
 	// light positions
-	glm::vec3 lightPos1 = glm::vec3(0,0,0);
-	glm::vec3 lightPos2 = glm::vec3(0,0,0);
-	glm::vec3 lightPos3 = glm::vec3(0,0,0);
+	glm::vec3 lightPos1 = glm::vec3(8,10,0);
+	glm::vec3 lightPos2 = glm::vec3(14,5,0);
+	glm::vec3 lightPos3 = glm::vec3(2,4,-10);
 
 	// position
 	glm::vec3 position = glm::vec3(-4.232554, 1.761511, 14.585515);

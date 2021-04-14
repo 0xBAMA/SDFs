@@ -8,7 +8,9 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 #define MAX_DIST  300.
 #define EPSILON   0.001 // closest surface distance
 
-#define AA 1
+#define AA 2
+
+uniform vec3 basic_diffuse;
 
 uniform vec3 lightPos1;
 uniform vec3 lightPos2;
@@ -1006,50 +1008,56 @@ void main()
 
     // imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( 120, 45, 12, 255 ));
 
-		vec4 col = vec4(0, 0, 0, 1);
+    vec4 col = vec4(0, 0, 0, 1);
 
-		for(int x = 0; x < AA; x++)
-		for(int y = 0; y < AA; y++)
-		{
-			vec2 offset = vec2(float(x), float(y)) / float(AA) - 0.5;
+    for(int x = 0; x < AA; x++)
+    for(int y = 0; y < AA; y++)
+    {
+        vec2 offset = vec2(float(x), float(y)) / float(AA) - 0.5;
 
-			vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy + offset)-vec2(imageSize(current)/2.)) / vec2(imageSize(current)/2.);
-			vec3 ro = ray_origin;
-			// vec3 rd = normalize(2.*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // 'correct' based on 512x256
-			// vec3 rd = normalize((5./3.)*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // 'correct' based on 400x240
-			vec3 rd = normalize(1.618*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // kinda like this better
+        vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy + offset)-vec2(imageSize(current)/2.)) / vec2(imageSize(current)/2.);
+        vec3 ro = ray_origin;
+        // vec3 rd = normalize(2.*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // 'correct' based on 512x256
+        // vec3 rd = normalize((5./3.)*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // 'correct' based on 400x240
+        vec3 rd = normalize(1.618*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // kinda like this better
 
-			float dresult = raymarch(ro, rd);
+        float dresult = raymarch(ro, rd);
 
-			// vec3 lightpos = vec3(8.); pR(lightpos.xz, time);
-			vec3 lightpos = vec3(2*sin(time), 2., 2*cos(time));
+        // vec3 lightpos = vec3(8.); pR(lightpos.xz, time);
+        vec3 lightpos = vec3(2*sin(time), 2., 2*cos(time));
 
-			vec3 hitpos = ro+dresult*rd;
-			vec3 normal = norm(hitpos);
+        vec3 hitpos = ro+dresult*rd;
+        vec3 normal = norm(hitpos);
 
-			vec3 shadow_ro = hitpos+normal*EPSILON*2.;
-			vec3 shadow_rd1 = normalize(lightpos-hitpos);
-			vec3 shadow_rd2 = normalize(lightpos-hitpos);
-			float shadow_mint = EPSILON;
-			float shadow_maxt = distance(hitpos, lightpos);
+        vec3 shadow_ro = hitpos+normal*EPSILON*2.;
+        vec3 shadow_rd1 = normalize(lightPos1-hitpos);
+        vec3 shadow_rd2 = normalize(lightPos2-hitpos);
+        vec3 shadow_rd3 = normalize(lightPos3-hitpos);
 
-			float sresult1 = sharp_shadow(shadow_ro, shadow_rd1, shadow_mint, shadow_maxt) + 0.2;
-			float sresult2 = soft_shadow(shadow_ro, shadow_rd2, shadow_mint, shadow_maxt, 20) + 0.2;
+        float shadow_mint = EPSILON;
 
-			float aoresult = calcAO(shadow_ro, normal);
+        float shadow_maxt1 = distance(hitpos, lightPos1);
+        float shadow_maxt2 = distance(hitpos, lightPos2);
+        float shadow_maxt3 = distance(hitpos, lightPos3);
 
-			// col.rgb += ((norm(hitpos)/2.)+vec3(0.5))*(1 - (dresult / 25))*sresult;
-			vec3 temp = vec3(0.18, 0.25, 0.345) + sresult1 * lightCol1 + sresult2 * lightCol2;
+        float sresult1 = sharp_shadow(shadow_ro, shadow_rd1, shadow_mint, shadow_maxt1);
+        float sresult2 = soft_shadow(shadow_ro, shadow_rd2, shadow_mint, shadow_maxt2, 20);
+        float sresult3 = soft_shadow(shadow_ro, shadow_rd3, shadow_mint, shadow_maxt3, 16);
 
-			// temp *= exp( -0.002 * dresult * dresult * dresult ); // not a big fan of this for fog
+        float aoresult = calcAO(shadow_ro, normal);
 
-			temp *= (1-pow(dresult/25., 1.618));
-			temp *= aoresult; // ambient occlusion calculation
+        // col.rgb += ((norm(hitpos)/2.)+vec3(0.5))*(1 - (dresult / 25))*sresult;
+        vec3 temp = basic_diffuse + sresult1 * lightCol1 + sresult2 * lightCol2 + sresult3 * lightCol3;
 
-			col.rgb += temp;
-		}
+        // temp *= exp( -0.002 * dresult * dresult * dresult ); // not a big fan of this for fog
 
-		col.rgb /= float(AA*AA);
+        temp *= (1-pow(dresult/30., 1.618)); // alternative fog calculation
+        temp *= aoresult; // ambient occlusion calculation
 
-		imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
+        col.rgb += temp;
+    }
+
+    col.rgb /= float(AA*AA);
+
+    imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }

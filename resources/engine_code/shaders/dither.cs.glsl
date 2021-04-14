@@ -346,6 +346,298 @@ vec3 hcy_to_ycbcr(vec3 hcy)   { return rgb_to_ycbcr(hcy_to_rgb(hcy)); }
 
 // end tobspr color space conversions
 
+// these come from: https://www.shadertoy.com/view/4dcSRN
+//----------------------------------------------------------------------------
+
+// YUV, generic conversion
+// ranges: Y=0..1, U=-uvmax.x..uvmax.x, V=-uvmax.x..uvmax.x
+
+vec3 yuv_rgb (vec3 yuv, vec2 wbwr, vec2 uvmax) {
+    vec2 br = yuv.x + yuv.yz * (1.0 - wbwr) / uvmax;
+	float g = (yuv.x - dot(wbwr, br)) / (1.0 - wbwr.x - wbwr.y);
+	return vec3(br.y, g, br.x);
+}
+
+vec3 rgb_yuv (vec3 rgb, vec2 wbwr, vec2 uvmax) {
+	float y = wbwr.y*rgb.r + (1.0 - wbwr.x - wbwr.y)*rgb.g + wbwr.x*rgb.b;
+    return vec3(y, uvmax * (rgb.br - y) / (1.0 - wbwr));
+}
+
+//----------------------------------------------------------------------------
+
+// YUV, HDTV, gamma compressed, ITU-R BT.709
+// ranges: Y=0..1, U=-0.436..0.436, V=-0.615..0.615
+
+vec3 yuv_rgb (vec3 yuv) {
+    return yuv_rgb(yuv, vec2(0.0722, 0.2126), vec2(0.436, 0.615));
+}
+
+vec3 rgb_yuv (vec3 rgb) {
+    return rgb_yuv(rgb, vec2(0.0722, 0.2126), vec2(0.436, 0.615));
+}
+
+//----------------------------------------------------------------------------
+
+// Y*b*r, generic conversion
+// ranges: Y=0..1, b=-0.5..0.5, r=-0.5..0.5
+
+vec3 ypbpr_rgb (vec3 ybr, vec2 kbkr) {
+    return yuv_rgb(ybr, kbkr, vec2(0.5));
+}
+
+vec3 rgb_ypbpr (vec3 rgb, vec2 kbkr) {
+    return rgb_yuv(rgb, kbkr, vec2(0.5));
+}
+
+//----------------------------------------------------------------------------
+
+// YPbPr, analog, gamma compressed, HDTV
+// ranges: Y=0..1, b=-0.5..0.5, r=-0.5..0.5
+
+// YPbPr to RGB, after ITU-R BT.709
+vec3 ypbpr_rgb (vec3 ypbpr) {
+    return ypbpr_rgb(ypbpr, vec2(0.0722, 0.2126));
+}
+
+// RGB to YPbPr, after ITU-R BT.709
+vec3 rgb_ypbpr (vec3 rgb) {
+    return rgb_ypbpr(rgb, vec2(0.0722, 0.2126));
+}
+
+//----------------------------------------------------------------------------
+
+// YPbPr, analog, gamma compressed, VGA, TV
+// ranges: Y=0..1, b=-0.5..0.5, r=-0.5..0.5
+
+// YPbPr to RGB, after ITU-R BT.601
+vec3 ypbpr_rgb_bt601 (vec3 ypbpr) {
+    return ypbpr_rgb(ypbpr, vec2(0.114, 0.299));
+}
+
+// RGB to YPbPr, after ITU-R BT.601
+vec3 rgb_ypbpr_bt601 (vec3 rgb) {
+    return rgb_ypbpr(rgb, vec2(0.114, 0.299));
+}
+
+//----------------------------------------------------------------------------
+
+// in the original implementation, the factors and offsets are
+// ypbpr * (219, 224, 224) + (16, 128, 128)
+
+// YPbPr to YCbCr (analog to digital)
+vec3 ypbpr_ycbcr (vec3 ypbpr) {
+	return ypbpr * vec3(0.85546875,0.875,0.875) + vec3(0.0625, 0.5, 0.5);
+}
+
+// YCbCr to YPbPr (digital to analog)
+vec3 ycbcr_ypbpr (vec3 ycbcr) {
+	return (ycbcr - vec3(0.0625, 0.5, 0.5)) / vec3(0.85546875,0.875,0.875);
+}
+
+//----------------------------------------------------------------------------
+
+// YCbCr, digital, gamma compressed
+// ranges: Y=0..1, b=0..1, r=0..1
+
+// YCbCr to RGB (generic)
+vec3 ycbcr_rgb(vec3 ycbcr, vec2 kbkr) {
+    return ypbpr_rgb(ycbcr_ypbpr(ycbcr), kbkr);
+}
+// RGB to YCbCr (generic)
+vec3 rgb_ycbcr(vec3 rgb, vec2 kbkr) {
+    return ypbpr_ycbcr(rgb_ypbpr(rgb, kbkr));
+}
+// YCbCr to RGB
+vec3 ycbcr_rgb(vec3 ycbcr) {
+    return ypbpr_rgb(ycbcr_ypbpr(ycbcr));
+}
+// RGB to YCbCr
+vec3 rgb_ycbcr(vec3 rgb) {
+    return ypbpr_ycbcr(rgb_ypbpr(rgb));
+}
+
+//----------------------------------------------------------------------------
+
+// ITU-R BT.2020:
+// YcCbcCrc, linear
+// ranges: Y=0..1, b=-0.5..0.5, r=-0.5..0.5
+
+// YcCbcCrc to RGB
+vec3 yccbccrc_rgb(vec3 yccbccrc) {
+	return ypbpr_rgb(yccbccrc, vec2(0.0593, 0.2627));
+}
+
+// RGB to YcCbcCrc
+vec3 rgb_yccbccrc(vec3 rgb) {
+	return rgb_ypbpr(rgb, vec2(0.0593, 0.2627));
+}
+
+//----------------------------------------------------------------------------
+
+// YCoCg
+// ranges: Y=0..1, Co=-0.5..0.5, Cg=-0.5..0.5
+
+vec3 ycocg_rgb (vec3 ycocg) {
+    vec2 br = vec2(-ycocg.y,ycocg.y) - ycocg.z;
+    return ycocg.x + vec3(br.y, ycocg.z, br.x);
+}
+
+vec3 rgb_ycocg (vec3 rgb) {
+    float tmp = 0.5*(rgb.r + rgb.b);
+    float y = rgb.g + tmp;
+    float Cg = rgb.g - tmp;
+    float Co = rgb.r - rgb.b;
+    return vec3(y, Co, Cg) * 0.5;
+}
+
+//----------------------------------------------------------------------------
+
+vec3 yccbccrc_norm(vec3 ypbpr) {
+    vec3 p = yccbccrc_rgb(ypbpr);
+   	vec3 ro = yccbccrc_rgb(vec3(ypbpr.x, 0.0, 0.0));
+    vec3 rd = normalize(p - ro);
+    vec3 m = 1./rd;
+    vec3 b = 0.5*abs(m)-m*(ro - 0.5);
+    float tF = min(min(b.x,b.y),b.z);
+    p = ro + rd * tF * max(abs(ypbpr.y),abs(ypbpr.z)) * 2.0;
+	return rgb_yccbccrc(p);
+}
+
+vec3 ycocg_norm(vec3 ycocg) {
+    vec3 p = ycocg_rgb(ycocg);
+   	vec3 ro = ycocg_rgb(vec3(ycocg.x, 0.0, 0.0));
+    vec3 rd = normalize(p - ro);
+    vec3 m = 1./rd;
+    vec3 b = 0.5*abs(m)-m*(ro - 0.5);
+    float tF = min(min(b.x,b.y),b.z);
+    p = ro + rd * tF * max(abs(ycocg.y),abs(ycocg.z)) * 2.0;
+	return rgb_ycocg(p);
+}
+
+//----------------------------------------------------------------------------
+
+
+///////////////////////////////////////////////////////////////////////
+// B C H
+///////////////////////////////////////////////////////////////////////
+// from: https://www.shadertoy.com/view/lsVGz1
+vec3 rgb2DEF(vec3 _col){
+  mat3 XYZ; // Adobe RGB (1998)
+  XYZ[0] = vec3(0.5767309, 0.1855540, 0.1881852);
+  XYZ[1] = vec3(0.2973769, 0.6273491, 0.0752741);
+  XYZ[2] = vec3(0.0270343, 0.0706872, 0.9911085);
+  mat3 DEF;
+  DEF[0] = vec3(0.2053, 0.7125, 0.4670);
+  DEF[1] = vec3(1.8537, -1.2797, -0.4429);
+  DEF[2] = vec3(-0.3655, 1.0120, -0.6104);
+
+  vec3 xyz = _col.rgb * XYZ;
+  vec3 def = xyz * DEF;
+  return def;
+}
+
+vec3 def2RGB(vec3 _def){
+  mat3 XYZ;
+  XYZ[0] = vec3(0.6712, 0.4955, 0.1540);
+  XYZ[1] = vec3(0.7061, 0.0248, 0.5223);
+  XYZ[2] = vec3(0.7689, -0.2556, -0.8645);
+  mat3 RGB; // Adobe RGB (1998)
+  RGB[0] = vec3(2.0413690, -0.5649464, -0.3446944);
+  RGB[1] = vec3(-0.9692660, 1.8760108, 0.0415560);
+  RGB[2] = vec3(0.0134474, -0.1183897, 1.0154096);
+
+  vec3 xyz = _def * XYZ;
+  vec3 rgb = xyz * RGB;
+  return rgb;
+}
+float getB(vec3 _def){
+    float b = sqrt((_def.r*_def.r) + (_def.g*_def.g) + (_def.b*_def.b));
+    return b;
+}
+float getC(vec3 _def){
+    vec3 def_D = vec3(1.,0.,0.);
+    float C = atan(length(cross(_def,def_D)), dot(_def,def_D));
+    return C;
+}
+float getH(vec3 _def){
+    vec3 def_E_axis = vec3(0.,1.,0.);
+    float H = atan(_def.z, _def.y) - atan(def_E_axis.z, def_E_axis.y) ;
+    return H;
+}
+// RGB 2 BCH
+vec3 rgb2BCH(vec3 _col){
+  vec3 DEF = rgb2DEF(_col);
+  float B = getB(DEF);
+  float C = getC(DEF);
+  float H = getH(DEF);
+  return vec3(B,C,H);
+}
+// BCH 2 RGB
+vec3 bch2RGB(vec3 _bch){
+  vec3 def;
+  def.x = _bch.x * cos(_bch.y);
+  def.y = _bch.x * sin(_bch.y) * cos(_bch.z);
+  def.z = _bch.x * sin(_bch.y) * sin(_bch.z);
+  vec3 rgb = def2RGB(def);
+  return rgb;
+}
+
+// BRIGHTNESS
+vec3 Brightness(vec3 _col, float _f){
+  vec3 BCH = rgb2BCH(_col);
+  vec3 b3 = vec3(BCH.x,BCH.x,BCH.x);
+  float x = pow((_f + 1.)/2.,2.);
+  x = _f;
+  _col = _col + (b3 * x)/3.;
+  return _col;
+}
+
+// CONTRAST
+// simple contrast
+// needs neighboring brightness values for higher accuracy
+vec3 Contrast(vec3 _col, float _f){
+  vec3 def = rgb2DEF(_col);
+  float B = getB(def);
+  float C = getC(def);
+  float H = getH(def);
+
+  B = B * pow(B*(1.-C), _f);
+
+  def.x = B * cos(C);
+  def.y = B * sin(C) * cos(H);
+  def.z = B * sin(C) * sin(H);
+
+  _col.rgb = def2RGB(def);
+  return _col;
+}
+
+vec3 Hue(vec3 _col, float _f){
+  vec3 BCH = rgb2BCH(_col);
+  BCH.z += _f * 3.1459 * 2.;
+  BCH = bch2RGB(BCH);
+  return BCH;
+}
+
+vec3 Saturation(vec3 _col, float _f){
+  vec3 BCH = rgb2BCH(_col);
+  BCH.y *= (_f + 1.);
+  BCH = bch2RGB(BCH);
+  return BCH;
+}
+
+///////////////////////////////////////////////////////////////////////
+// chromamax colorspace from : https://www.shadertoy.com/view/3lS3Wy
+#define max3(a) max(a.x, max(a.y, a.z))
+
+vec4 rgb2cm(vec3 rgb){
+	float maximum = max3(rgb);
+    return vec4(rgb / max(maximum, 1e-32) - maximum, exp2(-maximum));
+}
+
+vec3 cm2rgb(vec4 cm){
+    float maximum = -log2(cm.a);
+	return clamp(cm.rgb + maximum, 0.0, 1.0) * maximum;
+}
 
 
 
@@ -417,7 +709,9 @@ void main()
 
   // store the processed result back to the image
   // imageStore(current, ivec2(gl_GlobalInvocationID.xy), write); // this is what will be used once the rest is implemented
-  // imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
-  uvec4 temp = uvec4(255*get_blue(), 255);
-  imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp);
+  imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
+
+  // write dither pattern to render texture
+  // uvec4 temp = uvec4(255*get_blue(), 255);
+  // imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp);
 }

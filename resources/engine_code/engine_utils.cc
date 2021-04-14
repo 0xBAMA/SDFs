@@ -397,26 +397,26 @@ void engine::gl_setup() {
 
   {//  blue noise dither pattern, adapted from https://gist.github.com/kajott/d9f9bb93043040bfe2f48f4f499903d8
     // values in the range 0-255
-    // std::vector<uint8_t> bluepatternbig = gen_blue_noise();
+    std::vector<uint8_t> bluepatternbig = gen_blue_noise();
 
-    std::vector<uint8_t> bluepatternr = gen_blue_noise();
-    std::vector<uint8_t> bluepatterng = gen_blue_noise();
-    std::vector<uint8_t> bluepatternb = gen_blue_noise();
-    std::vector<uint8_t> bluepatterna = gen_blue_noise();
+    // std::vector<uint8_t> bluepatternr = gen_blue_noise();
+    // std::vector<uint8_t> bluepatterng = gen_blue_noise();
+    // std::vector<uint8_t> bluepatternb = gen_blue_noise();
+    // std::vector<uint8_t> bluepatterna = gen_blue_noise();
 
-    // #define map(x,y) bluepatternbig[x+(128*y)]
-    #define map(x,y,pattern) pattern[x+(128*y)]
+    #define map(x,y) bluepatternbig[x+(128*y)]
+    // #define map(x,y,pattern) pattern[x+(64*y)]
 
     for(size_t x = 0; x < 64; x++)
       for(size_t y = 0; y < 64; y++)
       {
-        // pattern.push_back(map(x,y));
-        // pattern.push_back(map(x+64,y));
-        // pattern.push_back(map(x+64,y+64));
-        pattern.push_back(map(x,y,bluepatternr));
-        pattern.push_back(map(x,y,bluepatterng));
-        pattern.push_back(map(x,y,bluepatternb));
-        pattern.push_back(map(x,y,bluepatterna));
+        pattern.push_back(map(x,y));
+        pattern.push_back(map(x+64,y));
+        pattern.push_back(map(x+64,y+64));
+        // pattern.push_back(map(x,y,bluepatternr));
+        // pattern.push_back(map(x,y,bluepatterng));
+        // pattern.push_back(map(x,y,bluepatternb));
+        // pattern.push_back(map(x,y,bluepatterna));
       }
 
     #undef map
@@ -429,7 +429,7 @@ void engine::gl_setup() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, &pattern[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
     glBindImageTexture(1, dither_bayer, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
   }
 
@@ -486,10 +486,25 @@ void engine::control_window()
     ImGui::Text("");
     ImGui::ColorEdit3("Clear Color", (float*)&clear_color);
     ImGui::Text("");
+    ImGui::ColorEdit3("Basic Diffuse", (float*)&basic_diffuse);
+    ImGui::Text("");
     ImGui::Text("Lights");
     ImGui::ColorEdit3("Light 1 Color", (float*)&lightCol1);
     ImGui::ColorEdit3("Light 2 Color", (float*)&lightCol2);
     ImGui::ColorEdit3("Light 3 Color", (float*)&lightCol3);
+    ImGui::Text("");
+    ImGui::SliderFloat("Light 1 X", &lightPos1.x, -10.f, 10.f, "%.3f");
+    ImGui::SliderFloat("Light 1 Y", &lightPos1.y, -10.f, 10.f, "%.3f");
+    ImGui::SliderFloat("Light 1 Z", &lightPos1.z, -10.f, 10.f, "%.3f");
+    ImGui::Text("");
+    ImGui::SliderFloat("Light 2 X", &lightPos2.x, -10.f, 10.f, "%.3f");
+    ImGui::SliderFloat("Light 2 Y", &lightPos2.y, -10.f, 10.f, "%.3f");
+    ImGui::SliderFloat("Light 2 Z", &lightPos2.z, -10.f, 10.f, "%.3f");
+    ImGui::Text("");
+    ImGui::SliderFloat("Light 3 X", &lightPos3.x, -10.f, 10.f, "%.3f");
+    ImGui::SliderFloat("Light 3 Y", &lightPos3.y, -10.f, 10.f, "%.3f");
+    ImGui::SliderFloat("Light 3 Z", &lightPos3.z, -10.f, 10.f, "%.3f");
+
     ImGui::EndTabItem();
   }
 
@@ -541,10 +556,18 @@ void engine::draw_everything() {
   glUniform3f(glGetUniformLocation(raymarch_shader, "basis_y"), basis_y.x, basis_y.y, basis_y.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "basis_z"), basis_z.x, basis_z.y, basis_z.z);
 
+  // basic diffuse color
+  glUniform3f(glGetUniformLocation(raymarch_shader, "basic_diffuse"), basic_diffuse.x, basic_diffuse.y, basic_diffuse.z);
+
   // send light information to the raymarch shader
+  // color
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1"), lightCol1.x, lightCol1.y, lightCol1.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2"), lightCol2.x, lightCol2.y, lightCol2.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3"), lightCol3.x, lightCol3.y, lightCol3.z);
+  // position
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos1"), lightPos1.x, lightPos1.y, lightPos1.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), lightPos2.x, lightPos2.y, lightPos2.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos3"), lightPos3.x, lightPos3.y, lightPos3.z);
 
   // send position to the raymarch shader
   glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);
