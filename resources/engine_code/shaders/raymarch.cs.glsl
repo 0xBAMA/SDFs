@@ -1017,9 +1017,11 @@ void main()
 
         vec2 pixcoord = (vec2(gl_GlobalInvocationID.xy + offset)-vec2(imageSize(current)/2.)) / vec2(imageSize(current)/2.);
         vec3 ro = ray_origin;
-        // vec3 rd = normalize(2.*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // 'correct' based on 512x256
-        // vec3 rd = normalize((5./3.)*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // 'correct' based on 400x240
-        vec3 rd = normalize(1.618*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z); // kinda like this better
+
+        float aspect_ratio;
+        // aspect_ratio = 1.618;
+        aspect_ratio = float(imageSize(current).x) / float(imageSize(current).y);
+        vec3 rd = normalize(aspect_ratio*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
 
         float dresult = raymarch(ro, rd);
 
@@ -1058,6 +1060,8 @@ void main()
     }
 
     col.rgb /= float(AA*AA);
+
+    // potentially tonemap + gamma correct here, because the imageStore will be quantizing to 8 bit
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }

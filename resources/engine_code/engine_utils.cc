@@ -390,7 +390,7 @@ void engine::gl_setup() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, &pattern[0]);
-    glBindImageTexture(1, dither_bayer, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    // glBindImageTexture(1, dither_bayer, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
   }
 
   pattern.clear(); // zero out
@@ -430,7 +430,7 @@ void engine::gl_setup() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, &pattern[0]);
-    glBindImageTexture(1, dither_bayer, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    // glBindImageTexture(2, dither_blue, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
   }
 
 //  ╔═╗┌─┐┌┬┐┌─┐┬ ┬┌┬┐┌─┐  ╔═╗┬ ┬┌─┐┌┬┐┌─┐┬─┐┌─┐
