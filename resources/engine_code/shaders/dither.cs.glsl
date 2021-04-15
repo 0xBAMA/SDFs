@@ -818,12 +818,14 @@ vec3 get_rgb_triangle(){
 
 // switch on desired noise pattern
 vec3 get_noise(){
+    vec3 noise = vec3(0);
     switch(noise_function){
         case 0:
             break;
         default:
             break;
     }
+    return noise;
 }
 
 
@@ -838,30 +840,114 @@ vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.c
 }
 
 // do some #define statements to make the below switch statements more legible
+#define NONE      0 // no dithering
+#define RGB       1
+#define SRGB      2
+#define XYZ       3
+#define XYY       4
+#define HSV       5
+#define HSL       6
+#define HCY       7
+#define YPBPR     8
+#define YPBPR601  9
+#define YCBCR     10
+#define YCCBCCRC  11
+#define YCOCG     12
+#define BCH       13
+#define CHROMAMAX 14
+#define OKLAB     15
+
 
 // these next two functions rely on uniform colorspace selector
 vec4 convert(uvec4 value){
+  vec4 converted = vec4(0);
   switch(spaceswitch)
   {
-    case 0: // blah
+    case NONE: // blah
       break;
+
+    case RGB:
+      break;
+    case SRGB:
+      break;
+    case XYZ:
+      break;
+    case XYY:
+      break;
+    case HSV:
+      break;
+    case HSL:
+      break;
+    case HCY:
+      break;
+    case YPBPR:
+      break;
+    case YPBPR601:
+      break;
+    case YCBCR:
+      break;
+    case YCCBCCRC:
+      break;
+    case YCOCG:
+      break;
+    case BCH:
+      break;
+    case CHROMAMAX:
+      break;
+    case OKLAB:
+      break;
+
+
     default:
       break;
   }
-  return vec4(0);
+  return concverted;
 }
 
 // takes in a value in the globally indicated colorspace
 // returns a uvec4 which is ready to be written as 8-bit RGBA
 uvec4 convert_back(vec4 value){
+  uvec4 converted = uvec4(0);
   switch(spaceswitch)
   {
     case 0: // blah
       break;
-    default:
+
+    case RGB:
+      break;
+    case SRGB:
+      break;
+    case XYZ:
+      break;
+    case XYY:
+      break;
+    case HSV:
+      break;
+    case HSL:
+      break;
+    case HCY:
+      break;
+    case YPBPR:
+      break;
+    case YPBPR601:
+      break;
+    case YCBCR:
+      break;
+    case YCCBCCRC:
+      break;
+    case YCOCG:
+      break;
+    case BCH:
+      break;
+    case CHROMAMAX:
+      break;
+    case OKLAB:
+      break;
+
+   default:
       break;
   }
-  return uvec4(0);
+  return converted;
 }
 
 vec4 process(vec4 value){
