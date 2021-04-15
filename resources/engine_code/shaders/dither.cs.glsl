@@ -705,12 +705,15 @@ vec3 linear_srgb_from_oklab(vec3 c) {
 
 
 
-vec3 get_bayer(){
-  return texture(bayer_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(bayer_dither_pattern, 0).r)).xyz;
+float get_bayer(){
+  return texture(bayer_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(bayer_dither_pattern, 0).r)).r;
 }
 
-vec3 get_blue(){
-  return texture(blue_noise_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(blue_noise_dither_pattern, 0).r)).xyz;
+float get_blue(){
+  float read = texture(blue_noise_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(blue_noise_dither_pattern, 0).r)).r;
+  const float c_goldenRatioConjugate = 0.61803398875;
+
+  return fract(read+float(frame%256)*c_goldenRatioConjugate);
 }
 
 // vec3 get_noise()
@@ -777,9 +780,9 @@ void main()
   imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
 
   // write dither pattern to render texture
-  uvec4 temp = uvec4(255*get_blue(), 255);
+  uvec4 temp = uvec4(255*vec3(get_blue()), 255);
   // uvec4 temp = uvec4(255*get_bayer(), 255);
 
-  temp.rgb = (temp.rgb >> 7) << 7; // bitcrush logic is still going to be viable
+  // temp.rgb = (temp.rgb >> 7) << 7; // bitcrush logic is still going to be viable
   imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp);
 }
