@@ -713,6 +713,9 @@ vec3 get_blue(){
   return texture(blue_noise_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(blue_noise_dither_pattern, 0).r)).xyz;
 }
 
+// vec3 get_noise()
+
+
 vec4 bitcrush_reduce(vec4 value){ // this is my old method
   return vec4(0);
 }
