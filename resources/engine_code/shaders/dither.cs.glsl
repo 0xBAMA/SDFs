@@ -10,7 +10,7 @@ layout( binding = 2 ) uniform sampler2D blue_noise_dither_pattern;
 // bayer is static, but blue cycles over time, like https://www.shadertoy.com/view/wlGfWG
 uniform int spaceswitch; // what color space
 uniform int dithermode; // methodology (bitcrush blue, bitcrush bayer, exponential blue, exponential bayer)
-uniform int frame;     // used to cycle the blue noise values over time
+uniform uint frame;    // used to cycle the blue noise values over time
 
 //  ╔═╗┌─┐┬  ┌─┐┬─┐┌─┐┌─┐┌─┐┌─┐┌─┐  ╔═╗┌─┐┌┐┌┬  ┬┌─┐┬─┐┌─┐┬┌─┐┌┐┌  ╔═╗┬ ┬┌┐┌┌─┐┌┬┐┬┌─┐┌┐┌┌─┐
 //  ║  │ ││  │ │├┬┘└─┐├─┘├─┤│  ├┤   ║  │ ││││└┐┌┘├┤ ├┬┘└─┐││ ││││  ╠╣ │ │││││   │ ││ ││││└─┐
@@ -27,21 +27,7 @@ GLSL Color Space Utility Functions
 -------------------------------------------------------------------------------
 The MIT License (MIT)
 Copyright (c) 2015
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -------------------------------------------------------------------------------
 Most formulars / matrices are from:
 https://en.wikipedia.org/wiki/SRGB
@@ -627,6 +613,7 @@ vec3 Saturation(vec3 _col, float _f){
 
 ///////////////////////////////////////////////////////////////////////
 // chromamax colorspace from : https://www.shadertoy.com/view/3lS3Wy
+// note that this one uses a four channel represntation
 #define max3(a) max(a.x, max(a.y, a.z))
 
 vec4 rgb2cm(vec3 rgb){
@@ -726,14 +713,15 @@ vec3 get_blue(){
   return texture(blue_noise_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(blue_noise_dither_pattern, 0).r)).xyz;
 }
 
-vec4 bitcrush_reduce(vec4 value){
+vec4 bitcrush_reduce(vec4 value){ // this is my old method
   return vec4(0);
 }
 
-// trying a new dithering method now based on the above linked shadertoy example (exponential)
 vec4 exponential_reduce(vec4 value){
   return vec4(0);
 }
+
+// do some #define statements to make the below switch statements more legible
 
 // these two functions rely on global state (spaceswitch)
 vec4 convert(uvec4 value){
@@ -786,6 +774,9 @@ void main()
   imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
 
   // write dither pattern to render texture
-  // uvec4 temp = uvec4(255*get_blue(), 255);
-  // imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp);
+  uvec4 temp = uvec4(255*get_blue(), 255);
+  // uvec4 temp = uvec4(255*get_bayer(), 255);
+
+  temp.rgb = (temp.rgb >> 7) << 7; // bitcrush logic is still going to be viable
+  imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp);
 }

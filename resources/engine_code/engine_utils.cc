@@ -588,6 +588,10 @@ void engine::draw_everything() {
   //  - needs to know mode, and also frame number to cycle the blue noise
   glUseProgram(dither_shader);
 
+  static unsigned int frame = 0;
+  frame++; // increment
+  glUniform1ui(glGetUniformLocation(dither_shader, "frame"), frame); // send
+
   // invoke on the GPU
   glDispatchCompute( WIDTH/8, HEIGHT/8, 1 );
 
