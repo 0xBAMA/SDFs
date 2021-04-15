@@ -8,9 +8,12 @@ layout( binding = 1 ) uniform sampler2D bayer_dither_pattern;
 layout( binding = 2 ) uniform sampler2D blue_noise_dither_pattern;
 
 // bayer is static, but blue cycles over time, like https://www.shadertoy.com/view/wlGfWG
-uniform int spaceswitch; // what color space
-uniform int dithermode; // methodology (bitcrush blue, bitcrush bayer, exponential blue, exponential bayer)
-uniform uint frame;    // used to cycle the blue noise values over time
+uniform uint spaceswitch;      // what color space does the dithering take place in
+uniform uint dithermode;      // methodology (bitcrush, exponential)
+uniform uint noise_function; // dither pattern being used
+uniform uint frame;         // used to cycle the blue noise values over time
+
+uniform uint bits;        // how many bits to quantize to?
 
 //  ╔═╗┌─┐┬  ┌─┐┬─┐┌─┐┌─┐┌─┐┌─┐┌─┐  ╔═╗┌─┐┌┐┌┬  ┬┌─┐┬─┐┌─┐┬┌─┐┌┐┌  ╔═╗┬ ┬┌┐┌┌─┐┌┬┐┬┌─┐┌┐┌┌─┐
 //  ║  │ ││  │ │├┬┘└─┐├─┘├─┤│  ├┤   ║  │ ││││└┐┌┘├┤ ├┬┘└─┐││ ││││  ╠╣ │ │││││   │ ││ ││││└─┐
@@ -705,31 +708,138 @@ vec3 linear_srgb_from_oklab(vec3 c) {
 
 
 
-float get_bayer(){
-  return texture(bayer_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(bayer_dither_pattern, 0).r)).r;
+vec3 get_bayer(){
+  return texture(bayer_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(bayer_dither_pattern, 0).r)).rrr;
 }
 
-float get_blue(){
-  float read = texture(blue_noise_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(blue_noise_dither_pattern, 0).r)).r;
-  const float c_goldenRatioConjugate = 0.61803398875;
-
-  return fract(read+float(frame%256)*c_goldenRatioConjugate);
+vec3 get_static_monochrome_blue(){
+  return texture(blue_noise_dither_pattern, gl_GlobalInvocationID.xy/float(textureSize(blue_noise_dither_pattern, 0).r)).rrr;
 }
 
-// vec3 get_noise()
+const float c_goldenRatioConjugate = 0.61803398875;
+
+vec3 get_static_rgb_blue(){
+  vec3 read = get_static_monochrome_blue();
+
+  vec3 result = vec3(fract(read.x+c_goldenRatioConjugate),
+                     fract(read.y+2.*c_goldenRatioConjugate),
+                     fract(read.z+5.*c_goldenRatioConjugate));
+
+  return result;
+}
+
+vec3 get_cycled_monochrome_blue(){
+  vec3 read = get_static_monochrome_blue();
+
+  return vec3(fract(read+float(frame%256)*c_goldenRatioConjugate));
+}
+
+vec3 get_cycled_rgb_blue(){
+  vec3 read = get_static_monochrome_blue();
+
+  vec3 result = vec3(fract(read.x+float(frame%256)*c_goldenRatioConjugate),
+                     fract(read.y+float((frame+1)%256)*c_goldenRatioConjugate),
+                     fract(read.z+float((frame+2)%256)*c_goldenRatioConjugate));
+
+  return result;
+}
+
+// the next six noise functions are from https://www.shadertoy.com/view/llVGzG
+// uniform noise
+vec3 get_uniform_noise(){
+  return vec3(fract(sin(dot(gl_GlobalInvocationID.xy, vec2(12.9898, 78.233))) * 43758.5453));
+}
+
+// interleaved gradient noise
+vec3 get_interleaved_gradient_noise(){
+  // Jimenez 2014, "Next Generation Post-Processing in Call of Duty"
+  float f = 0.06711056 * gl_GlobalInvocationID.x + 0.00583715 * gl_GlobalInvocationID.y;
+  return vec3(fract(52.9829189 * fract(f)));
+}
+
+// vlachos
+vec3 get_vlachos(){
+  vec3 noise = vec3(dot(vec2(171.0, 231.0), gl_GlobalInvocationID.xy));
+  return fract(noise / vec3(103.0, 71.0, 97.0));
+}
+
+// triangle helper functions
+float triangleNoise(const vec2 n) {
+    // triangle noise, in [-0.5..1.5[ range
+    vec2 p = fract(n * vec2(5.3987, 5.4421));
+    p += dot(p.yx, p.xy + vec2(21.5351, 14.3137));
+
+    float xy = p.x * p.y;
+    // compute in [0..2[ and remap to [-1.0..1.0[
+    float noise = (fract(xy * 95.4307) + fract(xy * 75.04961) - 1.0);
+    //noise = sign(noise) * (1.0 - sqrt(1.0 - abs(noise)));
+	return noise;
+}
+
+float triangleRemap(float n) {
+    float origin = n * 2.0 - 1.0;
+    float v = origin / sqrt(abs(origin));
+    v = max(-1.0, v);
+    v -= sign(origin);
+    return v;
+}
+
+vec3 triangleRemap(const vec3 n) {
+    return vec3(
+        triangleRemap(n.x),
+        triangleRemap(n.y),
+        triangleRemap(n.z)
+    );
+}
+
+// vlachos triangle distribution
+vec3 get_vlachos_triangle(){
+    // Vlachos 2016, "Advanced VR Rendering"
+    vec3 noise = vec3(dot(vec2(171.0, 231.0), gl_GlobalInvocationID.xy));
+    noise = fract(noise / vec3(103.0, 71.0, 97.0));
+    return triangleRemap(noise);
+}
+
+// triangle noise monochrome
+vec3 get_monochrome_triangle(){
+    // Gjøl 2016, "Banding in Games: A Noisy Rant"
+    return vec3(triangleNoise(vec2(gl_GlobalInvocationID.xy) / vec2(gl_WorkGroupSize.xy)));
+}
+
+// triangle noise RGB
+vec3 get_rgb_triangle(){
+    return vec3(triangleNoise(vec2(gl_GlobalInvocationID.xy) / vec2(gl_WorkGroupSize.xy)),
+                triangleNoise(vec2(gl_GlobalInvocationID.xy) / vec2(gl_WorkGroupSize.xy + 0.1337)),
+                triangleNoise(vec2(gl_GlobalInvocationID.xy) / vec2(gl_WorkGroupSize.xy + 0.3141)));
+}
 
 
+
+
+// switch on desired noise pattern
+vec3 get_noise(){
+    switch(noise_function){
+        case 0:
+            break;
+        default:
+            break;
+    }
+}
+
+
+// several methods for reducing precision (quantizing)
 vec4 bitcrush_reduce(vec4 value){ // this is my old method
   return vec4(0);
 }
 
-vec4 exponential_reduce(vec4 value){
-  return vec4(0);
+vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.com/view/4sKBWR
+    // looks like it is very similar to romainguy's method https://www.shadertoy.com/view/llVGzG
+    return vec4(0);
 }
 
 // do some #define statements to make the below switch statements more legible
 
-// these two functions rely on global state (spaceswitch)
+// these next two functions rely on uniform colorspace selector
 vec4 convert(uvec4 value){
   switch(spaceswitch)
   {
@@ -777,12 +887,8 @@ void main()
 
   // store the processed result back to the image
   // imageStore(current, ivec2(gl_GlobalInvocationID.xy), write); // this is what will be used once the rest is implemented
-  imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
+  // imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
 
-  // write dither pattern to render texture
-  uvec4 temp = uvec4(255*vec3(get_blue()), 255);
-  // uvec4 temp = uvec4(255*get_bayer(), 255);
-
-  // temp.rgb = (temp.rgb >> 7) << 7; // bitcrush logic is still going to be viable
-  imageStore(current, ivec2(gl_GlobalInvocationID.xy), temp);
+  vec3 temp = get_cycled_rgb_blue();
+  imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255*temp.r, 255*temp.g, 255*temp.b, 255)); // for now just write the same value back
 }
