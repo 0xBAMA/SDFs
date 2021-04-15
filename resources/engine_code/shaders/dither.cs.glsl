@@ -814,7 +814,7 @@ vec3 get_rgb_triangle(){
 }
 
 
-
+// #defines to simplify the switch in the get_noise function
 
 // switch on desired noise pattern
 vec3 get_noise(){
@@ -850,12 +850,13 @@ vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.c
 #define HCY       7
 #define YPBPR     8
 #define YPBPR601  9
-#define YCBCR     10
-#define YCCBCCRC  11
-#define YCOCG     12
-#define BCH       13
-#define CHROMAMAX 14
-#define OKLAB     15
+#define YCBCR1    10
+#define YCBCR2    11
+#define YCCBCCRC  12
+#define YCOCG     13
+#define BCH       14
+#define CHROMAMAX 15
+#define OKLAB     16
 
 
 // these next two functions rely on uniform colorspace selector
@@ -884,7 +885,9 @@ vec4 convert(uvec4 value){
       break;
     case YPBPR601:
       break;
-    case YCBCR:
+    case YCBCR1:
+      break;
+    case YCBCR2:
       break;
     case YCCBCCRC:
       break;
@@ -931,7 +934,9 @@ uvec4 convert_back(vec4 value){
       break;
     case YPBPR601:
       break;
-    case YCBCR:
+    case YCBCR1:
+      break;
+    case YCBCR2:
       break;
     case YCCBCCRC:
       break;
