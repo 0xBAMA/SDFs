@@ -3,6 +3,43 @@
 
 #include "includes.h"
 
+// These defines are used to simplify the ImGui::Combo things in engine_utils.cc
+ 
+// colorspace
+#define RGB       1
+#define SRGB      2
+#define XYZ       3
+#define XYY       4
+#define HSV       5
+#define HSL       6
+#define HCY       7
+#define YPBPR     8
+#define YPBPR601  9
+#define YCBCR1    10
+#define YCBCR2    11
+#define YCCBCCRC  12
+#define YCOCG     13
+#define BCH       14
+#define CHROMAMAX 15
+#define OKLAB     16
+
+// dither pattern
+#define BAYER             1
+#define STATIC_MONO_BLUE  2
+#define STATIC_RGB_BLUE   3
+#define CYCLED_MONO_BLUE  4
+#define CYCLED_RGB_BLUE   5
+#define UNIFORM           6
+#define INTERLEAVED_GRAD  7
+#define VLACHOS           8
+#define TRIANGLE_VLACHOS  9
+#define TRIANGLE_MONO     10
+#define TRIANGLE_RGB      11
+
+// dither methodology
+#define BITCRUSH      1
+#define EXPONENTIAL   2
+
 class engine
 {
 public:
@@ -55,6 +92,14 @@ private:
 	// position
 	glm::vec3 position = glm::vec3(-4.232554, 1.761511, 14.585515);
 
+
+
+    int current_colorspace = RGB;
+    int current_noise_func = BAYER;
+    int current_dither_mode = BITCRUSH;
+
+	int num_bits = 4; 
+		
 // main loop functions
 	void create_window();
 	void gl_setup();

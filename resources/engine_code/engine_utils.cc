@@ -143,7 +143,7 @@ void engine::create_window() {
   cout << "creating window...";
 
   window = SDL_CreateWindow(
-      "Raymarcher", 0, 0, WIDTH*2, HEIGHT*2,
+      "Raymarcher", 0, 0, WIDTH*3, HEIGHT*3,
       SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
   SDL_ShowWindow(window);
 
@@ -206,7 +206,7 @@ void engine::create_window() {
   ImVec4 *colors = ImGui::GetStyle().Colors;
   colors[ImGuiCol_Text] = ImVec4(0.67f, 0.50f, 0.16f, 1.00f);
   colors[ImGuiCol_TextDisabled] = ImVec4(0.33f, 0.27f, 0.16f, 1.00f);
-  colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.05f, 0.00f, 0.85f);
+  colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.05f, 0.00f, 1.00f);
   colors[ImGuiCol_ChildBg] = ImVec4(0.23f, 0.17f, 0.02f, 0.05f);
   colors[ImGuiCol_PopupBg] = ImVec4(0.30f, 0.12f, 0.06f, 0.94f);
   colors[ImGuiCol_Border] = ImVec4(0.25f, 0.18f, 0.09f, 0.33f);
@@ -462,7 +462,7 @@ void engine::control_window()
   ImGui::Begin("Controls", NULL, 0);
   ImGui::BeginTabBar("", ImGuiTabBarFlags_TabListPopupButton | ImGuiTabBarFlags_FittingPolicyScroll );
 
-  if(ImGui::BeginTabItem("Controls"))
+  if(ImGui::BeginTabItem("Raymarcher Controls"))
   {
     ImGui::Text("");
     ImGui::ColorEdit3("Clear Color", (float*)&clear_color);
@@ -486,24 +486,40 @@ void engine::control_window()
     ImGui::SliderFloat("Light 3 Y", &lightPos3.y, -10.f, 10.f, "%.3f");
     ImGui::SliderFloat("Light 3 Z", &lightPos3.z, -10.f, 10.f, "%.3f");
 
+    // const char* tonemapping [] = {}; // are we doing tonemapping? not sure it makes sense, nothing implemented in the raymarch shader yet
+    // ImGui::Combo(" Tonemapping ", blah blah tonemapping mode);
+     
     ImGui::EndTabItem();
   }
 
-  if(ImGui::BeginTabItem("Dither Patterns"))
+  if(ImGui::BeginTabItem("Dither Parameters"))
   {
-    ImGui::Text(" BAYER PATTERN");
-    ImGui::SameLine();
-    HelpMarker("This is used for ordered dithering. It is a static dither pattern, with identifiable artifacts.");
-    ImGui::Text("  ");
-    ImGui::SameLine();
-    ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(256,256));
 
-    ImGui::Text(" BLUE NOISE PATTERN");
-    ImGui::SameLine();
-    HelpMarker("This uses blue noise generated during the initialization, and the use in the shader is cycled over time using the golden ratio.");
-    ImGui::Text("  ");
-    ImGui::SameLine();
-    ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(256,256));
+    const char* colorspaces [] = { " NONE ", " RGB ", " SRGB ", " XYZ ", " XYY ", " HSV ", " HSL ", " HCY ", " YPBPR ", " YPBPR601 ", " YCBCR1 ", " YCBCR2 ", " YCCBCCRC ", " YCOCG ", " BCH ", " CHROMAMAX ", " OKLAB "};
+    const char* noise_funcs [] = { " NONE ", " BAYER ", " STATIC_MONO_BLUE ", " STATIC_RGB_BLUE ", " CYCLED_MONO_BLUE ", " CYCLED_RGB_BLUE ", " UNIFORM ", " INTERLEAVED_GRAD ", " VLACHOS ", " TRIANGLE_VLACHOS ", " TRIANGLE_MONO ", " TRIANGLE_RGB "};
+    const char* dither_mode [] = { " NONE ", " BITCRUSH ", " EXPONENTIAL " };
+
+
+    ImGui::Combo(" Colorspace ", &current_colorspace,  colorspaces, IM_ARRAYSIZE(colorspaces));
+    ImGui::Combo(" Noise ",      &current_noise_func,  noise_funcs, IM_ARRAYSIZE(noise_funcs));
+    ImGui::Combo(" Method ",     &current_dither_mode, dither_mode, IM_ARRAYSIZE(dither_mode));
+
+    ImGui::Text("");
+    ImGui::SliderInt(" Bit Depth ", &num_bits, 0, 8);
+    
+    // ImGui::Text(" BAYER PATTERN");
+    // ImGui::SameLine();
+    // HelpMarker("This is used for ordered dithering. It is a static dither pattern, with identifiable artifacts.");
+    // ImGui::Text("  ");
+    // ImGui::SameLine();
+    // ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(256,256));
+
+    // ImGui::Text(" BLUE NOISE PATTERN");
+    // ImGui::SameLine();
+    // HelpMarker("This uses blue noise generated during the initialization, and the use in the shader is cycled over time using the golden ratio.");
+    // ImGui::Text("  ");
+    // ImGui::SameLine();
+    // ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(256,256));
 
     ImGui::EndTabItem();
   }
@@ -573,11 +589,18 @@ void engine::draw_everything() {
   frame++; // increment
   glUniform1ui(glGetUniformLocation(dither_shader, "frame"), frame); // send
 
+  // parameters controlling the dither process
+  // current_colorspace
+  // current_noise_func
+  // current_dither_mode
+  // num_bits
+
   // invoke on the GPU
   glDispatchCompute( WIDTH/8, HEIGHT/8, 1 );
 
   // sync to ensure the dithered image is in the texture
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
 
   //  ╔╦╗┬┌─┐┌─┐┬  ┌─┐┬ ┬
   //   ║║│└─┐├─┘│  ├─┤└┬┘

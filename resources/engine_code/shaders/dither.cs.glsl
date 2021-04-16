@@ -815,6 +815,18 @@ vec3 get_rgb_triangle(){
 
 
 // #defines to simplify the switch in the get_noise function
+#define BAYER             1
+#define STATIC_MONO_BLUE  2
+#define STATIC_RGB_BLUE   3
+#define CYCLED_MONO_BLUE  4
+#define CYCLED_RGB_BLUE   5
+#define UNIFORM           6
+#define INTERLEAVED_GRAD  7
+#define VLACHOS           8
+#define TRIANGLE_VLACHOS  9
+#define TRIANGLE_MONO     10
+#define TRIANGLE_RGB      11
+
 
 // switch on desired noise pattern
 vec3 get_noise(){
@@ -822,6 +834,30 @@ vec3 get_noise(){
     switch(noise_function){
         case 0:
             break;
+
+        case BAYER:
+            break;
+        case STATIC_MONO_BLUE:
+            break;
+        case STATIC_RGB_BLUE:
+            break;
+        case CYCLED_MONO_BLUE:
+            break;
+        case CYCLED_RGB_BLUE:
+            break;
+        case UNIFORM:
+            break;
+        case INTERLEAVED_GRAD:
+            break;
+        case VLACHOS:
+            break;
+        case TRIANGLE_VLACHOS:
+            break;
+        case TRIANGLE_MONO:
+            break;
+        case TRIANGLE_RGB:
+            break;
+            
         default:
             break;
     }
@@ -830,8 +866,13 @@ vec3 get_noise(){
 
 
 // several methods for reducing precision (quantizing)
-vec4 bitcrush_reduce(vec4 value){ // this is my old method
-  return vec4(0);
+vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
+    ivec4 temp; // note use of signed int for temp, so as to retain top bits (for spaces that use the negative range)
+
+    temp = ivec4(value*255.);
+    temp = temp >> bits << bits;
+    
+    return vec4(temp/255.);
 }
 
 vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.com/view/4sKBWR
@@ -904,7 +945,7 @@ vec4 convert(uvec4 value){
     default:
       break;
   }
-  return concverted;
+  return converted;
 }
 
 // takes in a value in the globally indicated colorspace
