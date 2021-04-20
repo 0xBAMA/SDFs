@@ -836,26 +836,37 @@ vec3 get_noise(){
             break;
 
         case BAYER:
+            noise = get_bayer();
             break;
         case STATIC_MONO_BLUE:
+            noise = get_static_monochrome_blue();
             break;
         case STATIC_RGB_BLUE:
+            noise = get_static_rgb_blue();
             break;
         case CYCLED_MONO_BLUE:
+            noise = get_cycled_monochrome_blue();
             break;
         case CYCLED_RGB_BLUE:
+            noise = get_cycled_rgb_blue();
             break;
         case UNIFORM:
+            noise = get_uniform_noise();
             break;
         case INTERLEAVED_GRAD:
+            noise = get_interleaved_gradient_noise();
             break;
         case VLACHOS:
+            noise = get_vlachos();
             break;
         case TRIANGLE_VLACHOS:
+            noise = get_vlachos_triangle();
             break;
         case TRIANGLE_MONO:
+            noise = get_monochrome_triangle();
             break;
         case TRIANGLE_RGB:
+            noise = get_rgb_triangle();
             break;
             
         default:
@@ -867,7 +878,7 @@ vec3 get_noise(){
 
 // several methods for reducing precision (quantizing)
 vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
-    ivec4 temp; // note use of signed int for temp, so as to retain top bits (for spaces that use the negative range)
+    ivec4 temp; // note use of signed int for temp, so as to retain top bits (for colorspaces that use the negative range)
 
     temp = ivec4(value*255.);
     temp = temp >> bits << bits;
@@ -877,7 +888,10 @@ vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
 
 vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.com/view/4sKBWR
     // looks like it is very similar to romainguy's method https://www.shadertoy.com/view/llVGzG
-    return vec4(0);
+    value = value/255.;
+    float scale = exp2(float(2)) - 1.0;
+    value = floor(value*scale + 0.5f)/scale;
+    return value;
 }
 
 // do some #define statements to make the below switch statements more legible
@@ -1022,5 +1036,7 @@ void main()
   // imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
 
   vec3 temp = get_cycled_rgb_blue();
+  // temp.rgb = bitcrush_reduce(read).rgb;
+  temp.rgb = exponential_reduce(vec4(read)).rgb;
   imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255*temp.r, 255*temp.g, 255*temp.b, 255)); // for now just write the same value back
 }
