@@ -8,12 +8,12 @@ layout( binding = 1 ) uniform sampler2D bayer_dither_pattern;
 layout( binding = 2 ) uniform sampler2D blue_noise_dither_pattern;
 
 // bayer is static, but blue cycles over time, like https://www.shadertoy.com/view/wlGfWG
-uniform uint spaceswitch;      // what color space does the dithering take place in
-uniform uint dithermode;      // methodology (bitcrush, exponential)
-uniform uint noise_function; // dither pattern being used
-uniform uint frame;         // used to cycle the blue noise values over time
+uniform int spaceswitch;      // what color space does the dithering take place in
+uniform int dithermode;      // methodology (bitcrush, exponential)
+uniform int noise_function; // dither pattern being used
+uniform int frame;         // used to cycle the blue noise values over time
 
-uniform uint bits;        // how many bits to quantize to?
+uniform int bits;        // how many bits to quantize to?
 
 //  ╔═╗┌─┐┬  ┌─┐┬─┐┌─┐┌─┐┌─┐┌─┐┌─┐  ╔═╗┌─┐┌┐┌┬  ┬┌─┐┬─┐┌─┐┬┌─┐┌┐┌  ╔═╗┬ ┬┌┐┌┌─┐┌┬┐┬┌─┐┌┐┌┌─┐
 //  ║  │ ││  │ │├┬┘└─┐├─┘├─┤│  ├┤   ║  │ ││││└┐┌┘├┤ ├┬┘└─┐││ ││││  ╠╣ │ │││││   │ ││ ││││└─┐
@@ -878,18 +878,19 @@ vec3 get_noise(){
 
 // several methods for reducing precision (quantizing)
 vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
-    ivec4 temp; // note use of signed int for temp, so as to retain top bits (for colorspaces that use the negative range)
+    uvec4 temp = ivec4(value); // note use of signed int for temp, so as to retain top bits (for colorspaces that use the negative range)
 
-    temp = ivec4(value*255.);
-    temp = temp >> bits << bits;
+    // temp = ivec4(value*255.);
+    temp = temp >> 8-bits << 8-bits;
     
-    return vec4(temp/255.);
+    // return vec4(temp/255.);
+    return vec4(temp);
 }
 
 vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.com/view/4sKBWR
     // looks like it is very similar to romainguy's method https://www.shadertoy.com/view/llVGzG
     value = value/255.;
-    float scale = exp2(float(2)) - 1.0;
+    float scale = exp2(float(bits)) - get_static_monochrome_blue().x;
     value = floor(value*scale + 0.5f)/scale;
     return value;
 }
@@ -917,12 +918,14 @@ vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.c
 // these next two functions rely on uniform colorspace selector
 vec4 convert(uvec4 value){
   vec4 converted = vec4(0);
+  vec4 base_rgbval = vec4(value/255.);
   switch(spaceswitch)
   {
     case NONE: // blah
       break;
 
     case RGB:
+      converted = base_rgbval; 
       break;
     case SRGB:
       break;
@@ -972,6 +975,7 @@ uvec4 convert_back(vec4 value){
       break;
 
     case RGB:
+      converted = uvec4(value*255.);
       break;
     case SRGB:
       break;

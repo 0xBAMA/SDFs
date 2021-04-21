@@ -587,7 +587,8 @@ void engine::draw_everything() {
 
   static unsigned int frame = 0;
   frame++; // increment
-  glUniform1ui(glGetUniformLocation(dither_shader, "frame"), frame); // send
+  glUniform1i(glGetUniformLocation(dither_shader, "frame"), frame); // send
+  glUniform1i(glGetUniformLocation(dither_shader, "bits"), num_bits); 
 
   // parameters controlling the dither process
   // current_colorspace
