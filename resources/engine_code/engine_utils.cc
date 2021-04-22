@@ -486,7 +486,8 @@ void engine::control_window()
     ImGui::SliderFloat("Light 3 Y", &lightPos3.y, -10.f, 10.f, "%.3f");
     ImGui::SliderFloat("Light 3 Z", &lightPos3.z, -10.f, 10.f, "%.3f");
 
-    // const char* tonemapping [] = {}; // are we doing tonemapping? not sure it makes sense, nothing implemented in the raymarch shader yet
+    // selection of tonemapping mode
+    // const char* tonemapping [] = {}; 
     // ImGui::Combo(" Tonemapping ", blah blah tonemapping mode);
      
     ImGui::EndTabItem();
@@ -589,6 +590,9 @@ void engine::draw_everything() {
   frame++; // increment
   glUniform1i(glGetUniformLocation(dither_shader, "frame"), frame); // send
   glUniform1i(glGetUniformLocation(dither_shader, "bits"), num_bits); 
+  glUniform1i(glGetUniformLocation(dither_shader, "spaceswitch"), current_colorspace); 
+  glUniform1i(glGetUniformLocation(dither_shader, "dithermode"), current_dither_mode); 
+  glUniform1i(glGetUniformLocation(dither_shader, "noise_function"), current_noise_func); 
 
   // parameters controlling the dither process
   // current_colorspace

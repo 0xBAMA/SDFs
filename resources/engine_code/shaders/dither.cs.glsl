@@ -876,12 +876,14 @@ vec3 get_noise(){
 }
 
 
-// several methods for reducing precision (quantizing)
+// several methods for reducing precision (quantizing) - note that they are both set up expecting values 0-255
+
 vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
-    uvec4 temp = ivec4(value); // note use of signed int for temp, so as to retain top bits (for colorspaces that use the negative range)
+    uvec4 temp = uvec4(value); // note use of signed int for temp, so as to retain top bits (for colorspaces that use the negative range)
 
     // temp = ivec4(value*255.);
-    temp = temp >> 8-bits << 8-bits;
+    if(bits < 8)
+        temp = temp >> (8-bits) << (8-bits);
     
     // return vec4(temp/255.);
     return vec4(temp);
@@ -890,8 +892,14 @@ vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
 vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.com/view/4sKBWR
     // looks like it is very similar to romainguy's method https://www.shadertoy.com/view/llVGzG
     value = value/255.;
-    float scale = exp2(float(bits)) - get_static_monochrome_blue().x;
-    value = floor(value*scale + 0.5f)/scale;
+    float scaler = exp2(float(bits)) - get_noise().r;
+    float scaleg = exp2(float(bits)) - get_noise().g;
+    float scaleb = exp2(float(bits)) - get_noise().b;
+    float scalea = exp2(float(bits)) - get_noise().r; // hacky, but only one colorspace is 4-channel
+    value.r = floor(value.x*scaler + 0.5f)/scaler;
+    value.g = floor(value.y*scaleg + 0.5f)/scaleg;
+    value.b = floor(value.z*scaleb + 0.5f)/scaleb;
+    value.a = floor(value.w*scalea + 0.5f)/scalea;
     return value;
 }
 
@@ -975,7 +983,7 @@ uvec4 convert_back(vec4 value){
       break;
 
     case RGB:
-      converted = uvec4(value*255.);
+      converted = uvec4(vec3(value*255.), 255);
       break;
     case SRGB:
       break;
@@ -1040,7 +1048,7 @@ void main()
   // imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
 
   vec3 temp = get_cycled_rgb_blue();
-  // temp.rgb = bitcrush_reduce(read).rgb;
+  // temp.rgb = bitcrush_reduce(vec4(read)).rgb;
   temp.rgb = exponential_reduce(vec4(read)).rgb;
   imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255*temp.r, 255*temp.g, 255*temp.b, 255)); // for now just write the same value back
 }
