@@ -879,9 +879,8 @@ vec3 get_noise(){
 
 
 // two methods for reducing precision (quantizing+dither offset) - note that they are both set up expecting values 0.-1.
-
 vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
-    uvec4 temp = uvec4(value);
+    uvec4 temp = uvec4(value*255);
 
     // temp = ivec4(value*255.);
     // if(bits < 8)
@@ -891,7 +890,7 @@ vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
 
     // this needs to be redone - it also needs to call get_noise() locally to do the dither offset
     
-    return vec4(temp);
+    return vec4(temp)/255.;
 }
 
 vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.com/view/4sKBWR
@@ -933,7 +932,7 @@ vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.c
 
 // these next two functions rely on uniform colorspace selector
 vec4 convert(uvec4 value){
-  vec4 converted = vec4(0);
+  vec4 converted = vec4(0,0,0,1);
   vec4 base_rgbval = vec4(value)/255.;
 
   switch(spaceswitch)
@@ -942,36 +941,50 @@ vec4 convert(uvec4 value){
       converted = base_rgbval; 
       break;
     case SRGB:
+      converted.rgb = rgb_to_srgb(base_rgbval.rgb);
       break;
     case XYZ:
+      converted.rgb = rgb_to_xyz(base_rgbval.rgb);
       break;
     case XYY:
+      converted.rgb = rgb_to_xyY(base_rgbval.rgb);
       break;
     case HSV:
+      converted.rgb = rgb_to_hsv(base_rgbval.rgb);
       break;
     case HSL:
+      converted.rgb = rgb_to_hsl(base_rgbval.rgb);
       break;
     case HCY:
+      converted.rgb = rgb_to_hcy(base_rgbval.rgb);
       break;
     case YPBPR:
+      converted.rgb = rgb_ypbpr(base_rgbval.rgb);
       break;
     case YPBPR601:
+      converted.rgb = rgb_ypbpr_bt601(base_rgbval.rgb);
       break;
     case YCBCR1:
+      converted.rgb = rgb_to_ycbcr(base_rgbval.rgb);
       break;
     case YCBCR2:
+      converted.rgb = rgb_ycbcr(base_rgbval.rgb);
       break;
     case YCCBCCRC:
+      converted.rgb = rgb_yccbccrc(base_rgbval.rgb);
       break;
     case YCOCG:
+      converted.rgb = rgb_ycocg(base_rgbval.rgb);
       break;
     case BCH:
+      converted.rgb = rgb2BCH(base_rgbval.rgb);
       break;
     case CHROMAMAX:
+      converted.rgba = rgb2cm(base_rgbval.rgb);
       break;
     case OKLAB:
+      converted.rgb = oklab_from_linear_srgb(base_rgbval.rgb);
       break;
-
     default:
       break;
   }
@@ -981,44 +994,59 @@ vec4 convert(uvec4 value){
 // takes in a value in the globally indicated colorspace
 // returns a uvec4 which is ready to be written as 8-bit RGBA
 uvec4 convert_back(vec4 value){
-  uvec4 converted = uvec4(0);
+  uvec4 converted = uvec4(0,0,0,255);
   switch(spaceswitch)
   {
     case RGB:
       converted = uvec4(vec3(value*255.), 255);
       break;
     case SRGB:
+      converted.rgb = uvec3(srgb_to_rgb(value.rgb)*255);
       break;
     case XYZ:
+      converted.rgb = uvec3(xyz_to_rgb(value.rgb)*255);
       break;
     case XYY:
+      converted.rgb = uvec3(xyY_to_rgb(value.rgb)*255);
       break;
     case HSV:
+      converted.rgb = uvec3(hsv_to_rgb(value.rgb)*255);
       break;
     case HSL:
+      converted.rgb = uvec3(hsl_to_rgb(value.rgb)*255);
       break;
     case HCY:
+      converted.rgb = uvec3(hcy_to_rgb(value.rgb)*255);
       break;
     case YPBPR:
+      converted.rgb = uvec3(ypbpr_rgb(value.rgb)*255);
       break;
     case YPBPR601:
+      converted.rgb = uvec3(ypbpr_rgb_bt601(value.rgb)*255);
       break;
     case YCBCR1:
+      converted.rgb = uvec3(ycbcr_to_rgb(value.rgb)*255);
       break;
     case YCBCR2:
+      converted.rgb = uvec3(ycbcr_rgb(value.rgb)*255);
       break;
     case YCCBCCRC:
+      converted.rgb = uvec3(yccbccrc_rgb(value.rgb)*255);
       break;
     case YCOCG:
+      converted.rgb = uvec3(ycocg_rgb(value.rgb)*255);
       break;
     case BCH:
+      converted.rgb = uvec3(bch2RGB(value.rgb)*255);
       break;
     case CHROMAMAX:
+      converted.rgb = uvec3(cm2rgb(value.rgba)*255);
       break;
     case OKLAB:
+      converted.rgb = uvec3(linear_srgb_from_oklab(value.rgb)*255);
       break;
 
-   default:
+    default:
       break;
   }
   return converted;
@@ -1064,8 +1092,5 @@ void main()
   uvec4 write = convert_back(processed);
 
   // store the processed result back to the image
-  // imageStore(current, ivec2(gl_GlobalInvocationID.xy), write); // this is what will be used once the rest is implemented
-  // imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
-
-  imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255*processed.r, 255*processed.g, 255*processed.b, 255)); // for now just write the same value back
+  imageStore(current, ivec2(gl_GlobalInvocationID.xy), write); 
 }

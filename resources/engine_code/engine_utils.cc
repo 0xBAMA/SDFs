@@ -660,41 +660,41 @@ void engine::draw_everything() {
       }
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w)
-        rotation_about_x -= 0.03;
+        rotation_about_x -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_s)
-        rotation_about_x += 0.03;
+        rotation_about_x += SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a)
-        rotation_about_y -= 0.03;
+        rotation_about_y -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_d)
-        rotation_about_y += 0.03;
+        rotation_about_y += SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_e)
-        rotation_about_z -= 0.03;
+        rotation_about_z -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q)
-        rotation_about_z += 0.03;
+        rotation_about_z += SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_UP)
-        position += 0.07f * basis_z;
+        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_z;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DOWN)
-        position -= 0.07f * basis_z;
+        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_z;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RIGHT)
-        position += 0.07f * basis_x;
+        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_x;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_LEFT)
-        position -= 0.07f * basis_x;
+        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_x;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEUP)
-        position += 0.07f * basis_y;
+        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_y;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEDOWN)
-        position -= 0.07f * basis_y;
+        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_y;
     }
   }
 }
