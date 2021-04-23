@@ -815,6 +815,7 @@ vec3 get_rgb_triangle(){
 
 
 // #defines to simplify the switch in the get_noise function
+#define NONE              0
 #define BAYER             1
 #define STATIC_MONO_BLUE  2
 #define STATIC_RGB_BLUE   3
@@ -830,10 +831,11 @@ vec3 get_rgb_triangle(){
 
 // switch on desired noise pattern
 vec3 get_noise(){
-    vec3 noise = vec3(0);
+    vec3 noise;
     switch(noise_function){
-        case 0:
-            break;
+        case NONE:
+            noise = vec3(0); // this is how dithering is turned 'off'
+            break;          // which will just show the quantized result
 
         case BAYER:
             noise = get_bayer();
@@ -876,62 +878,66 @@ vec3 get_noise(){
 }
 
 
-// several methods for reducing precision (quantizing) - note that they are both set up expecting values 0-255
+// two methods for reducing precision (quantizing+dither offset) - note that they are both set up expecting values 0.-1.
 
 vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
-    uvec4 temp = uvec4(value); // note use of signed int for temp, so as to retain top bits (for colorspaces that use the negative range)
+    uvec4 temp = uvec4(value);
 
     // temp = ivec4(value*255.);
-    if(bits < 8)
-        temp = temp >> (8-bits) << (8-bits);
+    // if(bits < 8)
+        // temp = temp >> (8-bits) << (8-bits);
+
+    vec3 noiseval = get_noise(); // 0.-1.
+
+    // this needs to be redone - it also needs to call get_noise() locally to do the dither offset
     
-    // return vec4(temp/255.);
     return vec4(temp);
 }
 
 vec4 exponential_reduce(vec4 value){ // demofox's method https://www.shadertoy.com/view/4sKBWR
     // looks like it is very similar to romainguy's method https://www.shadertoy.com/view/llVGzG
-    value = value/255.;
+
+    // value = value/255.;
+
     float scaler = exp2(float(bits)) - get_noise().r;
     float scaleg = exp2(float(bits)) - get_noise().g;
     float scaleb = exp2(float(bits)) - get_noise().b;
-    float scalea = exp2(float(bits)) - get_noise().r; // hacky, but only one colorspace is 4-channel
+    float scalea = exp2(float(bits)) - get_noise().r; 
+    
     value.r = floor(value.x*scaler + 0.5f)/scaler;
     value.g = floor(value.y*scaleg + 0.5f)/scaleg;
     value.b = floor(value.z*scaleb + 0.5f)/scaleb;
     value.a = floor(value.w*scalea + 0.5f)/scalea;
+
     return value;
 }
 
 // do some #define statements to make the below switch statements more legible
-#define NONE      0 // no dithering
-#define RGB       1
-#define SRGB      2
-#define XYZ       3
-#define XYY       4
-#define HSV       5
-#define HSL       6
-#define HCY       7
-#define YPBPR     8
-#define YPBPR601  9
-#define YCBCR1    10
-#define YCBCR2    11
-#define YCCBCCRC  12
-#define YCOCG     13
-#define BCH       14
-#define CHROMAMAX 15
-#define OKLAB     16
+#define RGB       0
+#define SRGB      1
+#define XYZ       2
+#define XYY       3
+#define HSV       4
+#define HSL       5
+#define HCY       6
+#define YPBPR     7
+#define YPBPR601  8
+#define YCBCR1    9
+#define YCBCR2    10
+#define YCCBCCRC  11
+#define YCOCG     12
+#define BCH       13
+#define CHROMAMAX 14
+#define OKLAB     15
 
 
 // these next two functions rely on uniform colorspace selector
 vec4 convert(uvec4 value){
   vec4 converted = vec4(0);
-  vec4 base_rgbval = vec4(value/255.);
+  vec4 base_rgbval = vec4(value)/255.;
+
   switch(spaceswitch)
   {
-    case NONE: // blah
-      break;
-
     case RGB:
       converted = base_rgbval; 
       break;
@@ -966,7 +972,6 @@ vec4 convert(uvec4 value){
     case OKLAB:
       break;
 
-
     default:
       break;
   }
@@ -979,9 +984,6 @@ uvec4 convert_back(vec4 value){
   uvec4 converted = uvec4(0);
   switch(spaceswitch)
   {
-    case 0: // blah
-      break;
-
     case RGB:
       converted = uvec4(vec3(value*255.), 255);
       break;
@@ -1026,6 +1028,24 @@ vec4 process(vec4 value){
   // take in converted value (at least one color space uses all four channels)
   // reduce the precision, just numerically (maybe shift up by 0.5 for ycbcr?)
   // processed value ready to be converted from chosen color space back to RGBA
+
+  // switch on methodology
+  switch(dithermode)
+  {
+      case 0:
+          // bitcrush
+          return bitcrush_reduce(value);
+          break;
+
+      case 1:
+          // exponential
+          return exponential_reduce(value);
+          break;
+
+      default:
+          break;
+  }
+    
   return vec4(0);
 }
 
@@ -1047,8 +1067,5 @@ void main()
   // imageStore(current, ivec2(gl_GlobalInvocationID.xy), write); // this is what will be used once the rest is implemented
   // imageStore(current, ivec2(gl_GlobalInvocationID.xy), read); // for now just write the same value back
 
-  vec3 temp = get_cycled_rgb_blue();
-  // temp.rgb = bitcrush_reduce(vec4(read)).rgb;
-  temp.rgb = exponential_reduce(vec4(read)).rgb;
-  imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255*temp.r, 255*temp.g, 255*temp.b, 255)); // for now just write the same value back
+  imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4(255*processed.r, 255*processed.g, 255*processed.b, 255)); // for now just write the same value back
 }

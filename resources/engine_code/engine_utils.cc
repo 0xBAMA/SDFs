@@ -492,9 +492,9 @@ void engine::control_window()
 
   if(ImGui::BeginTabItem("Dither Parameters"))
   {
-    const char* colorspaces [] = { " NONE ", " RGB ", " SRGB ", " XYZ ", " XYY ", " HSV ", " HSL ", " HCY ", " YPBPR ", " YPBPR601 ", " YCBCR1 ", " YCBCR2 ", " YCCBCCRC ", " YCOCG ", " BCH ", " CHROMAMAX ", " OKLAB "};
+    const char* colorspaces [] = { " RGB ", " SRGB ", " XYZ ", " XYY ", " HSV ", " HSL ", " HCY ", " YPBPR ", " YPBPR601 ", " YCBCR1 ", " YCBCR2 ", " YCCBCCRC ", " YCOCG ", " BCH ", " CHROMAMAX ", " OKLAB "};
     const char* noise_funcs [] = { " NONE ", " BAYER ", " STATIC_MONO_BLUE ", " STATIC_RGB_BLUE ", " CYCLED_MONO_BLUE ", " CYCLED_RGB_BLUE ", " UNIFORM ", " INTERLEAVED_GRAD ", " VLACHOS ", " TRIANGLE_VLACHOS ", " TRIANGLE_MONO ", " TRIANGLE_RGB "};
-    const char* dither_mode [] = { " NONE ", " BITCRUSH ", " EXPONENTIAL " };
+    const char* dither_mode [] = { " BITCRUSH ", " EXPONENTIAL " };
 
     ImGui::Combo(" Colorspace ", &current_colorspace,  colorspaces, IM_ARRAYSIZE(colorspaces));
     ImGui::Combo(" Noise ",      &current_noise_func,  noise_funcs, IM_ARRAYSIZE(noise_funcs));

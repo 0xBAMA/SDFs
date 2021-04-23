@@ -6,39 +6,39 @@
 // These defines are used to simplify the ImGui::Combo things in engine_utils.cc
  
 // colorspace
-#define RGB       1
-#define SRGB      2
-#define XYZ       3
-#define XYY       4
-#define HSV       5
-#define HSL       6
-#define HCY       7
-#define YPBPR     8
-#define YPBPR601  9
-#define YCBCR1    10
-#define YCBCR2    11
-#define YCCBCCRC  12
-#define YCOCG     13
-#define BCH       14
-#define CHROMAMAX 15
-#define OKLAB     16
+#define RGB       0
+#define SRGB      1
+#define XYZ       2
+#define XYY       3
+#define HSV       4
+#define HSL       5
+#define HCY       6
+#define YPBPR     7
+#define YPBPR601  8
+#define YCBCR1    9
+#define YCBCR2    10
+#define YCCBCCRC  11
+#define YCOCG     12
+#define BCH       13
+#define CHROMAMAX 14
+#define OKLAB     15
 
 // dither pattern
-#define BAYER             1
-#define STATIC_MONO_BLUE  2
-#define STATIC_RGB_BLUE   3
-#define CYCLED_MONO_BLUE  4
-#define CYCLED_RGB_BLUE   5
-#define UNIFORM           6
-#define INTERLEAVED_GRAD  7
-#define VLACHOS           8
-#define TRIANGLE_VLACHOS  9
-#define TRIANGLE_MONO     10
-#define TRIANGLE_RGB      11
+#define BAYER             0
+#define STATIC_MONO_BLUE  1
+#define STATIC_RGB_BLUE   2
+#define CYCLED_MONO_BLUE  3
+#define CYCLED_RGB_BLUE   4
+#define UNIFORM           5
+#define INTERLEAVED_GRAD  6
+#define VLACHOS           7
+#define TRIANGLE_VLACHOS  8
+#define TRIANGLE_MONO     9
+#define TRIANGLE_RGB      10
 
 // dither methodology
-#define BITCRUSH      1
-#define EXPONENTIAL   2
+#define BITCRUSH      0
+#define EXPONENTIAL   1
 
 class engine
 {
