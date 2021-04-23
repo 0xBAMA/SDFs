@@ -960,6 +960,8 @@ vec3 norm(vec3 p) { // to get the normal vector for a point in space, this funct
     return normalize( vec3(de(p)) - vec3( de(p-e.xyy), de(p-e.yxy), de(p-e.yyx) ));
 }
 
+
+
 float sharp_shadow( in vec3 ro, in vec3 rd, float mint, float maxt ){
     for( float t=mint; t<maxt; )    {
         float h = de(ro + rd*t);
@@ -967,6 +969,7 @@ float sharp_shadow( in vec3 ro, in vec3 rd, float mint, float maxt ){
             return 0.0;
         t += h;
     }
+        
     return 1.0;
 }
 
@@ -1045,6 +1048,26 @@ void main()
         float sresult1 = sharp_shadow(shadow_ro, shadow_rd1, shadow_mint, shadow_maxt1);
         float sresult2 = soft_shadow(shadow_ro, shadow_rd2, shadow_mint, shadow_maxt2, 20);
         float sresult3 = soft_shadow(shadow_ro, shadow_rd3, shadow_mint, shadow_maxt3, 16);
+
+        // need to fix the lighting, to consider surface properties, a la previous iteration:
+        // float GetLight(vec3 p)
+        // {
+        //     //set this with a uniform
+        //     /* vec3 lightPos = vec3( 2, 5, 6); */
+
+        //     vec3 l = normalize(lightPos-p);
+        //     vec3 n = GetNormal(p);
+
+        //     float dif = clamp( dot( n, l), 0.0, 1.0);
+
+        //     float d = RayMarch(p+n*SURFACE_DISTANCE*2.0, l);
+
+        //     if(d < length(lightPos - p))
+        //         dif *= 0.1;
+
+        //     return dif;
+        // }
+
 
         float aoresult = calcAO(shadow_ro, normal);
 
