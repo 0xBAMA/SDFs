@@ -454,11 +454,8 @@ void engine::end_imgui()
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData()); // put imgui data into the framebuffer
 }
 
-
 void engine::control_window()
 {
-
-
   ImGui::Begin("Controls", NULL, 0);
   ImGui::BeginTabBar("", ImGuiTabBarFlags_TabListPopupButton | ImGuiTabBarFlags_FittingPolicyScroll );
 
@@ -495,11 +492,9 @@ void engine::control_window()
 
   if(ImGui::BeginTabItem("Dither Parameters"))
   {
-
     const char* colorspaces [] = { " NONE ", " RGB ", " SRGB ", " XYZ ", " XYY ", " HSV ", " HSL ", " HCY ", " YPBPR ", " YPBPR601 ", " YCBCR1 ", " YCBCR2 ", " YCCBCCRC ", " YCOCG ", " BCH ", " CHROMAMAX ", " OKLAB "};
     const char* noise_funcs [] = { " NONE ", " BAYER ", " STATIC_MONO_BLUE ", " STATIC_RGB_BLUE ", " CYCLED_MONO_BLUE ", " CYCLED_RGB_BLUE ", " UNIFORM ", " INTERLEAVED_GRAD ", " VLACHOS ", " TRIANGLE_VLACHOS ", " TRIANGLE_MONO ", " TRIANGLE_RGB "};
     const char* dither_mode [] = { " NONE ", " BITCRUSH ", " EXPONENTIAL " };
-
 
     ImGui::Combo(" Colorspace ", &current_colorspace,  colorspaces, IM_ARRAYSIZE(colorspaces));
     ImGui::Combo(" Noise ",      &current_noise_func,  noise_funcs, IM_ARRAYSIZE(noise_funcs));
@@ -507,20 +502,6 @@ void engine::control_window()
 
     ImGui::Text("");
     ImGui::SliderInt(" Bit Depth ", &num_bits, 0, 8);
-    
-    // ImGui::Text(" BAYER PATTERN");
-    // ImGui::SameLine();
-    // HelpMarker("This is used for ordered dithering. It is a static dither pattern, with identifiable artifacts.");
-    // ImGui::Text("  ");
-    // ImGui::SameLine();
-    // ImGui::Image((ImTextureID)(intptr_t)dither_bayer, ImVec2(256,256));
-
-    // ImGui::Text(" BLUE NOISE PATTERN");
-    // ImGui::SameLine();
-    // HelpMarker("This uses blue noise generated during the initialization, and the use in the shader is cycled over time using the golden ratio.");
-    // ImGui::Text("  ");
-    // ImGui::SameLine();
-    // ImGui::Image((ImTextureID)(intptr_t)dither_blue, ImVec2(256,256));
 
     ImGui::EndTabItem();
   }
@@ -631,12 +612,14 @@ void engine::draw_everything() {
   //  ╦┌┬┐╔═╗┬ ┬┬
   //  ║│││║ ╦│ ││
   //  ╩┴ ┴╚═╝└─┘┴
-  start_imgui(); // Start the Dear ImGui frame
   {// in this scope, everything related to imgui happens
+    start_imgui(); // Start the Dear ImGui frame
+    
     quit_conf(&quitconfirm); // show quit confirm window, if relevant
     control_window(); // do the controls window
+
+    end_imgui(); // put ImGui stuff in the back buffer
   }
-  end_imgui(); // put ImGui stuff in the back buffer
 
 
   // swap the double buffers to present everything for this frame
