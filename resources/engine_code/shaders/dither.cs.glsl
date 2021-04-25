@@ -882,14 +882,45 @@ vec3 get_noise(){
 vec4 bitcrush_reduce(vec4 value){ // this is adapted from my old method
     uvec4 temp = uvec4(value*255);
 
-    // temp = ivec4(value*255.);
-    // if(bits < 8)
-        // temp = temp >> (8-bits) << (8-bits);
-
     vec3 noiseval = get_noise(); // 0.-1.
 
-    // this needs to be redone - it also needs to call get_noise() locally to do the dither offset
+    // temp = ivec4(value*255.);
+    // if(bits < 8)
+        // temp = (temp >> (8-bits)) << (8-bits);
+
+    uvec4 himask = uvec4(0);
+    uvec4 lomask = uvec4(0);
+    switch(bits){ // wrote this out on paper - probably smoother ways to do it at runtime, but this is what we've got
+        case 0: himask = uvec4(0x00U); lomask = uvec4(0xFFU);  break; // degenerate case - just noise
+        case 1: himask = uvec4(0x80U); lomask = uvec4(0x7FU);  break;
+        case 2: himask = uvec4(0xC0U); lomask = uvec4(0x3FU);  break;
+        case 3: himask = uvec4(0xE0U); lomask = uvec4(0x1FU);  break;
+        case 4: himask = uvec4(0xF0U); lomask = uvec4(0x0FU);  break;
+        case 5: himask = uvec4(0xF8U); lomask = uvec4(0x07U);  break;
+        case 6: himask = uvec4(0xFCU); lomask = uvec4(0x03U);  break;
+        case 7: himask = uvec4(0xFEU); lomask = uvec4(0x01U);  break;
+        case 8:  // return original value
+        default:
+            return value; 
+            break;
+    }
+
+    uvec4 increment = lomask + uvec4(0x1U);
+
+
+    // uvec4 highbits = temp & uvec4();
     
+    return vec4(temp)/255.;
+}
+
+vec4 signed_bitcrush_reduce(vec4 value){
+    // 
+    uvec4 temp = ivec4(value*255.);
+    if(bits < 8)
+    {    
+        temp = (temp >> (8-bits)) << (8-bits);
+        // consider noise
+    }
     return vec4(temp)/255.;
 }
 

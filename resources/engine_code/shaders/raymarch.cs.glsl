@@ -901,43 +901,52 @@ float sdCylinder( vec3 p, vec2  h ) {
     return min(max(d.x,d.y),0.0) + length(max(d,0.0));
 }
 
-float de( vec3 porig ) { // distance estimator for the scene
-    vec3 p = porig;
+// float de( vec3 porig ) { // distance estimator for the scene
+//     vec3 p = porig;
 
-    // p = pmod(p, vec3(3.85,0.65,3.617));
-		pModMirror2(p.xz, vec2(3.85, 3.617));
-		pModMirror1(p.y, 0.685);
+//     // p = pmod(p, vec3(3.85,0.65,3.617));
+// 		pModMirror2(p.xz, vec2(3.85, 3.617));
+// 		pModMirror1(p.y, 0.685);
 
-		// sphereFold(p);
-		// mengerFold(p);
+// 		// sphereFold(p);
+// 		// mengerFold(p);
 
-    float tfactor = abs(pow(abs(cos(time/2.)), 6.)) * 2 - 1;
+//     float tfactor = abs(pow(abs(cos(time/2.)), 6.)) * 2 - 1;
 
-		// float drings = sdTorus(p, vec2(1.182, 0.08 + 0.05 * cos(time/5.+0.5*porig.x+0.8*porig.z)));
-		float drings = sdTorus(p, vec2(1.182, 0.08 ));
+// 		// float drings = sdTorus(p, vec2(1.182, 0.08 + 0.05 * cos(time/5.+0.5*porig.x+0.8*porig.z)));
+// 		float drings = sdTorus(p, vec2(1.182, 0.08 ));
 
-		// float dballz = sdSphere(p, 0.8 + 0.25*tfactor*(sin(time*2.1+porig.x*2.18+porig.z*2.7+porig.y*3.14)+1.));
-		float dballz = sdSphere(p, 0.8 + 0.25*tfactor);
+// 		// float dballz = sdSphere(p, 0.8 + 0.25*tfactor*(sin(time*2.1+porig.x*2.18+porig.z*2.7+porig.y*3.14)+1.));
+// 		float dballz = sdSphere(p, 0.8 + 0.25*tfactor);
 
-    float pillarz = smin_op(drings, dballz, 0.9);
+//     float pillarz = smin_op(drings, dballz, 0.9);
 
-		float dplane = fPlane(porig, vec3(0,1,0), 5.);
+// 		float dplane = fPlane(porig, vec3(0,1,0), 5.);
 
-		// p = pmod(p*0.2, vec3(2.4,1.2,1.6));
-		p = porig;
+// 		// p = pmod(p*0.2, vec3(2.4,1.2,1.6));
+// 		p = porig;
 
-		pR(p.yz, time/3.14);
-		// pR(p.xy, time*0.3);
+// 		pR(p.yz, time/3.14);
+// 		// pR(p.xy, time*0.3);
 
-    float dtorus = fTorus( p, 1.2, 6.6);
+//     float dtorus = fTorus( p, 1.2, 6.6);
 
-		float dfinal = smin_op(
-											smin_op(
-												max(pillarz, sdSphere(porig, 8.5)),
-													dtorus, 0.385),
-														dplane, 0.685);
+// 		float dfinal = smin_op(
+// 											smin_op(
+// 												max(pillarz, sdSphere(porig, 8.5)),
+// 													dtorus, 0.385),
+// 														dplane, 0.685);
 
-		return dfinal;
+// 		return dfinal;
+// }
+
+float de(vec3 p0){
+   vec4 p = vec4(p0, 1.);
+   for(int i = 0; i < 8; i++){
+       p.xyz = mod(p.xyz-1.,2.)-1.;
+        p*=1.4/dot(p.xyz,p.xyz);
+   }
+   return length(p.xz/p.w)*0.25;
 }
 
 // global state tracking
@@ -988,13 +997,59 @@ float soft_shadow( in vec3 ro, in vec3 rd, float mint, float maxt, float k /*hig
         t += h;
     }
     // return res;
-		res = clamp( res, 0.0, 1.0 );
-		return res*res*(3.0-2.0*res);
+    res = clamp( res, 0.0, 1.0 );
+    return res*res*(3.0-2.0*res);
 }
+
+vec3 visibility_only_lighting(int lightnum, vec3 hitloc, float sharpness /*over 99. considered 'sharp'*/){
+    vec3 shadow_rd, lightpos, lightcol;
+    float mint, maxt;
+
+    switch(lightnum){
+        case 1: lightpos = lightPos1; lightcol = lightCol1; break;
+        case 2: lightpos = lightPos2; lightcol = lightCol2; break;
+        case 3: lightpos = lightPos3; lightcol = lightCol3; break;
+        default: break;
+    }
+
+    shadow_rd = normalize(lightpos-hitloc);
+
+    mint = EPSILON;
+    maxt = distance(hitloc, lightpos);
+
+    if(sharpness > 99)
+        return lightcol * sharp_shadow(hitloc, shadow_rd, mint, maxt);
+    else
+        return lightcol * soft_shadow(hitloc, shadow_rd, mint, maxt, sharpness);
+}
+
+// reconsider
+// vec3 phong_lighting(int lightnum, vec3 hitloc, float sharpness, float specpower){
+//     vec3 shadow_rd, lightpos, lightcol;
+//     float mint, maxt;
+
+//     switch(lightnum){
+//         case 1: lightpos = lightPos1; lightcol = lightCol1; break;
+//         case 2: lightpos = lightPos2; lightcol = lightCol2; break;
+//         case 3: lightpos = lightPos3; lightcol = lightCol3; break;
+//         default: break;
+//     }
+
+//     shadow_rd = normalize(lightpos-hitloc);
+
+//     mint = EPSILON;
+//     maxt = distance(hitloc, lightpos);
+
+//     if(sharpness > 99)
+//         return lightcol * sharp_shadow(hitloc, shadow_rd, mint, maxt);
+//     else
+//         return lightcol * soft_shadow(hitloc, shadow_rd, mint, maxt, sharpness);
+// }
+
 
 float calcAO( in vec3 pos, in vec3 nor )
 {
-		float occ = 0.0;
+    float occ = 0.0;
     float sca = 1.0;
     for( int i=0; i<5; i++ )
     {
@@ -1035,19 +1090,10 @@ void main()
         vec3 normal = norm(hitpos);
 
         vec3 shadow_ro = hitpos+normal*EPSILON*2.;
-        vec3 shadow_rd1 = normalize(lightPos1-hitpos);
-        vec3 shadow_rd2 = normalize(lightPos2-hitpos);
-        vec3 shadow_rd3 = normalize(lightPos3-hitpos);
 
-        float shadow_mint = EPSILON;
-
-        float shadow_maxt1 = distance(hitpos, lightPos1);
-        float shadow_maxt2 = distance(hitpos, lightPos2);
-        float shadow_maxt3 = distance(hitpos, lightPos3);
-
-        float sresult1 = sharp_shadow(shadow_ro, shadow_rd1, shadow_mint, shadow_maxt1);
-        float sresult2 = soft_shadow(shadow_ro, shadow_rd2, shadow_mint, shadow_maxt2, 20);
-        float sresult3 = soft_shadow(shadow_ro, shadow_rd3, shadow_mint, shadow_maxt3, 16);
+        vec3 sresult1 = visibility_only_lighting(1, hitpos, 100);
+        vec3 sresult2 = visibility_only_lighting(2, hitpos, 20);
+        vec3 sresult3 = visibility_only_lighting(3, hitpos, 16);
 
         // need to fix the lighting, to consider surface properties, a la previous iteration:
         // float GetLight(vec3 p)
@@ -1068,11 +1114,10 @@ void main()
         //     return dif;
         // }
 
-
         float aoresult = calcAO(shadow_ro, normal);
 
         // col.rgb += ((norm(hitpos)/2.)+vec3(0.5))*(1 - (dresult / 25))*sresult;
-        vec3 temp = basic_diffuse + sresult1 * lightCol1 + sresult2 * lightCol2 + sresult3 * lightCol3;
+        vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
 
         // temp *= exp( -0.002 * dresult * dresult * dresult ); // not a big fan of this for fog
 
