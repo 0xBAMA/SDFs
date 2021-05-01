@@ -1122,6 +1122,9 @@ void main()
   // convert back (again using spaceswitch)
   uvec4 write = convert_back(processed);
 
+  // get the alpha value from initial read
+  write.a = read.a; // this is for fog
+  
   // store the processed result back to the image
   imageStore(current, ivec2(gl_GlobalInvocationID.xy), write); 
 }

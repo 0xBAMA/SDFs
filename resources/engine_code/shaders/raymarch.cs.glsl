@@ -940,13 +940,20 @@ float sdCylinder( vec3 p, vec2  h ) {
 // 		return dfinal;
 // }
 
-float de(vec3 p0){
+
+float fractal_de(vec3 p0){
    vec4 p = vec4(p0, 1.);
    for(int i = 0; i < 8; i++){
        p.xyz = mod(p.xyz-1.,2.)-1.;
         p*=1.4/dot(p.xyz,p.xyz);
    }
-   return length(p.xz/p.w)*0.25;
+   return (length(p.xz/p.w)*0.25);
+}
+
+float de(vec3 p){
+    float dfractal = fractal_de(p);
+
+    return dfractal;
 }
 
 // global state tracking
@@ -1067,6 +1074,7 @@ void main()
     // imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( 120, 45, 12, 255 ));
 
     vec4 col = vec4(0, 0, 0, 1);
+    float dresult_avg = 0.;
 
     for(int x = 0; x < AA; x++)
     for(int y = 0; y < AA; y++)
@@ -1125,10 +1133,14 @@ void main()
         temp *= aoresult; // ambient occlusion calculation
 
         col.rgb += temp;
+        dresult_avg += dresult;
     }
 
     col.rgb /= float(AA*AA);
+    dresult_avg /= float(AA*AA);
 
+    // do a mix here, between col and the fog color, with the selected depth falloff term
+    
     // potentially tonemap + gamma correct here, because the imageStore will be quantizing to 8 bit
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
