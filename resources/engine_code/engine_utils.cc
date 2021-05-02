@@ -430,16 +430,16 @@ void engine::gl_setup() {
   }
 }
 
-static void HelpMarker(const char *desc) {
-  ImGui::TextDisabled("(?)");
-  if (ImGui::IsItemHovered()) {
-    ImGui::BeginTooltip();
-    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-    ImGui::TextUnformatted(desc);
-    ImGui::PopTextWrapPos();
-    ImGui::EndTooltip();
-  }
-}
+// static void HelpMarker(const char *desc) {
+//   ImGui::TextDisabled("(?)");
+//   if (ImGui::IsItemHovered()) {
+//     ImGui::BeginTooltip();
+//     ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+//     ImGui::TextUnformatted(desc);
+//     ImGui::PopTextWrapPos();
+//     ImGui::EndTooltip();
+//   }
+// }
 
 void engine::start_imgui()
 {
@@ -543,6 +543,7 @@ void engine::draw_everything() {
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1"), lightCol1.x, lightCol1.y, lightCol1.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2"), lightCol2.x, lightCol2.y, lightCol2.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3"), lightCol3.x, lightCol3.y, lightCol3.z);
+
   // position
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos1"), lightPos1.x, lightPos1.y, lightPos1.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), lightPos2.x, lightPos2.y, lightPos2.z);
@@ -587,7 +588,6 @@ void engine::draw_everything() {
   // sync to ensure the dithered image is in the texture
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
-
   //  ╔╦╗┬┌─┐┌─┐┬  ┌─┐┬ ┬
   //   ║║│└─┐├─┘│  ├─┤└┬┘
   //  ═╩╝┴└─┘┴  ┴─┘┴ ┴ ┴
@@ -620,7 +620,6 @@ void engine::draw_everything() {
 
     end_imgui(); // put ImGui stuff in the back buffer
   }
-
 
   // swap the double buffers to present everything for this frame
   SDL_GL_SwapWindow(window);

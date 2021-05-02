@@ -72,8 +72,8 @@ private:
 
 // raymarcher state
 	// rotation
-	float rotation_about_x = 0.15;
-	float rotation_about_y = -3.45;
+	float rotation_about_x = 0.;
+	float rotation_about_y = 0.;
 	float rotation_about_z = 0.;
 
 	// base color
@@ -85,12 +85,12 @@ private:
 	glm::vec3 lightCol3 = glm::vec3( 0.1f, 0.35f, 0.65f);
 
 	// light positions
-	glm::vec3 lightPos1 = glm::vec3(-5,4.5,10);
-	glm::vec3 lightPos2 = glm::vec3(14,5,0);
-	glm::vec3 lightPos3 = glm::vec3(2,4,-10);
+	glm::vec3 lightPos1 = glm::vec3( 2.3, 1, 1);
+	glm::vec3 lightPos2 = glm::vec3( 1, 2.3, 1);
+	glm::vec3 lightPos3 = glm::vec3( 1, 1, 2.3);
 
 	// position
-	glm::vec3 position = glm::vec3(-4.232554, 1.761511, 14.585515);
+	glm::vec3 position = glm::vec3(1., 1., 1.);
 
 
 

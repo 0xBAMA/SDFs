@@ -5,13 +5,12 @@ layout( local_size_x = 8, local_size_y = 8, local_size_z = 1 ) in;
 layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 #define MAX_STEPS 500
-#define MAX_DIST  150.
+#define MAX_DIST  300.
 #define EPSILON   0.001 // closest surface distance
 
 #define AA 2
 
 uniform vec3 basic_diffuse;
-uniform vec3 fog_color;
 
 uniform vec3 lightPos1;
 uniform vec3 lightPos2;
@@ -1123,15 +1122,13 @@ void main()
         //     return dif;
         // }
 
-        float aoresult = calcAO(shadow_ro, normal);
 
-        // col.rgb += ((norm(hitpos)/2.)+vec3(0.5))*(1 - (dresult / 25))*sresult;
+        // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector 
         vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
 
-        // temp *= exp( -0.002 * dresult * dresult * dresult ); // not a big fan of this for fog
+        // temp *= ; // alternative fog calculation
 
-        temp *= (1-pow(dresult/30., 1.618)); // alternative fog calculation
-        temp *= aoresult; // ambient occlusion calculation
+        temp *= calcAO(shadow_ro, normal); // ambient occlusion calculation
 
         col.rgb += temp;
         dresult_avg += dresult;
@@ -1139,18 +1136,19 @@ void main()
 
     col.rgb /= float(AA*AA);
     dresult_avg /= float(AA*AA);
-    
+
     // compute the depth scale term
     float depth_term; 
 
     // depth_term = 2.-2.*(1./(1.-dresult_avg));
-    depth_term = exp(0.3*dresult_avg-3.);
+    // depth_term = exp( -0.002 * dresult_avg * dresult_avg * dresult_avg );
+    // depth_term = (1-pow(dresult_avg/30., 1.618));
+    // depth_term = clamp(exp(0.25*dresult_avg-3.), 0., 10.);
+    depth_term = exp(0.25*dresult_avg-3.);
     
     // do a mix here, between col and the fog color, with the selected depth falloff term
     // col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
-    // col.rgb = mix(col.rgb, vec3(0.5, 0.1, 0.), depth_term);
-    
-    col.rgb = vec3(dresult_avg / MAX_DIST);
+    col.rgb = mix(col.rgb, vec3(1,0.2,0), depth_term);
     
     // potentially tonemap + gamma correct here, because the imageStore will be quantizing to 8 bit
 
