@@ -5,12 +5,13 @@ layout( local_size_x = 8, local_size_y = 8, local_size_z = 1 ) in;
 layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 #define MAX_STEPS 500
-#define MAX_DIST  300.
+#define MAX_DIST  150.
 #define EPSILON   0.001 // closest surface distance
 
 #define AA 2
 
 uniform vec3 basic_diffuse;
+uniform vec3 fog_color;
 
 uniform vec3 lightPos1;
 uniform vec3 lightPos2;
@@ -1138,8 +1139,18 @@ void main()
 
     col.rgb /= float(AA*AA);
     dresult_avg /= float(AA*AA);
+    
+    // compute the depth scale term
+    float depth_term; 
 
+    // depth_term = 2.-2.*(1./(1.-dresult_avg));
+    depth_term = exp(0.3*dresult_avg-3.);
+    
     // do a mix here, between col and the fog color, with the selected depth falloff term
+    // col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+    // col.rgb = mix(col.rgb, vec3(0.5, 0.1, 0.), depth_term);
+    
+    col.rgb = vec3(dresult_avg / MAX_DIST);
     
     // potentially tonemap + gamma correct here, because the imageStore will be quantizing to 8 bit
 

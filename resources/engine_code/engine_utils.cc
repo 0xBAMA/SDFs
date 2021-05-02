@@ -462,7 +462,7 @@ void engine::control_window()
   if(ImGui::BeginTabItem("Raymarcher Controls"))
   {
     ImGui::Text("");
-    ImGui::ColorEdit3("Clear Color", (float*)&clear_color);
+    ImGui::ColorEdit3("Fog Color", (float*)&clear_color);
     ImGui::Text("");
     ImGui::ColorEdit3("Basic Diffuse", (float*)&basic_diffuse);
     ImGui::Text("");
