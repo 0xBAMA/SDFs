@@ -24,17 +24,17 @@
 #define OKLAB     15
 
 // dither pattern
-#define BAYER             0
-#define STATIC_MONO_BLUE  1
-#define STATIC_RGB_BLUE   2
-#define CYCLED_MONO_BLUE  3
-#define CYCLED_RGB_BLUE   4
-#define UNIFORM           5
-#define INTERLEAVED_GRAD  6
-#define VLACHOS           7
-#define TRIANGLE_VLACHOS  8
-#define TRIANGLE_MONO     9
-#define TRIANGLE_RGB      10
+#define BAYER             1
+#define STATIC_MONO_BLUE  2
+#define STATIC_RGB_BLUE   3
+#define CYCLED_MONO_BLUE  4
+#define CYCLED_RGB_BLUE   5
+#define UNIFORM           6
+#define INTERLEAVED_GRAD  7
+#define VLACHOS           8
+#define TRIANGLE_VLACHOS  9
+#define TRIANGLE_MONO     10
+#define TRIANGLE_RGB      11
 
 // dither methodology
 #define BITCRUSH      0
@@ -95,11 +95,11 @@ private:
 
 	float gamma_correction = 0.675;
 	int current_tmode = 6;
-    int current_colorspace = RGB;
+    int current_colorspace = CHROMAMAX;
     int current_noise_func = BAYER;
     int current_dither_mode = EXPONENTIAL;
 
-	int num_bits = 5; 
+	int num_bits = 4; 
 		
 // main loop functions
 	void create_window();
