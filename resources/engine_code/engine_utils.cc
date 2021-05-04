@@ -466,14 +466,18 @@ void engine::control_window()
     ImGui::Text("");
     ImGui::Text("Lights");
     ImGui::ColorEdit3("Light 1 Diffuse", (float*)&lightCol1d);
+    ImGui::ColorEdit3("Light 1 Specular", (float*)&lightCol1s);
+    ImGui::SliderFloat("Light 1 Spec Power", &specpower1, 0.1, 400.0);
+    ImGui::Text("");
     ImGui::ColorEdit3("Light 2 Diffuse", (float*)&lightCol2d);
+    ImGui::ColorEdit3("Light 2 Specular", (float*)&lightCol2s);
+    ImGui::SliderFloat("Light 2 Spec Power", &specpower2, 0.1, 400.0);
+    ImGui::Text("");
     ImGui::ColorEdit3("Light 3 Diffuse", (float*)&lightCol3d);
+    ImGui::ColorEdit3("Light 3 Specular", (float*)&lightCol3s);
+    ImGui::SliderFloat("Light 3 Spec Power", &specpower3, 0.1, 400.0);
     ImGui::Text("");
 
-    // selection of tonemapping mode
-    // const char* tonemapping [] = {}; 
-    // ImGui::Combo(" Tonemapping ", blah blah tonemapping mode);
-     
     ImGui::EndTabItem();
   }
   if(ImGui::BeginTabItem("Render Settings"))
@@ -515,7 +519,17 @@ void engine::control_window()
 }
 
 void engine::animate_lights(float t){
+  static glm::vec3 basisx, basisy, basisz;
   
+  // use some perlin noise to animate brightness and move position around a little
+
+  // generally have the lights orbit the view position (using the basis vectors)
+   // also check basis_xyz against static basisxyz to see if the view has changed and maybe do some kind of lerp
+
+  // temporary, for warnings
+  (void) basisx;
+  (void) basisy;
+  (void) basisz;
 }
 
 void engine::draw_everything() {
@@ -560,10 +574,20 @@ void engine::draw_everything() {
   // animate light parameters
   animate_lights(SDL_GetTicks() * 0.001);
   
-  // color
+  // diffuse color
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1d"), lightCol1d.x, lightCol1d.y, lightCol1d.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2d"), lightCol2d.x, lightCol2d.y, lightCol2d.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3d"), lightCol3d.x, lightCol3d.y, lightCol3d.z);
+
+  // specular color
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1s"), lightCol1s.x, lightCol1s.y, lightCol1s.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2s"), lightCol2s.x, lightCol2s.y, lightCol2s.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3s"), lightCol3s.x, lightCol3s.y, lightCol3s.z);
+
+  // specular power
+  glUniform1f(glGetUniformLocation(raymarch_shader, "specpower1"), specpower1);
+  glUniform1f(glGetUniformLocation(raymarch_shader, "specpower2"), specpower2);
+  glUniform1f(glGetUniformLocation(raymarch_shader, "specpower3"), specpower3);
   
   // position
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos1"), lightPos1.x, lightPos1.y, lightPos1.z);

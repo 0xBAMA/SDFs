@@ -29,6 +29,9 @@ uniform vec3 lightCol1s;
 uniform vec3 lightCol2s;
 uniform vec3 lightCol3s;
 // specular powers per light
+uniform float specpower1;
+uniform float specpower2;
+uniform float specpower3;
 
 uniform vec3 basis_x;
 uniform vec3 basis_y;
@@ -1310,14 +1313,30 @@ vec3 visibility_only_lighting(int lightnum, vec3 hitloc, float sharpness /*over 
 vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos, float sharpness, float specpower){
 
 
-    vec3 shadow_rd, lightpos, lightcoldiffuse;
-    float mint, maxt;
+    vec3 shadow_rd, lightpos, lightcoldiff, lightcolspec;
+    float mint, maxt, lightspecpow;
 
-    switch(lightnum){
-        case 1: lightpos = lightPos1; lightcoldiffuse = lightCol1d; break;
-        case 2: lightpos = lightPos2; lightcoldiffuse = lightCol2d; break;
-        case 3: lightpos = lightPos3; lightcoldiffuse = lightCol3d; break;
-        default: break;
+    switch(lightnum){ // eventually handle these as uniform vector inputs, to handle more than three
+        case 1:
+            lightpos     = lightPos1;
+            lightcoldiff = lightCol1d;
+            lightcolspec = lightCol1s;
+            lightspecpow = specpower1;
+            break;
+        case 2:
+            lightpos     = lightPos2;
+            lightcoldiff = lightCol2d;
+            lightcolspec = lightCol2s;
+            lightspecpow = specpower2;
+            break;
+        case 3:
+            lightpos     = lightPos3;
+            lightcoldiff = lightCol3d;
+            lightcolspec = lightCol3s;
+            lightspecpow = specpower3;
+            break;
+        default:
+            break;
     }
 
     vec3 l = normalize(lightpos - hitloc);
@@ -1325,6 +1344,10 @@ vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos, float sh
     vec3 n = normalize(norm);
     vec3 r = normalize(reflect(l, n));
         
+    // check occlusion with the soft/sharp shadow
+    // then continue with the phong calculation
+    
+ 
 
 //     shadow_rd = normalize(lightpos-hitloc);
 

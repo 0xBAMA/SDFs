@@ -81,10 +81,18 @@ private:
 
 	void animate_lights(float t);
 		
-	// light colors
+	// diffuse light colors
 	glm::vec3 lightCol1d = glm::vec3( 0.6f, 0.6f, 0.6f);
 	glm::vec3 lightCol2d = glm::vec3( 0.75f, 0.3f, 0.0f);
 	glm::vec3 lightCol3d = glm::vec3( 0.1f, 0.35f, 0.65f);
+	// specular light colors	
+	glm::vec3 lightCol1s = glm::vec3( 0.5f, 0.5f, 0.5f);
+	glm::vec3 lightCol2s = glm::vec3( 0.5f, 0.5f, 0.5f);
+	glm::vec3 lightCol3s = glm::vec3( 0.5f, 0.5f, 0.5f);
+	// specular power terms
+	float specpower1 = 5;
+	float specpower2 = 50;
+	float specpower3 = 150;
 
 	// light positions
 	glm::vec3 lightPos1 = glm::vec3( 2.3, 1, 1);
