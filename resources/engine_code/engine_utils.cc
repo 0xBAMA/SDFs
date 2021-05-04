@@ -194,7 +194,7 @@ void engine::create_window() {
   ImGui_ImplSDL2_InitForOpenGL(window, GLcontext);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  clear_color = ImVec4(75.0f / 255.0f, 75.0f / 255.0f, 75.0f / 255.0f, 1.0f); // initial value for clear color
+  clear_color = ImVec4(1.0, 0.2, 0., 1.0f); // initial value for clear color
 
   // really excited by the fact imgui has an hsv picker to set this
   glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -462,8 +462,6 @@ void engine::control_window()
   if(ImGui::BeginTabItem("Raymarcher Controls"))
   {
     ImGui::Text("");
-    ImGui::ColorEdit3("Fog Color", (float*)&clear_color);
-    ImGui::Text("");
     ImGui::ColorEdit3("Basic Diffuse", (float*)&basic_diffuse);
     ImGui::Text("");
     ImGui::Text("Lights");
@@ -487,6 +485,24 @@ void engine::control_window()
     // const char* tonemapping [] = {}; 
     // ImGui::Combo(" Tonemapping ", blah blah tonemapping mode);
      
+    ImGui::EndTabItem();
+  }
+  if(ImGui::BeginTabItem("Render Settings"))
+  {    
+    ImGui::Text("");
+    ImGui::ColorEdit3("Fog Color", (float*)&clear_color);
+    ImGui::Text("");
+    
+    // fog methodology
+    // ... tbd ...
+    
+    // tonemap methodology
+    const char* tmodes[] = {"None (Linear)", "ACES (Narkowicz 2015)", "Unreal Engine 3", "Unreal Engine 4", "Uncharted 2", "Gran Turismo", "Modified Gran Turismo", "Rienhard", "Modified Rienhard", "jt", "robobo1221s", "robo", "reinhardRobo", "jodieRobo", "jodieRobo2", "jodieReinhard", "jodieReinhard2"};
+    ImGui::Combo("Tonemapping Mode", &current_tmode, tmodes, IM_ARRAYSIZE(tmodes));
+
+    // gamma correction
+    ImGui::SliderFloat("gamma", &gamma_correction, 0.15, 4.0);
+    
     ImGui::EndTabItem();
   }
 
@@ -538,6 +554,15 @@ void engine::draw_everything() {
   // basic diffuse color
   glUniform3f(glGetUniformLocation(raymarch_shader, "basic_diffuse"), basic_diffuse.x, basic_diffuse.y, basic_diffuse.z);
 
+  // fog color
+  glUniform3f(glGetUniformLocation(raymarch_shader, "fog_color"), clear_color.x, clear_color.y, clear_color.z);
+
+  // tonemapping mode
+  glUniform1i(glGetUniformLocation(raymarch_shader, "tonemap_mode"), current_tmode);
+    
+  // gamma correction
+  glUniform1f(glGetUniformLocation(raymarch_shader, "gamma"), gamma_correction);
+  
   // send light information to the raymarch shader
   // color
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1"), lightCol1.x, lightCol1.y, lightCol1.z);

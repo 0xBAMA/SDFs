@@ -93,12 +93,13 @@ private:
 	glm::vec3 position = glm::vec3(1., 1., 1.);
 
 
-
+	float gamma_correction = 0.675;
+	int current_tmode = 6;
     int current_colorspace = RGB;
     int current_noise_func = BAYER;
-    int current_dither_mode = BITCRUSH;
+    int current_dither_mode = EXPONENTIAL;
 
-	int num_bits = 4; 
+	int num_bits = 5; 
 		
 // main loop functions
 	void create_window();
