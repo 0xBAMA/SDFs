@@ -79,10 +79,12 @@ private:
 	// base color
 	glm::vec3 basic_diffuse = glm::vec3(45./255., 45./255., 45./255.);
 
+	void animate_lights(float t);
+		
 	// light colors
-	glm::vec3 lightCol1 = glm::vec3( 0.6f, 0.6f, 0.6f);
-	glm::vec3 lightCol2 = glm::vec3( 0.75f, 0.3f, 0.0f);
-	glm::vec3 lightCol3 = glm::vec3( 0.1f, 0.35f, 0.65f);
+	glm::vec3 lightCol1d = glm::vec3( 0.6f, 0.6f, 0.6f);
+	glm::vec3 lightCol2d = glm::vec3( 0.75f, 0.3f, 0.0f);
+	glm::vec3 lightCol3d = glm::vec3( 0.1f, 0.35f, 0.65f);
 
 	// light positions
 	glm::vec3 lightPos1 = glm::vec3( 2.3, 1, 1);
@@ -92,6 +94,7 @@ private:
 	// position
 	glm::vec3 position = glm::vec3(1., 1., 1.);
 
+	glm::vec3 basis_x, basis_y, basis_z;
 
 	float gamma_correction = 0.675;
 	int current_tmode = 6;

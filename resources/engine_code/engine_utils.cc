@@ -465,21 +465,10 @@ void engine::control_window()
     ImGui::ColorEdit3("Basic Diffuse", (float*)&basic_diffuse);
     ImGui::Text("");
     ImGui::Text("Lights");
-    ImGui::ColorEdit3("Light 1 Color", (float*)&lightCol1);
-    ImGui::ColorEdit3("Light 2 Color", (float*)&lightCol2);
-    ImGui::ColorEdit3("Light 3 Color", (float*)&lightCol3);
+    ImGui::ColorEdit3("Light 1 Diffuse", (float*)&lightCol1d);
+    ImGui::ColorEdit3("Light 2 Diffuse", (float*)&lightCol2d);
+    ImGui::ColorEdit3("Light 3 Diffuse", (float*)&lightCol3d);
     ImGui::Text("");
-    ImGui::SliderFloat("Light 1 X", &lightPos1.x, -10.f, 10.f, "%.3f");
-    ImGui::SliderFloat("Light 1 Y", &lightPos1.y, -10.f, 10.f, "%.3f");
-    ImGui::SliderFloat("Light 1 Z", &lightPos1.z, -10.f, 10.f, "%.3f");
-    ImGui::Text("");
-    ImGui::SliderFloat("Light 2 X", &lightPos2.x, -10.f, 10.f, "%.3f");
-    ImGui::SliderFloat("Light 2 Y", &lightPos2.y, -10.f, 10.f, "%.3f");
-    ImGui::SliderFloat("Light 2 Z", &lightPos2.z, -10.f, 10.f, "%.3f");
-    ImGui::Text("");
-    ImGui::SliderFloat("Light 3 X", &lightPos3.x, -10.f, 10.f, "%.3f");
-    ImGui::SliderFloat("Light 3 Y", &lightPos3.y, -10.f, 10.f, "%.3f");
-    ImGui::SliderFloat("Light 3 Z", &lightPos3.z, -10.f, 10.f, "%.3f");
 
     // selection of tonemapping mode
     // const char* tonemapping [] = {}; 
@@ -525,6 +514,10 @@ void engine::control_window()
   ImGui::End();
 }
 
+void engine::animate_lights(float t){
+  
+}
+
 void engine::draw_everything() {
   //  ╦ ╦┌─┐┌┬┐┌─┐┌┬┐┌─┐  ╔═╗┌┬┐┌─┐┌┬┐┌─┐
   //  ║ ║├─┘ ││├─┤ │ ├┤   ╚═╗ │ ├─┤ │ ├┤
@@ -535,10 +528,10 @@ void engine::draw_everything() {
   /* glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1)); */
   glm::mat4 rotation = glm::toMat4(rotationy * rotationx);
 
-  // create the basis vectors
-  glm::vec3 basis_x = (rotation*glm::vec4(1,0,0,0)).xyz();
-  glm::vec3 basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
-  glm::vec3 basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
+  // create the basis vectors - these are more static now being retained as member variables
+  basis_x = (rotation*glm::vec4(1,0,0,0)).xyz();
+  basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
+  basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
 
   //  ╦═╗┌─┐┬ ┬┌┬┐┌─┐┬─┐┌─┐┬ ┬
   //  ╠╦╝├─┤└┬┘│││├─┤├┬┘│  ├─┤
@@ -564,11 +557,14 @@ void engine::draw_everything() {
   glUniform1f(glGetUniformLocation(raymarch_shader, "gamma"), gamma_correction);
   
   // send light information to the raymarch shader
+  // animate light parameters
+  animate_lights(SDL_GetTicks() * 0.001);
+  
   // color
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1"), lightCol1.x, lightCol1.y, lightCol1.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2"), lightCol2.x, lightCol2.y, lightCol2.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3"), lightCol3.x, lightCol3.y, lightCol3.z);
-
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1d"), lightCol1d.x, lightCol1d.y, lightCol1d.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2d"), lightCol2d.x, lightCol2d.y, lightCol2d.z);
+  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3d"), lightCol3d.x, lightCol3d.y, lightCol3d.z);
+  
   // position
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos1"), lightPos1.x, lightPos1.y, lightPos1.z);
   glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), lightPos2.x, lightPos2.y, lightPos2.z);

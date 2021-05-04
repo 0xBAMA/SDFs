@@ -20,9 +20,15 @@ uniform vec3 lightPos1;
 uniform vec3 lightPos2;
 uniform vec3 lightPos3;
 
-uniform vec3 lightCol1;
-uniform vec3 lightCol2;
-uniform vec3 lightCol3;
+// diffuse light colors
+uniform vec3 lightCol1d;
+uniform vec3 lightCol2d;
+uniform vec3 lightCol3d;
+// specular light colors
+uniform vec3 lightCol1s;
+uniform vec3 lightCol2s;
+uniform vec3 lightCol3s;
+// specular powers per light
 
 uniform vec3 basis_x;
 uniform vec3 basis_y;
@@ -1284,9 +1290,9 @@ vec3 visibility_only_lighting(int lightnum, vec3 hitloc, float sharpness /*over 
     float mint, maxt;
 
     switch(lightnum){
-        case 1: lightpos = lightPos1; lightcol = lightCol1; break;
-        case 2: lightpos = lightPos2; lightcol = lightCol2; break;
-        case 3: lightpos = lightPos3; lightcol = lightCol3; break;
+        case 1: lightpos = lightPos1; lightcol = lightCol1d; break;
+        case 2: lightpos = lightPos2; lightcol = lightCol2d; break;
+        case 3: lightpos = lightPos3; lightcol = lightCol3d; break;
         default: break;
     }
 
@@ -1301,17 +1307,24 @@ vec3 visibility_only_lighting(int lightnum, vec3 hitloc, float sharpness /*over 
         return lightcol * soft_shadow(hitloc, shadow_rd, mint, maxt, sharpness);
 }
 
-// reconsider
-// vec3 phong_lighting(int lightnum, vec3 hitloc, float sharpness, float specpower){
-//     vec3 shadow_rd, lightpos, lightcol;
-//     float mint, maxt;
+vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos, float sharpness, float specpower){
 
-//     switch(lightnum){
-//         case 1: lightpos = lightPos1; lightcol = lightCol1; break;
-//         case 2: lightpos = lightPos2; lightcol = lightCol2; break;
-//         case 3: lightpos = lightPos3; lightcol = lightCol3; break;
-//         default: break;
-//     }
+
+    vec3 shadow_rd, lightpos, lightcoldiffuse;
+    float mint, maxt;
+
+    switch(lightnum){
+        case 1: lightpos = lightPos1; lightcoldiffuse = lightCol1d; break;
+        case 2: lightpos = lightPos2; lightcoldiffuse = lightCol2d; break;
+        case 3: lightpos = lightPos3; lightcoldiffuse = lightCol3d; break;
+        default: break;
+    }
+
+    vec3 l = normalize(lightpos - hitloc);
+    vec3 v = normalize(eye_pos - hitloc);
+    vec3 n = normalize(norm);
+    vec3 r = normalize(reflect(l, n));
+        
 
 //     shadow_rd = normalize(lightpos-hitloc);
 
@@ -1322,7 +1335,9 @@ vec3 visibility_only_lighting(int lightnum, vec3 hitloc, float sharpness /*over 
 //         return lightcol * sharp_shadow(hitloc, shadow_rd, mint, maxt);
 //     else
 //         return lightcol * soft_shadow(hitloc, shadow_rd, mint, maxt, sharpness);
-// }
+
+    return vec3(0);
+}
 
 
 float calcAO( in vec3 pos, in vec3 nor )
