@@ -1230,8 +1230,29 @@ float fractal_de(vec3 p0){
    return (length(p.xz/p.w)*0.25);
 }
 
+
+
+
+// hard crash - probably hardware related 
+float torus(vec3 pos, vec3 p, vec2 s){    
+    vec2 a = normalize(p.xz-pos.xz);
+    pos.xz += a*s.x;
+    return length(pos-p)-s.y;
+}
+float fractal_de2(vec3 p0){
+    vec4 p = vec4(p0, 1.);
+    for(int i = 0; i < 8; i++){
+        p.xyz = mod(p.xyz-1., 2.)-1.;
+        p*=(1.8/dot(p.xyz,p.xyz));
+    }
+    p.xyz /= p.w;
+    return 0.25*torus(p0, p.xyz, vec2(5.,0.7));
+}
+
+
 float de(vec3 p){
     float dfractal = fractal_de(p);
+    // float dfractal = fractal_de2(p);
 
     return dfractal;
 }
@@ -1310,7 +1331,7 @@ vec3 visibility_only_lighting(int lightnum, vec3 hitloc, float sharpness /*over 
         return lightcol * soft_shadow(hitloc, shadow_rd, mint, maxt, sharpness);
 }
 
-vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos, float sharpness, float specpower){
+vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos, float sharpness){
 
 
     vec3 shadow_rd, lightpos, lightcoldiff, lightcolspec;
@@ -1339,27 +1360,32 @@ vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos, float sh
             break;
     }
 
-    vec3 l = normalize(lightpos - hitloc);
-    vec3 v = normalize(eye_pos - hitloc);
+    shadow_rd = normalize(lightpos-hitloc);
+    
+    vec3 l = normalize(hitloc - lightpos);
+    vec3 v = normalize(hitloc - eye_pos);
     vec3 n = normalize(norm);
     vec3 r = normalize(reflect(l, n));
         
+    mint = EPSILON;
+    maxt = distance(hitloc, lightpos);
+
     // check occlusion with the soft/sharp shadow
-    // then continue with the phong calculation
+    float occlusion_term;
     
- 
+    if(sharpness > 99)
+        occlusion_term = sharp_shadow(hitloc, shadow_rd, mint, maxt);
+    else
+        occlusion_term = soft_shadow(hitloc, shadow_rd, mint, maxt, sharpness);
 
-//     shadow_rd = normalize(lightpos-hitloc);
+    // then continue with the phong calculation
+    vec3 diffuse_component, specular_component;
+    float dattenuation_term = 1./pow(distance(hitloc, lightpos), 2.);
 
-//     mint = EPSILON;
-//     maxt = distance(hitloc, lightpos);
+    diffuse_component = occlusion_term * dattenuation_term * max(dot(n, l),0.) * lightcoldiff;
+    specular_component = (dot(n,l)>0) ? occlusion_term * dattenuation_term * pow(max(dot(r,v),0.),lightspecpow) * lightcolspec : vec3(0);
 
-//     if(sharpness > 99)
-//         return lightcol * sharp_shadow(hitloc, shadow_rd, mint, maxt);
-//     else
-//         return lightcol * soft_shadow(hitloc, shadow_rd, mint, maxt, sharpness);
-
-    return vec3(0);
+    return diffuse_component + specular_component;
 }
 
 
@@ -1408,30 +1434,17 @@ void main()
 
         vec3 shadow_ro = hitpos+normal*EPSILON*2.;
 
-        vec3 sresult1 = visibility_only_lighting(1, hitpos, 100);
-        vec3 sresult2 = visibility_only_lighting(2, hitpos, 20);
-        vec3 sresult3 = visibility_only_lighting(3, hitpos, 16);
+        vec3 sresult1, sresult2, sresult3;
+        
+        // sresult1 = visibility_only_lighting(1, hitpos, 100);
+        // sresult2 = visibility_only_lighting(2, hitpos, 20);
+        // sresult3 = visibility_only_lighting(3, hitpos, 16);
 
-        // need to fix the lighting, to consider surface properties, a la previous iteration:
-        // float GetLight(vec3 p)
-        // {
-        //     //set this with a uniform
-        //     /* vec3 lightPos = vec3( 2, 5, 6); */
+        sresult1 = phong_lighting(1, hitpos, normal, ro, 100);
+        sresult2 = phong_lighting(2, hitpos, normal, ro, 20);
+        sresult3 = phong_lighting(3, hitpos, normal, ro, 16);
 
-        //     vec3 l = normalize(lightPos-p);
-        //     vec3 n = GetNormal(p);
-
-        //     float dif = clamp( dot( n, l), 0.0, 1.0);
-
-        //     float d = RayMarch(p+n*SURFACE_DISTANCE*2.0, l);
-
-        //     if(d < length(lightPos - p))
-        //         dif *= 0.1;
-
-        //     return dif;
-        // }
-
-
+        
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
         
         // apply lighting
