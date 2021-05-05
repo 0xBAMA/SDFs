@@ -4,9 +4,11 @@ layout( local_size_x = 8, local_size_y = 8, local_size_z = 1 ) in;
 // render texture, this is written to by this shader
 layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
+#define M_PI 3.1415926535897932384626433832795
+
 #define MAX_STEPS 500
-#define MAX_DIST  300.
-#define EPSILON   0.001 // closest surface distance
+#define MAX_DIST  400.
+#define EPSILON   0.002 // closest surface distance
 
 #define AA 2
 
@@ -32,6 +34,10 @@ uniform vec3 lightCol3s;
 uniform float specpower1;
 uniform float specpower2;
 uniform float specpower3;
+// sharpness terms per light
+uniform float shadow1;
+uniform float shadow2;
+uniform float shadow3;
 
 uniform vec3 basis_x;
 uniform vec3 basis_y;
@@ -1181,44 +1187,44 @@ float sdCylinder( vec3 p, vec2  h ) {
     return min(max(d.x,d.y),0.0) + length(max(d,0.0));
 }
 
-// float de( vec3 porig ) { // distance estimator for the scene
-//     vec3 p = porig;
+float old_de( vec3 porig ) { // distance estimator for the scene
+    vec3 p = porig;
 
-//     // p = pmod(p, vec3(3.85,0.65,3.617));
-// 		pModMirror2(p.xz, vec2(3.85, 3.617));
-// 		pModMirror1(p.y, 0.685);
+    // p = pmod(p, vec3(3.85,0.65,3.617));
+		pModMirror2(p.xz, vec2(3.85, 3.617));
+		pModMirror1(p.y, 0.685);
 
-// 		// sphereFold(p);
-// 		// mengerFold(p);
+		// sphereFold(p);
+		// mengerFold(p);
 
-//     float tfactor = abs(pow(abs(cos(time/2.)), 6.)) * 2 - 1;
+    float tfactor = abs(pow(abs(cos(time/2.)), 6.)) * 2 - 1;
 
-// 		// float drings = sdTorus(p, vec2(1.182, 0.08 + 0.05 * cos(time/5.+0.5*porig.x+0.8*porig.z)));
-// 		float drings = sdTorus(p, vec2(1.182, 0.08 ));
+		// float drings = sdTorus(p, vec2(1.182, 0.08 + 0.05 * cos(time/5.+0.5*porig.x+0.8*porig.z)));
+		float drings = sdTorus(p, vec2(1.182, 0.08 ));
 
-// 		// float dballz = sdSphere(p, 0.8 + 0.25*tfactor*(sin(time*2.1+porig.x*2.18+porig.z*2.7+porig.y*3.14)+1.));
-// 		float dballz = sdSphere(p, 0.8 + 0.25*tfactor);
+		// float dballz = sdSphere(p, 0.8 + 0.25*tfactor*(sin(time*2.1+porig.x*2.18+porig.z*2.7+porig.y*3.14)+1.));
+		float dballz = sdSphere(p, 0.8 + 0.25*tfactor);
 
-//     float pillarz = smin_op(drings, dballz, 0.9);
+    float pillarz = smin_op(drings, dballz, 0.9);
 
-// 		float dplane = fPlane(porig, vec3(0,1,0), 5.);
+		float dplane = fPlane(porig, vec3(0,1,0), 5.);
 
-// 		// p = pmod(p*0.2, vec3(2.4,1.2,1.6));
-// 		p = porig;
+		// p = pmod(p*0.2, vec3(2.4,1.2,1.6));
+		p = porig;
 
-// 		pR(p.yz, time/3.14);
-// 		// pR(p.xy, time*0.3);
+		pR(p.yz, time/3.14);
+		// pR(p.xy, time*0.3);
 
-//     float dtorus = fTorus( p, 1.2, 6.6);
+    float dtorus = fTorus( p, 1.2, 6.6);
 
-// 		float dfinal = smin_op(
-// 											smin_op(
-// 												max(pillarz, sdSphere(porig, 8.5)),
-// 													dtorus, 0.385),
-// 														dplane, 0.685);
+		float dfinal = smin_op(
+											smin_op(
+												max(pillarz, sdSphere(porig, 8.5)),
+													dtorus, 0.385),
+														dplane, 0.685);
 
-// 		return dfinal;
-// }
+		return dfinal;
+}
 
 
 float fractal_de(vec3 p0){
@@ -1229,8 +1235,6 @@ float fractal_de(vec3 p0){
    }
    return (length(p.xz/p.w)*0.25);
 }
-
-
 
 
 // hard crash - probably hardware related 
@@ -1249,12 +1253,36 @@ float fractal_de2(vec3 p0){
     return 0.25*torus(p0, p.xyz, vec2(5.,0.7));
 }
 
+float fractal_de3(vec3 p0){
+    vec4 p = vec4(p0, 1.);
+    for(int i = 0; i < 8; i++){
+        p.xyz = mod(p.xyz-1., 2.)-1.;
+        p*=(1.2/dot(p.xyz,p.xyz));
+    }
+    p/=p.w;
+    return abs(p.x)*0.25;
+}
+
+float fractal_de4(vec3 p0){
+    vec4 p = vec4(p0, 1.);
+    for(int i = 0; i < 8; i++){
+        
+        if(p.x > p.z)p.xz = p.zx;
+        if(p.z > p.y)p.zy = p.yz;
+        p = abs(p);
+        p.xyz = mod(p.xyz-1., 2.)-1.;
+
+        p*=1.23;
+    }
+    p/=p.w;
+    return abs(p.y)*0.25;
+}
 
 float de(vec3 p){
-    float dfractal = fractal_de(p);
-    // float dfractal = fractal_de2(p);
+    // return smin_op(fractal_de(p), fractal_de4(p), 0.385);
+    return fractal_de(p);
+    // return old_de(p);
 
-    return dfractal;
 }
 
 // global state tracking
@@ -1276,8 +1304,6 @@ vec3 norm(vec3 p) { // to get the normal vector for a point in space, this funct
     vec2 e = vec2( EPSILON, 0.); // computes the gradient of the estimator function
     return normalize( vec3(de(p)) - vec3( de(p-e.xyy), de(p-e.yxy), de(p-e.yyx) ));
 }
-
-
 
 float sharp_shadow( in vec3 ro, in vec3 rd, float mint, float maxt ){
     for( float t=mint; t<maxt; )    {
@@ -1309,14 +1335,14 @@ float soft_shadow( in vec3 ro, in vec3 rd, float mint, float maxt, float k /*hig
     return res*res*(3.0-2.0*res);
 }
 
-vec3 visibility_only_lighting(int lightnum, vec3 hitloc, float sharpness /*over 99. considered 'sharp'*/){
+vec3 visibility_only_lighting(int lightnum, vec3 hitloc){
     vec3 shadow_rd, lightpos, lightcol;
-    float mint, maxt;
+    float mint, maxt, sharpness;
 
     switch(lightnum){
-        case 1: lightpos = lightPos1; lightcol = lightCol1d; break;
-        case 2: lightpos = lightPos2; lightcol = lightCol2d; break;
-        case 3: lightpos = lightPos3; lightcol = lightCol3d; break;
+        case 1: lightpos = lightPos1; lightcol = lightCol1d; sharpness = shadow1; break;
+        case 2: lightpos = lightPos2; lightcol = lightCol2d; sharpness = shadow2; break;
+        case 3: lightpos = lightPos3; lightcol = lightCol3d; sharpness = shadow3; break;
         default: break;
     }
 
@@ -1331,11 +1357,11 @@ vec3 visibility_only_lighting(int lightnum, vec3 hitloc, float sharpness /*over 
         return lightcol * soft_shadow(hitloc, shadow_rd, mint, maxt, sharpness);
 }
 
-vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos, float sharpness){
+vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos){
 
 
     vec3 shadow_rd, lightpos, lightcoldiff, lightcolspec;
-    float mint, maxt, lightspecpow;
+    float mint, maxt, lightspecpow, sharpness;
 
     switch(lightnum){ // eventually handle these as uniform vector inputs, to handle more than three
         case 1:
@@ -1343,47 +1369,58 @@ vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos, float sh
             lightcoldiff = lightCol1d;
             lightcolspec = lightCol1s;
             lightspecpow = specpower1;
+            sharpness    = shadow1;
             break;
         case 2:
             lightpos     = lightPos2;
             lightcoldiff = lightCol2d;
             lightcolspec = lightCol2s;
             lightspecpow = specpower2;
+            sharpness    = shadow2;
             break;
         case 3:
             lightpos     = lightPos3;
             lightcoldiff = lightCol3d;
             lightcolspec = lightCol3s;
             lightspecpow = specpower3;
+            sharpness    = shadow3;
             break;
         default:
             break;
     }
 
-    shadow_rd = normalize(lightpos-hitloc);
+    mint = EPSILON;
+    maxt = distance(hitloc, lightpos);
     
-    vec3 l = normalize(hitloc - lightpos);
+    /*vec3 l = -normalize(hitloc - lightpos);
     vec3 v = normalize(hitloc - eye_pos);
     vec3 n = normalize(norm);
     vec3 r = normalize(reflect(l, n));
         
-    mint = EPSILON;
-    maxt = distance(hitloc, lightpos);
-
+    diffuse_component = occlusion_term * dattenuation_term * max(dot(n, l),0.) * lightcoldiff;
+    specular_component = (dot(n,l)>0) ? occlusion_term * dattenuation_term * pow(max(dot(r,v),0.),lightspecpow) * lightcolspec : vec3(0);
+    */
+    
+    vec3 l = normalize(lightpos - hitloc);
+    vec3 v = normalize(eye_pos - hitloc);
+    vec3 h = normalize(l+v);
+    vec3 n = normalize(norm);
+    
+    // then continue with the phong calculation
+    vec3 diffuse_component, specular_component;
+    
     // check occlusion with the soft/sharp shadow
     float occlusion_term;
     
     if(sharpness > 99)
-        occlusion_term = sharp_shadow(hitloc, shadow_rd, mint, maxt);
+        occlusion_term = sharp_shadow(hitloc, l, mint, maxt);
     else
-        occlusion_term = soft_shadow(hitloc, shadow_rd, mint, maxt, sharpness);
+        occlusion_term = soft_shadow(hitloc, l, mint, maxt, sharpness);
 
-    // then continue with the phong calculation
-    vec3 diffuse_component, specular_component;
     float dattenuation_term = 1./pow(distance(hitloc, lightpos), 2.);
-
-    diffuse_component = occlusion_term * dattenuation_term * max(dot(n, l),0.) * lightcoldiff;
-    specular_component = (dot(n,l)>0) ? occlusion_term * dattenuation_term * pow(max(dot(r,v),0.),lightspecpow) * lightcolspec : vec3(0);
+    
+    diffuse_component = occlusion_term * dattenuation_term * max(dot(n, l), 0.) * lightcoldiff;
+    specular_component = (dot(n,l) > 0) ? occlusion_term * dattenuation_term * ((lightspecpow+2)/(2*M_PI)) * pow(max(dot(n,h),0.),lightspecpow) * lightcolspec : vec3(0);
 
     return diffuse_component + specular_component;
 }
@@ -1436,14 +1473,17 @@ void main()
 
         vec3 sresult1, sresult2, sresult3;
         
-        // sresult1 = visibility_only_lighting(1, hitpos, 100);
-        // sresult2 = visibility_only_lighting(2, hitpos, 20);
-        // sresult3 = visibility_only_lighting(3, hitpos, 16);
-
-        sresult1 = phong_lighting(1, hitpos, normal, ro, 100);
-        sresult2 = phong_lighting(2, hitpos, normal, ro, 20);
-        sresult3 = phong_lighting(3, hitpos, normal, ro, 16);
-
+        #define VISONLY 0
+        
+        #if VISONLY
+        sresult1 = visibility_only_lighting(1, hitpos);
+        sresult2 = visibility_only_lighting(2, hitpos);
+        sresult3 = visibility_only_lighting(3, hitpos);
+		#else
+        sresult1 = phong_lighting(1, hitpos, normal, ro);
+        sresult2 = phong_lighting(2, hitpos, normal, ro);
+        sresult3 = phong_lighting(3, hitpos, normal, ro);
+		#endif
         
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
         
@@ -1534,3 +1574,9 @@ void main()
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }
+
+
+
+
+
+

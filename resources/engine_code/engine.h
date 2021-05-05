@@ -93,6 +93,10 @@ private:
 	float specpower1 = 5;
 	float specpower2 = 50;
 	float specpower3 = 150;
+	// shadow sharpness terms
+	float shadow1 = 100;
+	float shadow2 = 100;
+	float shadow3 = 100;
 
 	// light positions
 	glm::vec3 lightPos1 = glm::vec3( 2.3, 1, 1);
@@ -119,6 +123,11 @@ private:
 	void start_imgui();
 	void end_imgui();
 	void control_window();
+	void editor_window();
+
+	// render flags (toggle shader execution)
+	bool raymarch_stage = true;
+	bool dither_stage = true;
 
 	// to confirm quit
 	bool quitconfirm = false;

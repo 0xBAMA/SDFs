@@ -467,15 +467,19 @@ void engine::control_window()
     ImGui::Text("Lights");
     ImGui::ColorEdit3("Light 1 Diffuse", (float*)&lightCol1d);
     ImGui::ColorEdit3("Light 1 Specular", (float*)&lightCol1s);
-    ImGui::SliderFloat("Light 1 Spec Power", &specpower1, 0.1, 400.0);
+    ImGui::SliderFloat("Light 1 Spec Power", &specpower1, 0.1, 200.0);
+    ImGui::SliderFloat("Light 1 Shadow Sharpness", &shadow1, 0.1, 100.0);
+    // what should the visibility only/phong switcher look like?
     ImGui::Text("");
     ImGui::ColorEdit3("Light 2 Diffuse", (float*)&lightCol2d);
     ImGui::ColorEdit3("Light 2 Specular", (float*)&lightCol2s);
-    ImGui::SliderFloat("Light 2 Spec Power", &specpower2, 0.1, 400.0);
+    ImGui::SliderFloat("Light 2 Spec Power", &specpower2, 0.1, 200.0);
+    ImGui::SliderFloat("Light 2 Shadow Sharpness", &shadow2, 0.1, 100.0);
     ImGui::Text("");
     ImGui::ColorEdit3("Light 3 Diffuse", (float*)&lightCol3d);
     ImGui::ColorEdit3("Light 3 Specular", (float*)&lightCol3s);
-    ImGui::SliderFloat("Light 3 Spec Power", &specpower3, 0.1, 400.0);
+    ImGui::SliderFloat("Light 3 Spec Power", &specpower3, 0.1, 200.0);
+    ImGui::SliderFloat("Light 3 Shadow Sharpness", &shadow3, 0.1, 100.0);
     ImGui::Text("");
 
     ImGui::EndTabItem();
@@ -518,18 +522,77 @@ void engine::control_window()
   ImGui::End();
 }
 
+void engine::editor_window(){
+  static TextEditor editor;
+  static auto lang = TextEditor::LanguageDefinition::GLSL();
+
+  auto cpos = editor.GetCursorPosition();
+  editor.SetPalette(TextEditor::GetDarkPalette());
+
+  static const char *fileToEdit = "resources/engine_code/shaders/raymarch.cs.glsl";
+  static bool loaded = false;
+  if (!loaded) {
+    std::ifstream t(fileToEdit);
+    editor.SetLanguageDefinition(lang);
+    if (t.good()) {
+      editor.SetText(std::string((std::istreambuf_iterator<char>(t)),
+                                  std::istreambuf_iterator<char>()));
+      loaded = true;
+    }
+  }
+
+  ImGui::Begin("Editor", NULL, 0);
+  ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1,
+              cpos.mColumn + 1, editor.GetTotalLines(),
+              editor.IsOverwrite() ? "Ovr" : "Ins",
+              editor.CanUndo() ? "*" : " ",
+              editor.GetLanguageDefinition().mName.c_str(), fileToEdit);
+
+  editor.Render("TextEditor", ImVec2(-FLT_MIN, total_screen_height / 2));
+
+  ImGui::Text(" ");
+  ImGui::Text(" ");
+  ImGui::SameLine();
+  if(ImGui::SmallButton(" Compile "))
+  {
+   // compile the shader
+    auto shader = UShader(editor.GetText());
+    raymarch_shader = shader.Program;
+    
+    cout << std::string(shader.report);
+  }
+  ImGui::SameLine();
+  ImGui::Text(" ");
+  ImGui::SameLine();
+  if(ImGui::SmallButton(" Reload "))
+  {
+    std::ifstream t(fileToEdit);
+    if (t.good()) {
+      editor.SetText(std::string((std::istreambuf_iterator<char>(t)),
+                                  std::istreambuf_iterator<char>()));
+      loaded = true;
+    }
+  }
+  ImGui::SameLine();
+  ImGui::Text(" ");
+  ImGui::SameLine();
+  if(ImGui::SmallButton(" Save "))
+  {
+    std::ofstream file("resources/engine_code/shaders/raymarch.cs.glsl");
+    std::string savetext(editor.GetText());
+    file << savetext;
+  }
+  
+  ImGui::End();
+}
+
 void engine::animate_lights(float t){
-  static glm::vec3 basisx, basisy, basisz;
   
   // use some perlin noise to animate brightness and move position around a little
+  PerlinNoise p;
 
-  // generally have the lights orbit the view position (using the basis vectors)
-   // also check basis_xyz against static basisxyz to see if the view has changed and maybe do some kind of lerp
+  
 
-  // temporary, for warnings
-  (void) basisx;
-  (void) basisy;
-  (void) basisz;
 }
 
 void engine::draw_everything() {
@@ -539,99 +602,108 @@ void engine::draw_everything() {
   // update rotation matrix
   glm::quat rotationx = glm::angleAxis(rotation_about_x, glm::vec3(1,0,0));
   glm::quat rotationy = glm::angleAxis(rotation_about_y, glm::vec3(0,1,0));
-  /* glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1)); */
-  glm::mat4 rotation = glm::toMat4(rotationy * rotationx);
+  glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1));
+  glm::mat4 rotation = glm::toMat4(rotationy * rotationx * rotationz);
 
   // create the basis vectors - these are more static now being retained as member variables
   basis_x = (rotation*glm::vec4(1,0,0,0)).xyz();
   basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
   basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
 
-  //  ╦═╗┌─┐┬ ┬┌┬┐┌─┐┬─┐┌─┐┬ ┬
-  //  ╠╦╝├─┤└┬┘│││├─┤├┬┘│  ├─┤
-  //  ╩╚═┴ ┴ ┴ ┴ ┴┴ ┴┴└─└─┘┴ ┴
-  // using the raymarch shader
-  glUseProgram(raymarch_shader);
+  if(raymarch_stage){ // toggles invocation of the raymarch step
+    //  ╦═╗┌─┐┬ ┬┌┬┐┌─┐┬─┐┌─┐┬ ┬
+    //  ╠╦╝├─┤└┬┘│││├─┤├┬┘│  ├─┤
+    //  ╩╚═┴ ┴ ┴ ┴ ┴┴ ┴┴└─└─┘┴ ┴
+    // using the raymarch shader
+    glUseProgram(raymarch_shader);
 
-  // send basis vectors to the raymarch shader
-  glUniform3f(glGetUniformLocation(raymarch_shader, "basis_x"), basis_x.x, basis_x.y, basis_x.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "basis_y"), basis_y.x, basis_y.y, basis_y.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "basis_z"), basis_z.x, basis_z.y, basis_z.z);
+    // send basis vectors to the raymarch shader
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_x"), basis_x.x, basis_x.y, basis_x.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_y"), basis_y.x, basis_y.y, basis_y.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_z"), basis_z.x, basis_z.y, basis_z.z);
 
-  // basic diffuse color
-  glUniform3f(glGetUniformLocation(raymarch_shader, "basic_diffuse"), basic_diffuse.x, basic_diffuse.y, basic_diffuse.z);
+    // basic diffuse color
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basic_diffuse"), basic_diffuse.x, basic_diffuse.y, basic_diffuse.z);
 
-  // fog color
-  glUniform3f(glGetUniformLocation(raymarch_shader, "fog_color"), clear_color.x, clear_color.y, clear_color.z);
+    // fog color
+    glUniform3f(glGetUniformLocation(raymarch_shader, "fog_color"), clear_color.x, clear_color.y, clear_color.z);
 
-  // tonemapping mode
-  glUniform1i(glGetUniformLocation(raymarch_shader, "tonemap_mode"), current_tmode);
+    // tonemapping mode
+    glUniform1i(glGetUniformLocation(raymarch_shader, "tonemap_mode"), current_tmode);
     
-  // gamma correction
-  glUniform1f(glGetUniformLocation(raymarch_shader, "gamma"), gamma_correction);
+    // gamma correction
+    glUniform1f(glGetUniformLocation(raymarch_shader, "gamma"), gamma_correction);
   
-  // send light information to the raymarch shader
-  // animate light parameters
-  animate_lights(SDL_GetTicks() * 0.001);
+    // send light information to the raymarch shader
+    // animate light parameters
+    animate_lights(SDL_GetTicks() * 0.001);
   
-  // diffuse color
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1d"), lightCol1d.x, lightCol1d.y, lightCol1d.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2d"), lightCol2d.x, lightCol2d.y, lightCol2d.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3d"), lightCol3d.x, lightCol3d.y, lightCol3d.z);
+    // diffuse color
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1d"), lightCol1d.x, lightCol1d.y, lightCol1d.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2d"), lightCol2d.x, lightCol2d.y, lightCol2d.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3d"), lightCol3d.x, lightCol3d.y, lightCol3d.z);
 
-  // specular color
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1s"), lightCol1s.x, lightCol1s.y, lightCol1s.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2s"), lightCol2s.x, lightCol2s.y, lightCol2s.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3s"), lightCol3s.x, lightCol3s.y, lightCol3s.z);
+    // specular color
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1s"), lightCol1s.x, lightCol1s.y, lightCol1s.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2s"), lightCol2s.x, lightCol2s.y, lightCol2s.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol3s"), lightCol3s.x, lightCol3s.y, lightCol3s.z);
 
-  // specular power
-  glUniform1f(glGetUniformLocation(raymarch_shader, "specpower1"), specpower1);
-  glUniform1f(glGetUniformLocation(raymarch_shader, "specpower2"), specpower2);
-  glUniform1f(glGetUniformLocation(raymarch_shader, "specpower3"), specpower3);
+    // specular power
+    glUniform1f(glGetUniformLocation(raymarch_shader, "specpower1"), specpower1);
+    glUniform1f(glGetUniformLocation(raymarch_shader, "specpower2"), specpower2);
+    glUniform1f(glGetUniformLocation(raymarch_shader, "specpower3"), specpower3);
   
-  // position
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos1"), lightPos1.x, lightPos1.y, lightPos1.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), lightPos2.x, lightPos2.y, lightPos2.z);
-  glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos3"), lightPos3.x, lightPos3.y, lightPos3.z);
+    // shadow sharpness
+    glUniform1f(glGetUniformLocation(raymarch_shader, "shadow1"), shadow1);
+    glUniform1f(glGetUniformLocation(raymarch_shader, "shadow2"), shadow2);
+    glUniform1f(glGetUniformLocation(raymarch_shader, "shadow3"), shadow3);
+  
+    // position
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos1"), lightPos1.x, lightPos1.y, lightPos1.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), lightPos2.x, lightPos2.y, lightPos2.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos3"), lightPos3.x, lightPos3.y, lightPos3.z);
 
-  // send position to the raymarch shader
-  glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);
+    // send position to the raymarch shader
+    glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);
 
-  // send a quantitiy representing time
-  glUniform1f(glGetUniformLocation(raymarch_shader, "time"), SDL_GetTicks() * 0.001);
+    // send a quantitiy representing time
+    glUniform1f(glGetUniformLocation(raymarch_shader, "time"), SDL_GetTicks() * 0.001);
 
-  // invoke the shader on the GPU
-  glDispatchCompute( WIDTH/8, HEIGHT/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8
+    // invoke the shader on the GPU
+    glDispatchCompute( WIDTH/8, HEIGHT/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8
+    
+    // sync to ensure the raymarched image is in the texture
+    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+  }
 
-  // sync to ensure the raymarched image is in the texture
-  glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+  if(dither_stage){ // toggles invocation of the dither step
+    //  ╔╦╗┬┌┬┐┬ ┬┌─┐┬─┐
+    //   ║║│ │ ├─┤├┤ ├┬┘
+    //  ═╩╝┴ ┴ ┴ ┴└─┘┴└─
+    // invoke the dither shader
+    //  - needs to know mode, and also frame number to cycle the blue noise
+    glUseProgram(dither_shader);
 
-  //  ╔╦╗┬┌┬┐┬ ┬┌─┐┬─┐
-  //   ║║│ │ ├─┤├┤ ├┬┘
-  //  ═╩╝┴ ┴ ┴ ┴└─┘┴└─
-  // invoke the dither shader
-  //  - needs to know mode, and also frame number to cycle the blue noise
-  glUseProgram(dither_shader);
+    static unsigned int frame = 0;
+    frame++; // increment
+    glUniform1i(glGetUniformLocation(dither_shader, "frame"), frame); // send
+    glUniform1i(glGetUniformLocation(dither_shader, "bits"), num_bits); 
+    glUniform1i(glGetUniformLocation(dither_shader, "spaceswitch"), current_colorspace); 
+    glUniform1i(glGetUniformLocation(dither_shader, "dithermode"), current_dither_mode); 
+    glUniform1i(glGetUniformLocation(dither_shader, "noise_function"), current_noise_func); 
 
-  static unsigned int frame = 0;
-  frame++; // increment
-  glUniform1i(glGetUniformLocation(dither_shader, "frame"), frame); // send
-  glUniform1i(glGetUniformLocation(dither_shader, "bits"), num_bits); 
-  glUniform1i(glGetUniformLocation(dither_shader, "spaceswitch"), current_colorspace); 
-  glUniform1i(glGetUniformLocation(dither_shader, "dithermode"), current_dither_mode); 
-  glUniform1i(glGetUniformLocation(dither_shader, "noise_function"), current_noise_func); 
+    // parameters controlling the dither process
+    // current_colorspace
+    // current_noise_func
+    // current_dither_mode
+    // num_bits
 
-  // parameters controlling the dither process
-  // current_colorspace
-  // current_noise_func
-  // current_dither_mode
-  // num_bits
+    // invoke on the GPU
+    glDispatchCompute( WIDTH/8, HEIGHT/8, 1 );
 
-  // invoke on the GPU
-  glDispatchCompute( WIDTH/8, HEIGHT/8, 1 );
-
-  // sync to ensure the dithered image is in the texture
-  glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+    // sync to ensure the dithered image is in the texture
+    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+  }
 
   //  ╔╦╗┬┌─┐┌─┐┬  ┌─┐┬ ┬
   //   ║║│└─┐├─┘│  ├─┤└┬┘
@@ -662,6 +734,7 @@ void engine::draw_everything() {
     
     quit_conf(&quitconfirm); // show quit confirm window, if relevant
     control_window(); // do the controls window
+    editor_window(); // do the window with the text editor
 
     end_imgui(); // put ImGui stuff in the back buffer
   }

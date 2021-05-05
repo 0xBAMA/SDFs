@@ -201,4 +201,79 @@ class CShader //very similar to above, but for compute shader instead of vertex/
     }
 };
 
+class UShader // very similar to above, but compiles strings
+{
+public:
+  GLuint Program;
+  std::string report;
+
+  // Constructor generates the shader on the fly
+  UShader(std::string text, bool verbose = false) {
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+
+    const GLchar *cstrCode = text.c_str();
+    std::stringstream ss;
+
+    // 2. Compile shaders
+    GLuint shader;
+    GLint success;
+    GLchar infoLog[512];
+
+    // Vertex Shader
+    shader = glCreateShader(GL_COMPUTE_SHADER);
+    glShaderSource(shader, 1, &cstrCode, NULL);
+    glCompileShader(shader);
+
+    // Print compile errors if any
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+      // report compilation failure + error
+      glGetShaderInfoLog(shader, 512, NULL, infoLog);
+      ss << "Compilation Failed: " << infoLog;
+    } else {
+      // report compilation successful
+      ss << "Compilation Success. ";
+    }
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    float time_microseconds =
+        std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+
+    ss << std::setw(4) << " (" << time_microseconds / 1000. << " ms)" << endl;
+
+    t1 = std::chrono::high_resolution_clock::now();
+
+    // Shader Program
+    this->Program = glCreateProgram();
+    glAttachShader(this->Program, shader);
+    glLinkProgram(this->Program);
+
+    // Print linking errors if any
+    glGetProgramiv(this->Program, GL_LINK_STATUS, &success);
+    if (!success) {
+      // report linking failure + error
+      glGetProgramInfoLog(this->Program, 512, NULL, infoLog);
+      ss << "Linking Failed: " << infoLog;
+    } else {
+      // report linking successful
+      ss << "Linking Success.";
+    }
+
+    // Delete the shaders as they're linked into our program now and no longer
+    // necessery
+    glDeleteShader(shader);
+
+    // finish report
+    t2 = std::chrono::high_resolution_clock::now();
+    time_microseconds =
+        std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    ss << std::setw(4) << " (" << time_microseconds / 1000. << " ms)" << endl;
+
+    report = ss.str();
+  }
+  // Uses the current shader
+  void Use() { glUseProgram(this->Program); }
+};
+
 #endif
