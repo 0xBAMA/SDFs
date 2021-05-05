@@ -8,10 +8,10 @@ Experimenting with SDFs - Built on NQAE
 ### Plans for part 3:
 This has been a little while coming. I've been thinking a lot about what I want to do with it, while dealing with the ongoing feature creep of Voraldo 1.2. On the plus side, that's been a good opportunity to get up to speed on SDF methodology (folds and other space manipulation, plus a huge range of starting primitives).
 
-- dithering in even more color spaces, perhaps blending a few different results together?
-- soft shadows
-- maybe higher resolution (320x240 to 640x480, but we'll see)
-- multisampling the initial raymarching result
-- experimenting with distance estimated fractals
-- a scheme for refractive objects (lens shapes)
-- cycled blue noise dithering using the golden ratio trick
+- ~~dithering in even more color spaces,~~ perhaps blending a few different results together?
+- ~~soft shadows~~
+- maybe higher resolution (640x480 or widescreen variant of that?) - currently 512x256, just to be friendly with shader invocation dimensions
+- ~~multisampling the initial raymarching result~~
+- ~~experimenting with distance estimated fractals~~
+- a scheme for refractive objects - lens shapes made by the intersection of two spheres (spheres of different radii?) - methodology based on hit, refract, march to hit on the inside (using inverted lens SDF), refract again on exit, then march to final hit - this is all a relatively hard-coded process the way I have it planned, so we'll see how it turns out
+- ~~cycled blue noise dithering using the golden ratio trick~~
