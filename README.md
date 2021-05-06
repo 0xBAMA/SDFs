@@ -8,6 +8,10 @@ Experimenting with SDFs - Built on NQAE
 ### Plans for part 3:
 This has been a little while coming. I've been thinking a lot about what I want to do with it, while dealing with the ongoing feature creep of Voraldo 1.2. On the plus side, that's been a good opportunity to get up to speed on SDF methodology (folds and other space manipulation, plus a huge range of starting primitives).
 
+The raymarching code is in resources > engine_code > shaders > raymarch.cs.glsl
+
+The dithering code is in resoureces > engine_code > shaders > dither.cs.glsl
+
 - ~~dithering in even more color spaces,~~ perhaps blending a few different results together?
 - finish implementing more flexible bitcrush implementation (considering signed and unsigned 8-bit values to deal with colorspaces defined in negative ranges)
 - ~~soft shadows~~
