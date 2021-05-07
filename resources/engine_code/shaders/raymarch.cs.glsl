@@ -10,7 +10,7 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 #define MAX_DIST  400.
 #define EPSILON   0.002 // closest surface distance
 
-#define AA 2
+#define AA 1
 
 uniform vec3 basic_diffuse;
 uniform vec3 fog_color;
@@ -1278,9 +1278,150 @@ float fractal_de4(vec3 p0){
     return abs(p.y)*0.25;
 }
 
+float fractal_de5(vec3 pos) 
+{
+#define SCALE 2.8
+#define MINRAD2 .25
+    float minRad2 = clamp(MINRAD2, 1.0e-9, 1.0);
+#define scale (vec4(SCALE, SCALE, SCALE, abs(SCALE)) / minRad2)
+    float absScalem1 = abs(SCALE - 1.0);
+    float AbsScaleRaisedTo1mIters = pow(abs(SCALE), float(1-10));
+	vec4 p = vec4(pos,1);
+	vec4 p0 = p;  // p.w is the distance estimate
+
+	for (int i = 0; i < 9; i++)
+	{
+		p.xyz = clamp(p.xyz, -1.0, 1.0) * 2.0 - p.xyz;
+
+		float r2 = dot(p.xyz, p.xyz);
+		p *= clamp(max(minRad2/r2, minRad2), 0.0, 1.0);
+
+		// scale, translate
+		p = p*scale + p0;
+	}
+	return ((length(p.xyz) - absScalem1) / p.w - AbsScaleRaisedTo1mIters);
+#undef MINRAD2
+#undef SCALE
+#undef scale
+}
+
+
+float fractal_de6( vec3 p )
+{
+	p = p.xzy;
+    vec3 cSize = vec3(1., 1., 1.3);
+	float scale = 1.;
+	for( int i=0; i < 12;i++ )
+	{
+		p = 2.0*clamp(p, -cSize, cSize) - p;
+		float r2 = dot(p,p);
+		float k = max((2.)/(r2), .027);
+		p     *= k;
+		scale *= k;
+	}
+	float l = length(p.xy);
+	float rxy = l - 4.0;
+	float n = l * p.z;
+	rxy = max(rxy, -(n) / 4.);
+	return (rxy) / abs(scale);
+}
+
+float fractal_de7( vec3 p )
+{
+	p = p.xzy;
+    vec3 cSize = vec3(1., 1., 1.3);
+	float scale = 1.;
+	for( int i=0; i < 12;i++ )
+	{
+		p = 2.0*clamp(p, -cSize, cSize) - p;
+        float r2 = dot(p,p+sin(p.z*.3));
+		float k = max((2.)/(r2), .027);
+		p     *= k;
+		scale *= k;
+	}
+	float l = length(p.xy);
+	float rxy = l - 4.0;
+	float n = l * p.z;
+	rxy = max(rxy, -(n) / 4.);
+	return (rxy) / abs(scale);
+}
+
+float fractal_de8( vec3 p )
+{
+	float scale = 1.0;
+    
+    float orb = 10000.0;
+
+    for( int i=0; i<6; i++ )
+	{
+		p = -1.0 + 2.0*fract(0.5*p+0.5);
+
+        p -= sign(p)*0.04; // trick
+        
+        float r2 = dot(p,p);
+		float k = 0.95/r2;
+		p     *= k;
+		scale *= k;
+
+        orb = min( orb, r2);
+	}
+
+    float d1 = sqrt( min( min( dot(p.xy,p.xy), dot(p.yz,p.yz) ), dot(p.zx,p.zx) ) ) - 0.02;
+    float d2 = abs(p.y);
+    float dmi = d2;
+    float adr = 0.7*floor((0.5*p.y+0.5)*8.0);
+    if( d1<d2 )
+    {
+        dmi = d1;
+        adr = 0.0;
+    }
+    return 0.5*dmi/scale;
+}
+
+float fractal_de9( vec3 p )
+{
+    vec3 CSize = vec3(1., 1.7, 1.);
+	p = p.xzy;
+	float scale = 1.1;
+	for( int i=0; i < 8;i++ )
+	{
+		p = 2.0*clamp(p, -CSize, CSize) - p;
+		float r2 = dot(p,p);
+		float k = max((2.)/(r2), .5);
+		p     *= k;
+		scale *= k;
+	}
+	float l = length(p.xy);
+	float rxy = l - 1.0;
+	float n = l * p.z;
+	rxy = max(rxy, (n) / 8.);
+	return (rxy) / abs(scale);
+}
+
+float fractal_de10( vec3 p )
+{
+    vec3 CSize = vec3(1., 1.7, 1.);
+	p = p.xzy;
+	float scale = 1.1;
+	for( int i=0; i < 8;i++ )
+	{
+		p = 2.0*clamp(p, -CSize, CSize) - p;
+        float r2 = dot(p,p+sin(p.z*.3)); //Alternate fractal
+		float k = max((2.)/(r2), .5);
+		p     *= k;
+		scale *= k;
+	}
+	float l = length(p.xy);
+	float rxy = l - 1.0;
+	float n = l * p.z;
+	rxy = max(rxy, (n) / 8.);
+	return (rxy) / abs(scale);
+}
+
+
 float de(vec3 p){
-    // return smin_op(fractal_de(p), fractal_de4(p), 0.385);
-    return fractal_de(p);
+     //return smin_op(fractal_de(p), fractal_de4(p), 0.385);
+    return fractal_de10(p);
     // return old_de(p);
 
 }
@@ -1365,21 +1506,21 @@ vec3 phong_lighting(int lightnum, vec3 hitloc, vec3 norm, vec3 eye_pos){
 
     switch(lightnum){ // eventually handle these as uniform vector inputs, to handle more than three
         case 1:
-            lightpos     = lightPos1;
+            lightpos     = eye_pos + lightPos1;
             lightcoldiff = lightCol1d;
             lightcolspec = lightCol1s;
             lightspecpow = specpower1;
             sharpness    = shadow1;
             break;
         case 2:
-            lightpos     = lightPos2;
+            lightpos     = eye_pos + lightPos2;
             lightcoldiff = lightCol2d;
             lightcolspec = lightCol2s;
             lightspecpow = specpower2;
             sharpness    = shadow2;
             break;
         case 3:
-            lightpos     = lightPos3;
+            lightpos     = eye_pos + lightPos3;
             lightcoldiff = lightCol3d;
             lightcolspec = lightCol3s;
             lightspecpow = specpower3;
@@ -1440,6 +1581,14 @@ float calcAO( in vec3 pos, in vec3 nor )
     return clamp( 1.0 - 1.5*occ, 0.0, 1.0 );
 }
 
+// By TekF... getting a crash
+// void BarrelDistortion( inout vec3 ray, float degree )
+// {
+// 	ray.z /= degree;
+// 	ray.z = ( ray.z*ray.z - dot(ray.xy,ray.xy) );
+// 	ray.z = degree*sqrt(ray.z);
+// }
+
 void main()
 {
 
@@ -1488,9 +1637,9 @@ void main()
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
         
         // apply lighting
-        vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
+        // vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
 
-        temp *= calcAO(shadow_ro, normal); // ambient occlusion calculation
+        // temp *= calcAO(shadow_ro, normal); // ambient occlusion calculation
 
         col.rgb += temp;
         dresult_avg += dresult;
@@ -1507,6 +1656,7 @@ void main()
     // depth_term = (1-pow(dresult_avg/30., 1.618));
     // depth_term = clamp(exp(0.25*dresult_avg-3.), 0., 10.);
     depth_term = exp(0.25*dresult_avg-3.);
+    // depth_term = exp(-0.6*max(dresult_avg-3., 0.0));
     // depth_term = (sqrt(dresult_avg)/8.) * dresult_avg;
     // depth_term = sqrt(dresult_avg/9.);
     // depth_term = pow(dresult_avg/10., 2.);
@@ -1514,7 +1664,6 @@ void main()
     
     // do a mix here, between col and the fog color, with the selected depth falloff term
     col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
-    // col.rgb = mix(col.rgb, vec3(1,0.2,0), depth_term);
 
     // color stuff happens here, because the imageStore will be quantizing to 8 bit
     // tonemapping 
@@ -1574,6 +1723,13 @@ void main()
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }
+
+
+
+
+
+
+
 
 
 
