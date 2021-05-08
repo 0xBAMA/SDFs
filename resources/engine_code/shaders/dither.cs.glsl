@@ -809,8 +809,8 @@ vec3 get_monochrome_triangle(){
 // triangle noise RGB
 vec3 get_rgb_triangle(){
     return vec3(triangleNoise(vec2(gl_GlobalInvocationID.xy) / vec2(gl_WorkGroupSize.xy)),
-                triangleNoise(vec2(gl_GlobalInvocationID.xy) / vec2(gl_WorkGroupSize.xy + 0.1337)),
-                triangleNoise(vec2(gl_GlobalInvocationID.xy) / vec2(gl_WorkGroupSize.xy + 0.3141)));
+                triangleNoise(vec2(gl_GlobalInvocationID.xy + 0.1337) / vec2(gl_WorkGroupSize.xy)),
+                triangleNoise(vec2(gl_GlobalInvocationID.xy + 0.3141) / vec2(gl_WorkGroupSize.xy)));
 }
 
 

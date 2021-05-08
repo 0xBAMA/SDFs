@@ -103,6 +103,10 @@ private:
 	glm::vec3 lightPos2 = glm::vec3( 1, 2.3, 1);
 	glm::vec3 lightPos3 = glm::vec3( 1, 1, 2.3);
 
+	float AO_scale = 1.;
+	float depth_scale = 1.;
+	int depth_selector = 4;	
+
 	// position
 	glm::vec3 position = glm::vec3(1., 1., 1.);
 

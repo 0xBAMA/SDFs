@@ -490,9 +490,15 @@ void engine::control_window()
     ImGui::ColorEdit3("Fog Color", (float*)&clear_color);
     ImGui::Text("");
     
-    // fog methodology
-    // ... tbd ...
+    // fog terms
+    ImGui::SliderFloat(" Depth Scale ", &depth_scale, 0.001, 4.);
     
+    const char* dmodes[] = {"1", "2", "3", "EXP1", "EXP2", "EXP3", "EXP4", "POW1", "POW2", "POW3"};
+    ImGui::Combo("Depth Falloff", &depth_selector, dmodes, IM_ARRAYSIZE(dmodes));
+    
+    // ao scale
+    ImGui::SliderFloat(" AO Scale ", &AO_scale, 0.001, 4.);
+
     // tonemap methodology
     const char* tmodes[] = {"None (Linear)", "ACES (Narkowicz 2015)", "Unreal Engine 3", "Unreal Engine 4", "Uncharted 2", "Gran Turismo", "Modified Gran Turismo", "Rienhard", "Modified Rienhard", "jt", "robobo1221s", "robo", "reinhardRobo", "jodieRobo", "jodieRobo2", "jodieReinhard", "jodieReinhard2"};
     ImGui::Combo("Tonemapping Mode", &current_tmode, tmodes, IM_ARRAYSIZE(tmodes));
@@ -657,11 +663,20 @@ void engine::draw_everything() {
     glUniform1f(glGetUniformLocation(raymarch_shader, "shadow1"), shadow1);
     glUniform1f(glGetUniformLocation(raymarch_shader, "shadow2"), shadow2);
     glUniform1f(glGetUniformLocation(raymarch_shader, "shadow3"), shadow3);
-  
+
+    // ambient occlusion strength
+    glUniform1f(glGetUniformLocation(raymarch_shader, "AO_scale"), AO_scale);
+
     // position
     glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos1"), lightPos1.x, lightPos1.y, lightPos1.z);
     glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), lightPos2.x, lightPos2.y, lightPos2.z);
     glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos3"), lightPos3.x, lightPos3.y, lightPos3.z);
+
+    // depth scale term
+    glUniform1f(glGetUniformLocation(raymarch_shader, "depth_scale"), depth_scale);
+    
+    // depth falloff calculation selector
+    glUniform1i(glGetUniformLocation(raymarch_shader, "depth_falloff"), depth_selector);
 
     // send position to the raymarch shader
     glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);

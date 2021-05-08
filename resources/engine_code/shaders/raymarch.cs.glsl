@@ -39,12 +39,19 @@ uniform float shadow1;
 uniform float shadow2;
 uniform float shadow3;
 
+uniform float AO_scale;
+
 uniform vec3 basis_x;
 uniform vec3 basis_y;
 uniform vec3 basis_z;
 
 uniform vec3 ray_origin;
 uniform float time;
+
+uniform float depth_scale;
+uniform int depth_falloff;
+
+
 
 
 // tonemapping stuff
@@ -1637,9 +1644,9 @@ void main()
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
         
         // apply lighting
-        // vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
+        vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
 
-        // temp *= calcAO(shadow_ro, normal); // ambient occlusion calculation
+        temp *= ((1./AO_scale) * calcAO(shadow_ro, normal)); // ambient occlusion calculation
 
         col.rgb += temp;
         dresult_avg += dresult;
@@ -1648,20 +1655,27 @@ void main()
     col.rgb /= float(AA*AA);
     dresult_avg /= float(AA*AA);
 
+    dresult_avg *= depth_scale;
+
     // compute the depth scale term
     float depth_term; 
 
-    // depth_term = 2.-2.*(1./(1.-dresult_avg));
-    // depth_term = exp( -0.002 * dresult_avg * dresult_avg * dresult_avg );
-    // depth_term = (1-pow(dresult_avg/30., 1.618));
-    // depth_term = clamp(exp(0.25*dresult_avg-3.), 0., 10.);
-    depth_term = exp(0.25*dresult_avg-3.);
-    // depth_term = exp(-0.6*max(dresult_avg-3., 0.0));
-    // depth_term = (sqrt(dresult_avg)/8.) * dresult_avg;
-    // depth_term = sqrt(dresult_avg/9.);
-    // depth_term = pow(dresult_avg/10., 2.);
-    // depth_term = 1.-(1./(1+0.1*dresult_avg*dresult_avg));
+    switch(depth_falloff)
+    {
+        case 0: depth_term = 2.-2.*(1./(1.-dresult_avg)); break;
+        case 1: depth_term = 1.-(1./(1+0.1*dresult_avg*dresult_avg)); break;
+        case 2: depth_term = (1-pow(dresult_avg/30., 1.618)); break;
+
+        case 3: depth_term = clamp(exp(0.25*dresult_avg-3.), 0., 10.); break;
+        case 4: depth_term = exp(0.25*dresult_avg-3.); break;
+        case 5: depth_term = exp( -0.002 * dresult_avg * dresult_avg * dresult_avg ); break;
+        case 6: depth_term = exp(-0.6*max(dresult_avg-3., 0.0)); break;
     
+        case 7: depth_term = (sqrt(dresult_avg)/8.) * dresult_avg; break;
+        case 8: depth_term = sqrt(dresult_avg/9.); break;
+        case 9: depth_term = pow(dresult_avg/10., 2.); break;
+        default: break;
+    }
     // do a mix here, between col and the fog color, with the selected depth falloff term
     col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
 
