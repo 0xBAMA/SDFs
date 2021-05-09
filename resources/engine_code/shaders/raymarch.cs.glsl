@@ -1233,12 +1233,21 @@ float old_de( vec3 porig ) { // distance estimator for the scene
 		return dfinal;
 }
 
+float escape = 0.;
+
+vec3 pal( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
+{
+    return a + b*cos( 6.28318*(c*t+d) );
+}
+
 
 float fractal_de(vec3 p0){
    vec4 p = vec4(p0, 1.);
+   escape = 0.;
    for(int i = 0; i < 8; i++){
        p.xyz = mod(p.xyz-1.,2.)-1.;
         p*=1.4/dot(p.xyz,p.xyz);
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
    }
    return (length(p.xz/p.w)*0.25);
 }
@@ -1255,6 +1264,7 @@ float fractal_de2(vec3 p0){
     for(int i = 0; i < 8; i++){
         p.xyz = mod(p.xyz-1., 2.)-1.;
         p*=(1.8/dot(p.xyz,p.xyz));
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
     }
     p.xyz /= p.w;
     return 0.25*torus(p0, p.xyz, vec2(5.,0.7));
@@ -1265,6 +1275,7 @@ float fractal_de3(vec3 p0){
     for(int i = 0; i < 8; i++){
         p.xyz = mod(p.xyz-1., 2.)-1.;
         p*=(1.2/dot(p.xyz,p.xyz));
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
     }
     p/=p.w;
     return abs(p.x)*0.25;
@@ -1280,6 +1291,7 @@ float fractal_de4(vec3 p0){
         p.xyz = mod(p.xyz-1., 2.)-1.;
 
         p*=1.23;
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
     }
     p/=p.w;
     return abs(p.y)*0.25;
@@ -1305,6 +1317,7 @@ float fractal_de5(vec3 pos)
 
 		// scale, translate
 		p = p*scale + p0;
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 	return ((length(p.xyz) - absScalem1) / p.w - AbsScaleRaisedTo1mIters);
 #undef MINRAD2
@@ -1325,6 +1338,7 @@ float fractal_de6( vec3 p )
 		float k = max((2.)/(r2), .027);
 		p     *= k;
 		scale *= k;
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 	float l = length(p.xy);
 	float rxy = l - 4.0;
@@ -1345,6 +1359,7 @@ float fractal_de7( vec3 p )
 		float k = max((2.)/(r2), .027);
 		p     *= k;
 		scale *= k;
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 	float l = length(p.xy);
 	float rxy = l - 4.0;
@@ -1371,6 +1386,7 @@ float fractal_de8( vec3 p )
 		scale *= k;
 
         orb = min( orb, r2);
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 
     float d1 = sqrt( min( min( dot(p.xy,p.xy), dot(p.yz,p.yz) ), dot(p.zx,p.zx) ) ) - 0.02;
@@ -1397,6 +1413,7 @@ float fractal_de9( vec3 p )
 		float k = max((2.)/(r2), .5);
 		p     *= k;
 		scale *= k;
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 	float l = length(p.xy);
 	float rxy = l - 1.0;
@@ -1417,6 +1434,7 @@ float fractal_de10( vec3 p )
 		float k = max((2.)/(r2), .5);
 		p     *= k;
 		scale *= k;
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 	float l = length(p.xy);
 	float rxy = l - 1.0;
@@ -1425,12 +1443,52 @@ float fractal_de10( vec3 p )
 	return (rxy) / abs(scale);
 }
 
+// hard crash on desktop
+float fractal_de11(vec3 p0){
+    vec4 p = vec4(p0, 1.);
+    escape = 0.;
+    for(int i = 0; i < 8; i++){
+        p.xyz = fract(p.xyz*0.5 - 1.)*2.-1.0;
+        p*=(0.9/dot(p.xyz,p.xyz));
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
+    }
+    p/=p.w;
+    return abs(p.y)*0.25;
+}
+
+vec3 fold(vec3 p0){
+    vec3 p = p0;
+    //if(abs(p.x) > 1.)p.x = 1.0-p.x;
+    //if(abs(p.y) > 1.)p.y = 1.0-p.y;
+    //if(abs(p.z) > 1.)p.z = 1.0-p.z;
+    if(length(p) > 1.2)return p;
+        p = mod(p,2.)-1.;
+
+    return p;
+}
+float fractal_de12(vec3 p0){
+    vec4 p = vec4(p0, 1.);
+    escape = 0.;
+    for(int i = 0; i < 12; i++){
+        if(p.x > p.z)p.xz = p.zx;
+        if(p.z > p.y)p.zy = p.yz;
+
+        p = abs(p);
+        p.xyz = fold(p.xyz);
+
+        p.xyz = mod(p.xyz-1., 2.)-1.;
+        p*=(1.2/dot(p.xyz,p.xyz));
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
+
+    }
+    p/=p.w;
+    return abs(p.x)*0.25;
+}
 
 float de(vec3 p){
      //return smin_op(fractal_de(p), fractal_de4(p), 0.385);
-    return fractal_de10(p);
+    return fractal_de12(p);
     // return old_de(p);
-
 }
 
 // global state tracking
@@ -1588,7 +1646,7 @@ float calcAO( in vec3 pos, in vec3 nor )
     return clamp( 1.0 - 1.5*occ, 0.0, 1.0 );
 }
 
-// By TekF... getting a crash
+// By TekF... getting a crash trying to use this (default value used was 0.5 degree)
 // void BarrelDistortion( inout vec3 ray, float degree )
 // {
 // 	ray.z /= degree;
@@ -1643,8 +1701,13 @@ void main()
         
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
         
+        vec3 palatte_read = 0.2 * pal( escape, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,1.0,1.0),vec3(0.0,0.10,0.20) );
+        
         // apply lighting
-        vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
+        // vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
+        // vec3 temp = palatte_read + sresult1 + sresult2  + sresult3;
+        vec3 temp = palatte_read * (sresult1 + sresult2  + sresult3);
+
 
         temp *= ((1./AO_scale) * calcAO(shadow_ro, normal)); // ambient occlusion calculation
 

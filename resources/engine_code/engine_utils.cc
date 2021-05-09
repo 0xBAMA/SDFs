@@ -469,6 +469,8 @@ void engine::control_window()
     ImGui::ColorEdit3("Light 1 Specular", (float*)&lightCol1s);
     ImGui::SliderFloat("Light 1 Spec Power", &specpower1, 0.1, 200.0);
     ImGui::SliderFloat("Light 1 Shadow Sharpness", &shadow1, 0.1, 100.0);
+    ImGui::Text("");
+    ImGui::SliderFloat("Light 1 Orbit Radius", &orbit1, 0.1, 100.0);
     // what should the visibility only/phong switcher look like?
     ImGui::Text("");
     ImGui::ColorEdit3("Light 2 Diffuse", (float*)&lightCol2d);
@@ -476,10 +478,14 @@ void engine::control_window()
     ImGui::SliderFloat("Light 2 Spec Power", &specpower2, 0.1, 200.0);
     ImGui::SliderFloat("Light 2 Shadow Sharpness", &shadow2, 0.1, 100.0);
     ImGui::Text("");
+    ImGui::SliderFloat("Light 2 Orbit Radius", &orbit2, 0.1, 100.0);
+    ImGui::Text("");
     ImGui::ColorEdit3("Light 3 Diffuse", (float*)&lightCol3d);
     ImGui::ColorEdit3("Light 3 Specular", (float*)&lightCol3s);
     ImGui::SliderFloat("Light 3 Spec Power", &specpower3, 0.1, 200.0);
     ImGui::SliderFloat("Light 3 Shadow Sharpness", &shadow3, 0.1, 100.0);
+    ImGui::Text("");
+    ImGui::SliderFloat("Light 3 Orbit Radius", &orbit3, 0.1, 100.0);
     ImGui::Text("");
 
     ImGui::EndTabItem();
@@ -597,7 +603,7 @@ void engine::animate_lights(float t){
   // use some perlin noise to animate brightness and move position around a little
   PerlinNoise p;
 
-  
+  //query with p.noise(x,y,z); - returns value 0.-1.
 
 }
 

@@ -97,6 +97,10 @@ private:
 	float shadow1 = 100;
 	float shadow2 = 100;
 	float shadow3 = 100;
+	// light orbit radius
+	float orbit1 = 100;
+	float orbit2 = 100;
+	float orbit3 = 100;
 
 	// light positions
 	glm::vec3 lightPos1 = glm::vec3( 2.3, 1, 1);
