@@ -605,6 +605,7 @@ void engine::animate_lights(float t){
 
   //query with p.noise(x,y,z); - returns value 0.-1.
 
+
 }
 
 void engine::draw_everything() {
@@ -612,6 +613,9 @@ void engine::draw_everything() {
   //  ║ ║├─┘ ││├─┤ │ ├┤   ╚═╗ │ ├─┤ │ ├┤
   //  ╚═╝┴  ─┴┘┴ ┴ ┴ └─┘  ╚═╝ ┴ ┴ ┴ ┴ └─┘
   // update rotation matrix
+  // glm::quat rotationx = glm::angleAxis(rotation_about_x, basis_x);
+  // glm::quat rotationy = glm::angleAxis(rotation_about_y, basis_y);
+  // glm::quat rotationz = glm::angleAxis(rotation_about_z, basis_z);
   glm::quat rotationx = glm::angleAxis(rotation_about_x, glm::vec3(1,0,0));
   glm::quat rotationy = glm::angleAxis(rotation_about_y, glm::vec3(0,1,0));
   glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1));
