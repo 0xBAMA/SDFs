@@ -1898,6 +1898,702 @@ float fractal_de31(vec3 p)
 }
 
 
+
+
+vec3 fold32(vec3 p0){
+    vec3 p = p0;
+    if(length(p) > 2.)return p;
+    p = mod(p,2.)-1.;
+    return p;
+}
+float fractal_de32(vec3 p0){
+    vec4 p = vec4(p0, 1.);
+    escape = 0.;
+    if(p.x > p.z)p.xz = p.zx;
+    if(p.z > p.y)p.zy = p.yz;
+    if(p.y > p.x)p.yx = p.xy;
+    p = abs(p);
+    for(int i = 0; i < 8; i++){
+        p.xyz = fold32(p.xyz);
+        p.xyz = fract(p.xyz*0.5 - 1.)*2.-1.0;
+        p*=(1.1/clamp(dot(p.xyz,p.xyz),-0.1,1.));
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
+    }
+    p/=p.w;
+    return abs(p.x)*0.25;
+}
+
+
+
+float fractal_de33(vec3 p0){ // hard crash on desktop
+    vec4 p = vec4(p0, 1.);
+    escape = 0.;
+    
+    for(int i = 0; i < 8; i++){
+        if(p.x > p.z)p.xz = p.zx;
+        if(p.z > p.y)p.zy = p.yz;
+        if(p.y > p.x)p.yx = p.xy;
+        p = abs(p);
+        p.xyz = fract(p.xyz*0.5 - 1.)*2.-1.0;
+        p*=(1.0/clamp(dot(p.xyz,p.xyz),-0.1,2.));
+        p.xyz-=vec3(0.1,0.4,0.2);
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
+
+    }
+    p/=p.w;
+    return abs(p.x)*0.25;
+}
+
+
+float fractal_de34(vec3 p0){ // hard crash on desktop
+    vec4 p = vec4(p0, 1.);
+    escape = 0.;
+    
+    for(int i = 0; i < 8; i++){
+        if(p.x > p.z)p.xz = p.zx;
+        if(p.z > p.y)p.zy = p.yz;
+        if(p.y > p.x)p.yx = p.xy;
+        p = abs(p);
+        p.xyz = fract(p.xyz*0.5 - 1.)*2.-1.0;
+        p*=(1.0/clamp(dot(p.xyz,p.xyz),-0.1,1.));
+        p.xyz-=vec3(0.1,0.4,0.2);
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
+
+    }
+    p/=p.w;
+    return abs(p.x)*0.25;
+}
+
+float fractal_de35(vec3 p){
+    p=mod(p,2.)-1.;
+    p=abs(p)-1.;
+    if(p.x<p.z)p.xz=p.zx;
+    if(p.y<p.z)p.yz=p.zy;
+    if(p.x<p.y)p.xy=p.yx;
+    float s=1.;
+    for(int i=0;i<10;i++)
+    {
+      float r2=2./clamp(dot(p,p),.1,1.);
+      p=abs(p)*r2-vec3(.6,.6,3.5);
+      s*=r2;
+    }
+    return length(p)/s;
+}
+
+
+float fractal_de36(vec3 p)
+{
+	float itr=10.,r=0.1;
+
+	p=mod(p-1.5,3.)-1.5;
+	p=abs(p)-1.3;
+	if(p.x<p.z)p.xz=p.zx;
+	if(p.y<p.z)p.yz=p.zy;
+ 	if(p.x<p.y)p.xy=p.yx;
+	float s=1.;
+	p-=vec3(.5,-.3,1.5);
+	for(float i=0.;i++<itr;)
+    {
+		float r2=2./clamp(dot(p,p),.1,1.);
+		p=abs(p)*r2;
+		p-=vec3(.7,.3,5.5);
+		s*=r2;
+	}
+    return length(p.xy)/(s-r);
+}
+
+
+float fractal_de37(vec3 p)
+{
+	float s=2.,r2;
+	p=abs(p);
+    for(int i=0; i<12;i++){
+		p=1.-abs(p-1.);
+        r2=1.2/dot(p,p);
+    	p*=r2;
+    	s*=r2;
+	}
+	return length(cross(p,normalize(vec3(1))))/s-0.003;
+}
+
+
+float fractal_de38(vec3 p)
+{
+	float s=2.,r2;
+	p=abs(p);
+    for(int i=0; i<12;i++){
+		p=1.-abs(p-1.);
+        r2=(i%3==1)?1.3:1.3/dot(p,p);
+    	p*=r2;
+    	s*=r2;
+	}
+	return length(cross(p,normalize(vec3(1))))/s-0.003;
+}
+
+
+
+// this is the one that looks like chains
+#define sabs39(a) sqrt(a * a + 0.005)
+#define smin39(a,b) SMin1(a,b,0.0003)
+#define rot(a) mat2(cos(a),sin(a),-sin(a),cos(a))
+float SMin1(float a, float b, float k)
+{
+    return a + 0.5 * ((b-a) - sqrt((b-a) * (b-a) + k));
+}
+vec2 fold39(vec2 p, int n)
+{
+    p.x=sabs39(p.x);
+    vec2 v=vec2(0,1);
+    for(int i=0;i<n;i++)
+    {
+        //p-=2.0*min(0.0,dot(p,v))*v;
+        p-=2.0*smin39(0.0,dot(p,v))*v;
+        v=normalize(vec2(v.x-1.0,v.y));
+    }
+    return p;    
+}
+float sdTorus39( vec3 p, vec2 t )
+{
+  vec2 q = vec2(length(p.xz)-t.x,p.y);
+  return length(q)-t.y;
+}
+float fractal_de39(vec3 p)
+{
+#if 1
+	float A=5.566;
+    float c=7.0;
+    p=mod(p,c)-c*0.5;
+    p.xz=fold39(p.xz,5);
+    for(int i=0;i<5;i++)
+    {
+    	p.xy=abs(p.xy)-2.0;
+    	p.yz=abs(p.yz)-2.5;
+    	p.xy*=rot(A);
+    	p.yz*=rot(A*0.5);
+    	p=abs(p)-2.0;
+    }
+#endif
+    vec2 s=vec2(0.05,0.02);
+    float h=0.08;
+    float de=1.0;
+    vec3 q=p;
+    q.xy=fold39(q.xy,5);
+    q.y-=2.;
+    q.x-=clamp(q.x,-h,h);
+    de=min(de,sdTorus39(q,s));
+    q=p;
+    q.xy*=rot(M_PI/exp2(5.0));
+    q.xy=fold39(q.xy,5);
+    q.y-=2.0;
+    q.x-=clamp(q.x,-h,h);
+    de=min(de,sdTorus39(q.xzy,s));
+    return de;
+}
+
+#undef rot
+#undef smin39
+#undef sabs39
+
+
+
+#define fold45(p)(p.y>p.x)?p.yx:p
+float fractal_de40(vec3 p)
+{
+    float scale = 2.1,
+           off0 = .8,
+           off1 = .3,
+           off2 = .83;
+    vec3 off =vec3(2.,.2,.1);
+	float s=1.0;
+	for(int i = 0;++i<20;)
+	{
+		p.xy = abs(p.xy);
+		p.xy = fold45(p.xy);
+		p.y -= off0;
+		p.y = -abs(p.y);
+		p.y += off0;
+		p.x += off1;
+		p.xz = fold45(p.xz);
+		p.x -= off2;
+		p.xz = fold45(p.xz);
+		p.x += off1;
+		p -= off;
+		p *= scale;
+		p += off;
+		s *= scale;
+	}
+	return length(p)/s;
+}
+
+
+
+float fractal_de41(vec3 p){
+	float s=4.;
+	p=abs(p);
+	vec3 off=p*4.6;
+	for (float i=0.; i<8.; i++){
+        p=1.-abs(abs(p-2.)-1.); 
+    	float r=-13.*clamp(.38*max(1.3/dot(p,p),.7),0.,3.3);
+        s*=r;
+		p*=r;
+        p+=off;
+    }
+	return length(cross(p,normalize(vec3(1,3,3))))/s-.006;
+}
+
+
+
+//spiky forest - crash on desktop
+#define rot(a)mat2(cos(a),sin(a),-sin(a),cos(a))
+float lpNorm42(vec3 p, float n)
+{
+	p = pow(abs(p), vec3(n));
+	return pow(p.x+p.y+p.z, 1.0/n);
+}
+
+float fractal_de42(vec3 p){
+    vec3 q=p;
+	float s = 2.5;
+	for(int i = 0; i < 10; i++) {
+        p=mod(p-1.,2.)-1.;
+		float r2=1.1/pow(lpNorm42(abs(p),2.+q.y*10.),1.75);
+    	p*=r2;
+    	s*=r2;
+        p.xy*=rot(.001);
+    }
+    return q.y>1.3?length(p)/s:abs(p.y)/s;
+}
+#undef rot
+
+
+
+vec3 rotate43(vec3 p,vec3 axis,float theta)
+{
+    vec3 v = cross(axis,p), u = cross(v, axis);
+    return u * cos(theta) + v * sin(theta) + axis * dot(p, axis);   
+}
+vec2 pmod43(vec2 p, float r)
+{
+    float a = mod(atan(p.y, p.x), (M_PI*2) / r) - 0.5 * (M_PI*2) / r;
+    return length(p) * vec2(-sin(a), cos(a));
+}
+float fractal_de43(vec3 p)
+{
+    for(int i=0;i<5;i++)
+    {
+        p.xy = pmod43(p.xy,12.0);
+        p.y-=4.0;
+        p.yz = pmod43(p.yz,16.0);
+        p.z-=6.8;
+    }
+    return dot(abs(p),rotate43(normalize(vec3(2,1,3)),normalize(vec3(7,1,2)),1.8))-0.3;
+}
+
+
+
+#define pmod44(p,n)length(p)*sin(vec2(0.,M_PI/2.)+mod(atan(p.y,p.x),2.*M_PI/n)-M_PI/n)
+#define fold44(p,v)p-2.*min(0.,dot(p,v))*v;
+
+float fractal_de44(vec3 p)
+{
+	float s = 1.0;
+    p.z=fract(p.z)-.5;
+	for(int i=0;i<20;i++) // very, very expensive de
+	{
+	    p.y += .15;
+	    p.xz = abs(p.xz);
+	    for(int j=0;j<2;j++)
+        {
+	        p.xy = pmod44(p.xy,8.);
+	        p.y -= .18;
+	    }
+	    p.xy = fold44(p.xy,normalize(vec2(1,-.8)));
+		p.y = -abs(p.y);
+		p.y += .4;
+	    p.yz = fold44(p.yz,normalize(vec2(3,-1)));
+		p.x -= .47;
+		p.yz = fold44(p.yz,normalize(vec2(2,-7)));
+		p -= vec3(1.7,.4,0);
+        float r2= 3.58/dot(p,p);
+        p *= r2;
+		p += vec3(1.8,.7,.0);
+		s *= r2;
+	}
+	return length(p)/s;
+}
+
+
+
+float fractal_de45(vec3 p){
+        p.z-=2.5;
+        float s = 3.;
+        float e = 0.;
+        for(int j=0;j++<8;)
+            s*=e=3.8/clamp(dot(p,p),0.,2.),
+            p=abs(p)*e-vec3(1,15,1);
+        return length(cross(p,vec3(1,1,-1)*.577))/s;
+}
+
+
+float fractal_de46(vec3 p){
+    float s = 2.;
+    float e = 0.;
+    for(int j=0;++j<7;)
+        p.xz=abs(p.xz)-2.3,
+        p.z>p.x?p=p.zyx:p,
+        p.z=1.5-abs(p.z-1.3+sin(p.z)*.2),
+        p.y>p.x?p=p.yxz:p,
+        p.x=3.-abs(p.x-5.+sin(p.x*3.)*.2),
+        p.y>p.x?p=p.yxz:p,
+        p.y=.9-abs(p.y-.4),
+        e=12.*clamp(.3/min(dot(p,p),1.),.0,1.)+
+        2.*clamp(.1/min(dot(p,p),1.),.0,1.),
+        p=e*p-vec3(7,1,1),
+        s*=e;
+    return length(p)/s;
+}
+
+
+
+float fractal_de47(vec3 p)
+{
+  	float s = 4.;
+	for(int i = 0; i < 8; i++)
+    {
+		p=mod(p-1.,2.)-1.;
+		float r2=(i%3==0)?1.5:1.2/dot(p,p);
+        p*=r2;
+        s*=r2;
+	}
+	vec3 q=p/s;
+	q.xz=mod(q.xz-.002,.004)-.002;
+	return min(length(q.yx)-.0003,length(q.yz)-.0003);
+}
+
+
+float fractal_de48(vec3 p){
+    p.z-=-1.;
+    #define fold48(p,v)p-2.*min(0.,dot(p,v))*v;
+    float s=3.;
+    float l=0.;
+    
+    for(int i = 0;++i<15;)
+    {
+        p.xy=fold48(p.xy,normalize(vec2(1,-1.3)));
+        p.y=-abs(p.y);
+        p.y+=.5;
+        p.xz=abs(p.xz);
+        p.yz=fold48(p.yz,normalize(vec2(8,-1)));
+        p.x-=.5;
+        p.yz=fold48(p.yz,normalize(vec2(1,-2)));
+        p-=vec3(1.8,.4,.1);
+        l = 2.6/dot(p,p);
+        p*=l;
+        p+=vec3(1.8,.7,.2);
+        s*=l;
+    }
+    return length(p.xy)/s;
+    #undef fold48
+}
+
+
+float lpNorm49(vec3 p, float n)
+{
+	p = pow(abs(p), vec3(n));
+	return pow(p.x+p.y+p.z, 1.0/n);
+}
+
+float fractal_de49(vec3 p){
+	float s = 1.;
+	for(int i = 0; i < 9; i++) {
+		p=p-2.*round(p/2.);
+		float r2=1.1/max(pow(lpNorm49(p.xyz, 4.5),1.6),.15);
+    	p*=r2;
+    	s*=r2;
+	}
+	return length(p)/s-.001;
+}
+
+
+
+#define rot(a) mat2(cos(a),sin(a),-sin(a),cos(a))
+float hash50(float x){
+    return fract(sin(x*234.123+156.2));
+}
+float lpNorm50(vec3 p, float n)
+{
+	p = pow(abs(p), vec3(n));
+	return pow(p.x+p.y+p.z, 1.0/n);
+}
+float fractal_de50(vec3 p){
+    vec2 id=floor(p.xz);
+    p.xz=mod(p.xz,1.)-.5;
+    p.y=abs(p.y)-.5;
+    p.y=abs(p.y)-.5;
+    p.xy*=rot(hash50(dot(id,vec2(12.3,46.7))));
+    p.yz*=rot(hash50(dot(id,vec2(32.9,76.2))));
+    float s = 1.;
+	for(int i = 0; i < 6; i++) {
+		float r2=1.2/pow(lpNorm50(p.xyz, 5.0),1.5);
+		p-=.1;
+    	p*=r2;
+    	s*=r2;
+		p=p-2.*round(p/2.);
+	}
+	return .6*dot(abs(p),normalize(vec3(1,2,3)))/s-.002;
+}
+#undef rot
+
+
+
+float fractal_de51(vec3 p){
+    for(int j=0;++j<8;)
+        p.z-=.3,
+        p.xz=abs(p.xz),
+        p.xz=(p.z>p.x)?p.zx:p.xz,
+        p.xy=(p.y>p.x)?p.yx:p.xy,
+        p.z=1.-abs(p.z-1.),
+        p=p*3.-vec3(10,4,2);
+
+    return length(p)/6e3-.001;
+}
+
+
+
+
+float lpNorm52(vec3 p, float n)
+{
+	p = pow(abs(p),vec3(n));
+	return pow(p.x+p.y+p.z,1./n);
+}
+float fractal_de52(vec3 p){
+    float scale=4.5;
+    float mr2=.5;
+    float off=.5;
+    float s=1.;
+    vec3 p0 = p;
+    for (int i=0; i<16; i++) {
+        if(i%3==0)p=p.yzx;
+        if(i%2==1)p=p.yxz;
+        p -= clamp(p,-1.,1.)*2.;
+        float r2=pow(lpNorm52(p.xyz,5.),2.);
+        float g=clamp(mr2*max(1./r2,1.),0.,1.);
+        p=p*scale*g+p0*off;
+        s=s*scale*g+off;
+    }
+    return length(p)/s-.01;
+}
+
+
+// hard crash on desktop
+#define sabs53(p) sqrt((p)*(p)+.8)
+void sfold90_53(inout vec2 p)
+{
+    p=(p.x+p.y+vec2(1,-1)*sabs(p.x-p.y))*.5;
+}
+float fractal_de53(vec3 p)
+{
+	p=mod(p-1.5,3.)-1.5;
+	p=abs(p)-1.3;
+	sfold90_53(p.xz);
+	sfold90_53(p.xz);
+	sfold90_53(p.xz);
+	
+	float s=1.;
+	p-=vec3(.5,-.3,1.5);
+	for(float i=0.;i++<7.;)
+    {
+		float r2=2.1/clamp(dot(p,p),.0,1.);
+		p=abs(p)*r2;
+		p-=vec3(.1,.5,7.);
+		s*=r2;
+	}
+    float a=3.;
+    p-=clamp(p,-a,a);
+    return length(p)/s-.005;
+}
+#undef sabs53
+
+
+
+
+// hard crash on desktop
+#define sabs_54(x)sqrt((x)*(x)+.005)
+#define sabs2_54(x)sqrt((x)*(x)+1e-4)
+#define smax_54(a,b) (a+b+sabs2_54(a-b))*.5
+
+void sfold90_54(inout vec2 p)
+{
+    p=(p.x+p.y+vec2(1,-1)*sabs(p.x-p.y))*.5;
+}
+
+float fractal_de54(vec3 p){
+    vec3 q=p;
+    p=abs(p)-4.;
+    sfold90_54(p.xy);
+    sfold90_54(p.yz);
+    sfold90_54(p.zx);
+    
+	float s=2.5;
+	p=sabs_54(p);
+	vec3  p0 = p*1.5;
+	for (float i=0.; i<4.; i++){
+    	p=1.-sabs2_54(sabs2_54(p-2.)-1.); 
+    	float g=-5.5*clamp(.7*smax_54(1.6/dot(p,p),.7),.0,5.5);
+    	p*=g;
+    	p+=p0+normalize(vec3(1,5,12))*(5.-.8*i);
+        s*=g;
+	}
+	s=sabs_54(s);
+	float a=25.;
+	p-=clamp(p,-a,a);
+	
+	q=abs(q)-vec3(3.7);
+    sfold90_54(q.xy);
+    sfold90_54(q.yz);
+    sfold90_54(q.zx);
+  	return smax_54(max(abs(q.y),abs(q.z))-1.3,length(p)/s-.00);
+}
+
+#undef sabs_54
+#undef sabs2_54
+#undef smax_54
+
+
+float fractal_de55(vec3 p){
+    float s=2.;
+    float e=0.;
+    vec3 q=vec3(3,3,.0);
+    for(int i=0;
+        i++<7;
+        p=q-abs(p-q*.4)
+    )
+        s*=e=15./min(dot(p,p),15.),
+        p=abs(p)*e-2.;
+    return (length(p.xz)-.5)/s;
+}
+
+
+float fractal_de56(vec3 p){
+    vec3 q;
+    p-=vec3(1.,.1,.1);
+    q=p;
+    float s=1.5;
+    float e=0.;
+    for(int j=0;j++<15;s*=e)
+        p=sign(p)*(1.2-abs(p-1.2)),
+        p=p*(e=8./clamp(dot(p,p),.3,5.5))+q*2.;
+    return length(p)/s;
+}
+
+
+
+float fractal_de57(vec3 p){
+    p.xz=fract(p.xz)-.5;
+    float k=1.;
+    float s=0.;
+    for(int i=0;i++<9;)
+        s=2./clamp(dot(p,p),.1,1.),
+        p=abs(p)*s-vec3(.5,3,.5),
+        k*=s;
+    return length(p)/k-.001;
+}
+
+// this one is very cool, but hard crash on desktop
+float fractal_de58(vec3 p){
+    float s=2.;
+    float k=0.;
+    p=abs(mod(p-1.,2.)-1.)-1.;
+    for(int j=0;++j<9;)
+        p=1.-abs(p-1.),
+        p=p*(k=-1./dot(p,p))-vec3(.1,.3,.1),
+        s*=abs(k);
+    return length(p.xz)/s;
+}
+
+
+
+
+// SDF sphere
+vec4 sphere59 (vec4 z) {
+  float r2 = dot (z.xyz, z.xyz);
+  if (r2 < 2.0)
+    z *= (1.0 / r2);
+  else z *= 0.5;
+  return z;
+}
+// SDF box
+vec3 box59 (vec3 z) {
+  return clamp (z, -1.0, 1.0) * 2.0 - z;
+}
+float DE0_59 (vec3 pos) {
+  vec3 from = vec3 (0.0);
+  vec3 z = pos - from;
+  float r = dot (pos - from, pos - from) * pow (length (z), 2.0);
+  return (1.0 - smoothstep (0.0, 0.01, r)) * 0.01;
+}
+float DE2_59 (vec3 pos) {
+  vec3 params = vec3 (0.5, 0.5, 0.5);
+  vec4 scale = vec4 (-20.0 * 0.272321);
+  vec4 p = vec4 (pos, 1.0), p0 = p;
+  vec4 c = vec4 (params, 0.5) - 0.5; // param = 0..1
+
+  for (float i = 0.0; i < 10.0; i++) {
+    p.xyz = box59(p.xyz);
+    p = sphere59(p);
+    p = p * scale + c;
+  }
+  return length(p.xyz) / p.w;
+}
+float fractal_de59 (vec3 pos) {
+  return max (DE0_59(pos), DE2_59(pos));
+}
+
+
+float de2_60(vec3 p) {
+    vec3 op = p;
+    p = abs(1.0 - mod(p, 2.));
+    float r = 0., power = 8., dr = 1.;
+    vec3 z = p;
+    
+    for (int i = 0; i < 7; i++) {
+        op = -1.0 + 2.0 * fract(0.5 * op + 0.5);
+        float r2 = dot(op, op);
+        r = length(z);
+
+        if (r > 1.616) break;
+        float theta = acos(z.z / r);
+        float phi = atan(z.y, z.x);
+
+        dr = pow(r, power - 1.) * power * dr + 1.;
+        float zr = pow(r, power);
+        theta = theta * power;
+        phi = phi * power;
+        z = zr * vec3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
+        z += p;
+    }
+    return (.5 * log(r) * r / dr);
+}
+float de1_60(vec3 p) {
+    float s = 1.;
+    float d = 0.;
+    vec3 r,q;
+        r = p;
+      q = r;
+    
+    for (int j = 0; j < 6; j++) {
+        r = abs(mod(q * s + 1.5, 2.) - 1.);	
+        r = max(r, r.yzx);
+        d = max(d, (.3 - length(r *0.985) * .3) / s);
+        s *= 2.1;
+    }
+    return d;
+}
+float fractal_de60(vec3 p) {
+    return min(de1_60(p), de2_60(p));;
+}
+
+
 float screw_de(vec3 p){
     float c=.2;
     p.z+=atan(p.y,p.x)/M_PI*c;
@@ -1910,7 +2606,8 @@ float screw_de(vec3 p){
 
 float de(vec3 p){
      //return smin_op(fractal_de(p), fractal_de4(p), 0.385);
-    return fractal_de20(p);
+    // return fractal_de20(p);
+    return fractal_de60(p);
     // return smin_op(screw_de(p), fractal_de26(p), 0.333);
     // return old_de(p);
 }
@@ -2125,7 +2822,7 @@ void main()
         
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
         
-        vec3 palatte_read = 0.2 * pal( escape, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,1.0,1.0),vec3(0.0,0.10,0.20) );
+        vec3 palatte_read = 0.4 * basic_diffuse * pal( escape, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,1.0,1.0),vec3(0.0,0.10,0.20) );
         
         // apply lighting
         // vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
@@ -2224,6 +2921,7 @@ void main()
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }
+
 
 
 
