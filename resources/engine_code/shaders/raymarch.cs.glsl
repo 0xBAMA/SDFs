@@ -324,6 +324,27 @@ vec3 jodieReinhard2ElectricBoogaloo(const vec3 color){
 
 
 
+// rotation function
+mat3 rotate3D(float angle, vec3 axis){
+    vec3 a = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float r = 1.0 - c;
+    return mat3(
+        a.x * a.x * r + c,
+        a.y * a.x * r + a.z * s,
+        a.z * a.x * r - a.y * s,
+        a.x * a.y * r - a.z * s,
+        a.y * a.y * r + c,
+        a.z * a.y * r + a.x * s,
+        a.x * a.z * r + a.y * s,
+        a.y * a.z * r - a.x * s,
+        a.z * a.z * r + c
+    );
+}
+
+
+
 ////////////////////////////////////////////////////////////////
 //
 //                           HG_SDF
@@ -1232,6 +1253,24 @@ float old_de( vec3 porig ) { // distance estimator for the scene
 
 		return dfinal;
 }
+
+
+
+
+
+
+
+
+// by gaz
+float screw_de(vec3 p){
+    float c=.2;
+    p.z+=atan(p.y,p.x)/M_PI*c;
+    p.z=mod(p.z,c*2.)-c;
+    return length(vec2(length(p.xy)-.4,p.z))-.1;
+}
+
+
+
 
 float escape = 0.;
 
@@ -3569,16 +3608,221 @@ float fractal_de89(vec3 p){
 }
 
 
-
-
-
-
-float screw_de(vec3 p){
-    float c=.2;
-    p.z+=atan(p.y,p.x)/M_PI*c;
-    p.z=mod(p.z,c*2.)-c;
-    return length(vec2(length(p.xy)-.4,p.z))-.1;
+// by yonatan - some aliasing
+float fractal_de90(vec3 p){
+    float j = 0.5;
+    for(p.xz=mod(p.xz,6.)-3.;++j<9.;p=3.*p-.9)
+        p.xz=abs(p.xz),
+        p.z>p.x?p=p.zyx:p,
+        p.y>p.z?p=p.xzy:p,
+        p.z--,
+        p.x-=++p.y*.5;
+    return min(.2,p.x/4e3-.2);
 }
+
+
+// by gaz
+float fractal_de91(vec3 p){
+    float s=4.;
+    float l=0;
+    p.z-=.9;
+    vec3 q=p;
+    s=2.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-1.,1.)*2.,
+        p=p*(l=8.8*clamp(.72/min(dot(p,p),2.),0.,1.))+q,
+        s*=l;
+    return length(p)/s;
+}
+
+
+// by gaz
+float fractal_de92(vec3 p){
+    float s=3., l=0.;
+    //p=g*d+vec3(0,0,t);
+    vec3 q=p;
+    p=mod(p,4.)-2.;
+    p=abs(p);
+    for(int j=0;j++<8;)
+        p=1.-abs(p-1.),
+        p=p*(l=-1.*max(1./dot(p,p),1.))+.5,
+        s*=l;
+    return max(.2-length(q.xy),length(p)/s);
+}
+
+
+// by eiffie  https://www.shadertoy.com/view/4sy3zh
+float fractal_de93(vec3 p){
+    const int iters=5;
+    const int iter2=3;
+    const float scale=3.48;
+    const vec3 offset=vec3(1.9,0.0,2.56);
+    const float psni=pow(scale,-float(iters));
+    const float psni2=pow(scale,-float(iter2));
+
+    p = abs(mod(p+3., 12.)-6.)-3.;
+	vec3 p2;
+	for (int n = 0; n < iters; n++) {
+		if(n==iter2)p2=p;
+		p = abs(p);
+		if (p.x<p.y)p.xy = p.yx;
+		p.xz = p.zx;
+		p = p*scale - offset*(scale-1.0);
+		if(p.z<-0.5*offset.z*(scale-1.0))
+            p.z+=offset.z*(scale-1.0);
+	}
+    float d1=(length(p.xy)-1.0)*psni;
+    float d2=length(max(abs(p2)-vec3(0.2,5.1,1.3),0.0))*psni2;
+    escape=(d1<d2)?0.:1.;
+	return min(d1,d2);
+}
+
+
+// by yonatan
+float fractal_de94(vec3 p){
+    p=fract(p)-.5;
+    vec3 O=vec3(2.,0,3.);
+    for(int j=0;j++<7;){
+        p=abs(p);
+        p=(p.x<p.y?p.zxy:p.zyx)*3.-O;
+        if(p.z<-.5*O.z)
+            p.z+=O.z;
+    } 
+    return length(p.xy)/3e3;
+}
+
+
+// by yonatan
+float fractal_de95(vec3 p){
+    p=fract(p)-.5;
+    vec3 O=vec3(2.,0,5.);
+    for(int j=0;j++<7;){
+        p=abs(p);
+        p=(p.x<p.y?p.zxy:p.zyx)*3.-O;
+        if(p.z<-.5*O.z)
+            p.z+=O.z;
+    } 
+    return length(p.xy)/3e3;
+}
+
+
+// by gaz
+float fractal_de96(vec3 p){
+    vec3 a=vec3(.5);
+    p.z-=55.;
+    p = abs(p);
+    float s=2., l=0.;
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        s*=l=-2.12/max(.2,dot(p,p)),
+        p=p*l-.55;
+    return dot(p,a)/s;
+}
+
+
+// variant of code by gaz
+float fractal_de97(vec3 p){
+    vec3 a=vec3(.5);
+    p.z-=55.;
+    float s=2., l=0.;
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        s*=l=-2.12/max(.2,dot(p,p)),
+        p=p*l-.55;
+    return dot(p,a)/s;
+}
+
+
+// variant of code by gaz
+float fractal_de98(vec3 p){
+    vec3 a=vec3(.5, 0.1, 0.2);
+    p.z-=55.;
+    float s=2., l=0.;
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        s*=l=-2.12/max(.2,dot(p,p)),
+        p=p*l-.55;
+    return dot(p,a)/s;
+}
+
+
+// by gaz
+float fractal_de99(vec3 p){
+    float i,g,e=1.,s,l;
+    vec3 a=vec3(.5);
+    p.z-=55.;
+    p=abs(p);
+    s=2.;
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        s*=l=-1.55/max(.4,dot(p,p)),
+        p=p*l-.535;
+    return dot(p,a)/s;
+}
+
+
+// by gaz
+float fractal_de100(vec3 p){
+    float i,g,e,R,S;vec3 q;
+    q=p*2.;
+    R=7.;
+    for(int j=0;j++<9;){
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.);
+   
+        S=-9.*clamp(.7/min(dot(p,p),3.),0.,1.);
+        p=p*S+q;
+        R=R*abs(S);
+    }
+    return length(p)/R; 
+}
+
+
+// by gaz
+void rot101(inout vec3 p,vec3 a,float t){
+	a=normalize(a);
+	vec3 u=cross(a,p),v=cross(a,u);
+	p=u*sin(t)+v*cos(t)+a*dot(a,p);   
+}
+#define G dot(p,vec2(1,-1)*.707)
+#define V v=vec2(1,-1)*.707
+void sfold101(inout vec2 p)
+{
+    vec2 v=vec2(1,-1)*.707;
+    float g=dot(p,v);
+    p-=(G-sqrt(G*G+.01))*v;
+}
+#undef G
+#undef V
+float fractal_de101(vec3 p){
+    float k=.01;
+    for(int i=0;i<8;i++)
+    {
+        p=abs(p)-1.;
+        sfold101(p.xz);
+        sfold101(p.yz);
+        sfold101(p.xy);
+        rot101(p,vec3(1,2,2),.6);
+        p*=2.;
+    }
+    return length(p.xy)/exp2(8.)-.01;
+}
+
+
+// by gaz
+float fractal_de102(vec3 p){
+    #define V vec2(.7,-.7)
+    #define G(p)dot(p,V)
+    float i=0.,g=0.,e=1.;
+    float t = 0.34; // this was the time varying parameter - change it to see different behavior
+    for(int j=0;j++<8;){
+        p=abs(rotate3D(0.34,vec3(1,-3,5))*p*2.)-1.,
+        p.xz-=(G(p.xz)-sqrt(G(p.xz)*G(p.xz)+.05))*V;
+    }
+    return length(p.xz)/3e2;
+    #undef V
+    #undef G
+}
+
 
 
 
@@ -3586,7 +3830,7 @@ float screw_de(vec3 p){
 float de(vec3 p){
      //return smin_op(fractal_de(p), fractal_de4(p), 0.385);
     // return fractal_de20(p);
-    return fractal_de89(p);
+    return fractal_de102(p);
     // return smin_op(screw_de(p), fractal_de26(p), 0.333);
     // return old_de(p);
 }
