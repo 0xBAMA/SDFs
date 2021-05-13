@@ -1753,14 +1753,11 @@ float fractal_de12(vec3 p0){
     for(int i = 0; i < 12; i++){
         if(p.x > p.z)p.xz = p.zx;
         if(p.z > p.y)p.zy = p.yz;
-
         p = abs(p);
         p.xyz = fold(p.xyz);
-
         p.xyz = mod(p.xyz-1., 2.)-1.;
         p*=(1.2/dot(p.xyz,p.xyz));
         escape += exp(-0.2*dot(p.xyz,p.xyz));
-
     }
     p/=p.w;
     return abs(p.x)*0.25;
@@ -1772,7 +1769,6 @@ vec3 fold2(vec3 p0){
     vec3 p = p0;
     if(length(p) > 2.)return p;
         p = mod(p,2.)-1.;
-        
     return p;
 }
 float fractal_de13(vec3 p0){
@@ -1811,7 +1807,6 @@ float fractal_de13(vec3 p0){
 // 		float theta = acos(z.z/r);
 // 		float phi = atan(z.y,z.x);
 // 		dr =  pow( r, Power-1.0)*Power*dr + 1.0;
-		
 // 		// scale and rotate the point
 // 		float zr = pow( r,Power);
 // 		theta = theta*Power;
@@ -4239,9 +4234,242 @@ float fractal_de112(vec3 p){
 
 
 
+// adapted from code by catzpaw
+float fractal_de113(vec3 p){
+    float k = M_PI*2.;
+    vec3 v = vec3(0.,3.,fract(k));
+    return (length(cross(p=cos(p+v),p.zxy))-0.1)*0.4;
+}
+
+
+// happy accident while converting 113
+float fractal_de114(vec3 p){
+    float k = M_PI*2.;
+    vec3 v = vec3(0.,3.,fract(k));
+    return (length(cross(cos(p+v),p.zxy))-0.4)*0.2;
+}
+
+
+// by catzpaw (distance bound doesn't hold)
+float fractal_de115(vec3 p){
+    vec3 v=vec3(0,1.5,6.3);
+    return min(6.-length((p-v).xy+sin(p.yx)), dot(cos(p),sin(p.yzx)))+sin(sin(p.z*3.5)+v.z)*.1+1.;
+}
+
+
+// by gaz
+float fractal_de116(vec3 p){
+    // p=rotate3D(t,vec3(1))*vec3(g*(FC.xy*2.-r)/r.y,g-80.);
+    p.z-=80.;
+    float s=3., l=0.;
+    p=abs(p);
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        p*=l=-.8/min(2.,length(p)),
+        p-=.5,
+        s*=l;
+    return (length(p)/s)-0.1;
+}
+
+
+// by gaz
+float fractal_de117(vec3 p){
+    float s = 1.;
+    for(int j=0;j<7;j++)
+        p=mod(p-1.,2.)-1.,
+        p*=1.2,
+        s*=1.2,
+        p=abs(abs(p)-1.)-1.;
+    return (length(cross(p,normalize(vec3(2,2.03,1))))/s)-0.02;
+}
+
+
+// by gaz
+float fractal_de118(vec3 p){
+    float s=2., l=0.;
+    p=abs(p);
+    for(int j=0;j++<8;)
+        p=1.-abs(abs(p-2.)-1.),
+        p*=l=1.2/dot(p,p),
+        s*=l;
+    return dot(p,normalize(vec3(3,-2,-1)))/s;
+}
+
+
+// by gaz
+float fractal_de119(vec3 p){
+    float s=2., l=0.;
+    p=abs(p);
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        p*=l=-1.3/dot(p,p),
+        p-=.15,
+        s*=l;
+    return length(p)/s;
+}
+
+
+// by gaz
+float fractal_de120(vec3 p){
+    p.z-=20;
+    float s=3., l=0.;
+    p=abs(p);
+    for(int j=0;j++<10;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        p*=l=-1./max(.19,dot(p,p)),
+        p-=.24,
+        s*=l;
+    return (length(p)/s);
+}
+
+
+// by gaz
+float fractal_de121(vec3 p){
+      // vec3 p=g*normalize(vec3((FC.xy-.5*r)/r.y,1))+vec3(0,1,t);
+      float s=2., l=0.;
+      p=abs(mod(p-1.,2.)-1.);
+      for(int j=0;j++<8;)
+          p=1.-abs(abs(abs(p-5.)-2.)-2.),
+          p*=l=-1.3/dot(p,p),
+          p-=vec3(.3,.3,.4),
+          s*=l;
+      return length(p.yz)/s;
+}
+
+
+// by gaz
+float fractal_de122(vec3 p){
+    float i,g,e=1.,R,S;
+    vec3 q;
+    q=p*8.;
+    R=8.;
+    for(int j=0;j++<6;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        S=-5.*clamp(1.5/dot(p,p),.8,5.),
+        p=p*S+q,
+        R*=S;
+    return length(p)/R;
+}
+
+
+// by gaz - hard crash on desktop
+float fractal_de123(vec3 p){
+    float i,g,e,s,l;
+    vec3 q;
+    s=2.;
+    p=abs(mod(p-1.,2.)-1.)-1.;
+    for(int j=0;j<8;j++)
+        p=1.-abs(abs(abs(p-5.)-2.)-2.),
+        p=p*(l=-1.4/dot(p,p))-vec3(.2),
+        s*=abs(l);
+    return length(p.xy)/s;
+}
 
 
 
+// by gaz
+float fractal_de124(vec3 p){
+    float i,g,e,s,k;
+    vec3 q;
+    p=vec3(length(p.xy)-PI,atan(p.y,p.x)*PI,p.z);
+    p.yz=mod(p.yz,4.)-2.;
+    s=2.;
+    p=abs(p);
+    q=p;
+    for(int j=0;++j<5;)
+        p=1.-abs(p-1.),
+        p=-p*(k=max(3./dot(p,p),3.))+q,
+        s*=k;
+    return length(p.xz)/s;
+}
+
+
+
+// by gaz
+float fractal_de125(vec3 p){
+    float i,g,e,R,S;
+    R=2.;
+    for(int j=0;j++<9;)
+        p=1.-abs(p-1.),
+        p*=S=(j%3>1)?1.3:1.2/dot(p,p),
+        R*=S;
+    return length(cross(p,vec3(.5)))/R-5e-3;
+}
+
+
+
+// by gaz
+float fractal_de126(vec3 p){
+	float s=2.,r2;
+	p=abs(p);
+    for(int i=0; i<12;i++){
+		p=1.-abs(p-1.);
+		r2=(i%3==1)?1.1:1.2/dot(p,p);
+    	p*=r2;
+    	s*=r2;
+	}
+	escape=log2(s*.003);
+	return length(cross(p,normalize(vec3(1))))/s-0.005;
+}
+
+
+
+// by gaz
+float fractal_de127(vec3 p){
+    float i,g,e,s,l;
+    vec3 q;
+    q=p;s=3.;
+    for(int j=0;j++<9;)
+        p=mod(p-1.,2.)-1.,
+        l=1.2/pow(pow(dot(pow(abs(p),vec3(5)),vec3(1)),.2),1.6),
+        p*=l,
+        s*=l;
+    return abs(p.y)/s;
+}
+
+
+// by gaz - https://twitter.com/gaziya5/status/1291673093694357505
+float fractal_de128(vec3 p){
+    float i,g,e,s,l;
+    vec3 q;
+    q=p;
+    s=4.;
+    for(int j=0;j++<9;)
+        p=mod(p-1.,2.)-1.,
+        l=1.2/dot(p,p),
+        p*=l,
+        s*=l;
+    return abs(p.y)/s;
+}
+
+
+// by gaz - hard crash on desktop
+float fractal_de129(vec3 p){
+    float i,g,e,s,l;
+    vec3 q;
+    q=p;
+    s=1.;
+    for(int j=0;j++<4;)
+        p=mod(p-1.,2.)-1.,
+        l=2./dot(p,p),
+        p*=l,
+        s*=l;
+    return length(p.xy)/s;
+}
+
+
+// by gaz
+float fractal_de130(vec3 p){
+#define F1(s)p.s=abs(p.s)-1.
+    p+=vec3(0,3.8,5.);
+    vec3 q=p;
+    p=mod(p,vec3(8,8,2))-vec3(4,4,1);
+    F1(yx);
+    F1(yx);
+    F1(xz);
+    return min(length(cross(p,vec3(.5)))-.03,length(p.xy)-.05);
+#undef F1
+}
 
 
 float de(vec3 p){
@@ -4249,8 +4477,8 @@ float de(vec3 p){
     // return fractal_de20(p);
     
     // return fractal_de71(p);
+    return fractal_de130(p);
 
-    return fractal_de112(p);
 
     // return smin_op(screw_de(p), fractal_de26(p), 0.333);
     // return old_de(p);
