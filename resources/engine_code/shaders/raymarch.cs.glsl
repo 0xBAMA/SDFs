@@ -3491,12 +3491,14 @@ float fractal_de78(vec3 p){
     float s=2.;
     float l=dot(p,p);
     float e=0.;
+    escape=0.;
     p=abs(abs(p)-.7)-.5;
     p.x<p.y?p=p.yxz:p;
     p.y<p.z?p=p.xzy:p;
     for(int i=0;i++<8;){
         s*=e=2./clamp(dot(p,p),.004+tan(12.)*.002,1.35);
         p=abs(p)*e-vec2(.5*l,12.).xxy;
+        escape+=exp(-0.002*dot(vec3(e),p));
     }
     return length(p-clamp(p,-1.,1.))/s;
 }
@@ -4472,12 +4474,180 @@ float fractal_de130(vec3 p){
 }
 
 
+// by gaz
+float fractal_de131(vec3 p){
+    float l,s=3.;
+    float t = 4.5;
+    for(int j=0;j++<5;p.xy=fract(p.xy+p.x)-.5)
+        p=vec3(log(l=length(p.xy)),atan(p.y,p.x)/PI*2.,p.z/l+1.),
+        s*=.5*l;
+    return abs(p.z)*s;
+}
+
+
+
+
+// by iq - 'Fractal Cave'
+float maxcomp132(in vec3 p ) { return max(p.x,max(p.y,p.z));}
+float sdBox132( vec3 p, vec3 b ){
+  vec3  di = abs(p) - b;
+  float mc = maxcomp132(di);
+  return min(mc,length(max(di,0.0)));
+}
+float fractal_de132(vec3 p){
+    vec3 w = p;
+    vec3 q = p;
+
+    q.xz = mod( q.xz+1.0, 2.0 ) -1.0;
+
+    float d = sdBox132(q,vec3(1.0));
+    float s = 1.0;
+    for( int m=0; m<7; m++ )
+    {
+        float h = float(m)/6.0;
+
+        p =  q.yzx - 0.5*sin( 1.5*p.x + 6.0 + p.y*3.0 + float(m)*5.0 + vec3(1.0,0.0,0.0));
+
+        vec3 a = mod( p*s, 2.0 )-1.0;
+        s *= 3.0;
+        vec3 r = abs(1.0 - 3.0*abs(a));
+
+        float da = max(r.x,r.y);
+        float db = max(r.y,r.z);
+        float dc = max(r.z,r.x);
+        float c = (min(da,min(db,dc))-1.0)/s;
+        d = max( c, d );
+   }
+    
+   return d*0.5;
+}
+
+
+// by gaz
+float fractal_de133(vec3 p){
+    float i,g,e,R,S;
+    vec3 q;
+    q=p;
+    R=2.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-1.,1.)*2.,
+        S=9.*clamp(.7/min(dot(p,p),3.),0.,1.),
+        p=p*S+q,
+        R=R*abs(S)+1.,
+        p=p.yzx;
+    return length(p)/R;
+}
+
+
+// by gaz
+float fractal_de134(vec3 p){
+    float i,g,e,R,S;
+    vec3 q;
+    q=p;
+    R=1.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-1.,1.)*2.,S=6.*clamp(.2/min(dot(p,p),7.),0.,1.),
+        p=p*S+q*.7,
+        R=R*abs(S)+.7;
+    return length(p)/R;
+}
+
+
+// by gaz
+float fractal_de135(vec3 p){
+    float i,g,e,R,S;
+    vec3 q;
+    p.z-=3.;
+    q=p;
+    R=1.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-.9,.9)*2.,
+        S=9.*clamp(.1/min(dot(p,p),1.),0.,1.),
+        p=p*S+q,
+        R=R*S+1.;
+    return .7*length(p)/R;
+}
+
+
+// by gaz
+float fractal_de136(vec3 p){
+    float i,g,e,R,S;
+    vec3 q;
+    p.z-=4.;
+    q=p;
+    R=1.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-1.,1.)*2.,
+        S=9.*clamp(.3/min(dot(p,p),1.),0.,1.),
+        p=p*S+q*.5,
+        R=R*abs(S)+.5;
+    return .6*length(p)/R-1e-3;
+}
+
+
+// by takusakuw
+float fractal_de137(vec3 p){
+    return length(sin(p)+cos(p*.5))-.4;
+}
+
+
+// by yosshin
+float fractal_de138(vec3 p){
+    return min(.65-length(fract(p+.5)-.5),p.y+.2);
+}
+
+
+// by takusakuw
+float fractal_de139(vec3 p){
+    return (length(sin(p.zxy)-cos(p.zzx))-.5);
+}
+
+
+// by yuruyurau
+float fractal_de140(vec3 p){
+#define b(p)length(max(abs(mod(p,.8)-.4)-.05,0.))
+    vec3 l;
+    p=cos(p)-vec3(.3), p.yx*=mat2(cos(.8+vec4(0,3,5,0)));
+    return min(min(b(p.xy),b(p.xz)),b(p.yz));
+#undef b
+}
+
+
+// by gaz
+float fractal_de141(vec3 p){
+    #define F1(a,n)a=abs(a)-n,a=vec2(a.x*.5+a.y,a.x-a.y*.5)
+    p=fract(p)-.5;
+    for(int j=0;j++<8;)
+      F1(p.zy,.0),
+      F1(p.xz,.55);
+    return .4*length(p.yz)-2e-3;
+    #undef F1
+}
+
+
+// by gaz
+float fractal_de142(vec3 p){
+#define M(a)mat2(cos(a+vec4(0,2,5,0)))
+#define F1(a)for(int j=0;j<5;j++)p.a=abs(p.a*M(3.));(p.a).y-=3.
+    float t = 0.96;
+    p.z-=9.;
+    p.xz*=M(t);
+    F1(xy);
+    F1(zy);
+    return dot(abs(p),vec3(.3))-.5;
+#undef M
+#undef F1
+}
+
+
+
+
 float de(vec3 p){
-     //return smin_op(fractal_de(p), fractal_de4(p), 0.385);
+    // return smin_op(fractal_de(p), fractal_de4(p), 0.385);
     // return fractal_de20(p);
     
-    // return fractal_de71(p);
-    return fractal_de130(p);
+    return fractal_de78(p);
+    // return fractal_de6(p);
 
 
     // return smin_op(screw_de(p), fractal_de26(p), 0.333);
@@ -4679,7 +4849,9 @@ void main()
         aspect_ratio = float(imageSize(current).x) / float(imageSize(current).y);
         vec3 rd = normalize(aspect_ratio*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
 
+        escape = 0.;
         float dresult = raymarch(ro, rd);
+        float escape_result = escape;
 
         // vec3 lightpos = vec3(8.); pR(lightpos.xz, time);
         vec3 lightpos = vec3(2*sin(time), 2., 2*cos(time));
@@ -4705,7 +4877,7 @@ void main()
         
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
         
-        vec3 palatte_read = 0.4 * basic_diffuse * pal( escape, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,1.0,1.0),vec3(0.0,0.10,0.20) );
+        vec3 palatte_read = 0.4 * basic_diffuse * pal( escape_result, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,1.0,1.0),vec3(0.0,0.10,0.20) );
         
         // apply lighting
         // vec3 temp = basic_diffuse + sresult1 + sresult2  + sresult3;
@@ -4715,36 +4887,32 @@ void main()
 
         temp *= ((1./AO_scale) * calcAO(shadow_ro, normal)); // ambient occlusion calculation
 
+        // do the depth scaling here
+        // compute the depth scale term
+        float depth_term = depth_scale * dresult;
+        switch(depth_falloff)
+        {
+            case 0: depth_term = 2.-2.*(1./(1.-depth_term)); break;
+            case 1: depth_term = 1.-(1./(1+0.1*depth_term*depth_term)); break;
+            case 2: depth_term = (1-pow(depth_term/30., 1.618)); break;
+
+            case 3: depth_term = clamp(exp(0.25*depth_term-3.), 0., 10.); break;
+            case 4: depth_term = exp(0.25*depth_term-3.); break;
+            case 5: depth_term = exp( -0.002 * depth_term * depth_term * depth_term ); break;
+            case 6: depth_term = exp(-0.6*max(depth_term-3., 0.0)); break;
+    
+            case 7: depth_term = (sqrt(depth_term)/8.) * depth_term; break;
+            case 8: depth_term = sqrt(depth_term/9.); break;
+            case 9: depth_term = pow(depth_term/10., 2.); break;
+            default: break;
+        }
+        // do a mix here, between col and the fog color, with the selected depth falloff term
+        temp.rgb = mix(temp.rgb, fog_color.rgb, depth_term);
+        
         col.rgb += temp;
-        dresult_avg += dresult;
     }
 
     col.rgb /= float(AA*AA);
-    dresult_avg /= float(AA*AA);
-
-    dresult_avg *= depth_scale;
-
-    // compute the depth scale term
-    float depth_term; 
-
-    switch(depth_falloff)
-    {
-        case 0: depth_term = 2.-2.*(1./(1.-dresult_avg)); break;
-        case 1: depth_term = 1.-(1./(1+0.1*dresult_avg*dresult_avg)); break;
-        case 2: depth_term = (1-pow(dresult_avg/30., 1.618)); break;
-
-        case 3: depth_term = clamp(exp(0.25*dresult_avg-3.), 0., 10.); break;
-        case 4: depth_term = exp(0.25*dresult_avg-3.); break;
-        case 5: depth_term = exp( -0.002 * dresult_avg * dresult_avg * dresult_avg ); break;
-        case 6: depth_term = exp(-0.6*max(dresult_avg-3., 0.0)); break;
-    
-        case 7: depth_term = (sqrt(dresult_avg)/8.) * dresult_avg; break;
-        case 8: depth_term = sqrt(dresult_avg/9.); break;
-        case 9: depth_term = pow(dresult_avg/10., 2.); break;
-        default: break;
-    }
-    // do a mix here, between col and the fog color, with the selected depth falloff term
-    col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
 
     // color stuff happens here, because the imageStore will be quantizing to 8 bit
     // tonemapping 
