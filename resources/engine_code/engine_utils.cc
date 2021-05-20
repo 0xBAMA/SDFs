@@ -503,7 +503,7 @@ void engine::control_window()
     ImGui::Combo("Depth Falloff", &depth_selector, dmodes, IM_ARRAYSIZE(dmodes));
     
     // ao scale
-    ImGui::SliderFloat(" AO Scale ", &AO_scale, 0.001, 4.);
+    ImGui::SliderFloat(" AO Scale ", &AO_scale, 0.001, 1.);
 
     // tonemap methodology
     const char* tmodes[] = {"None (Linear)", "ACES (Narkowicz 2015)", "Unreal Engine 3", "Unreal Engine 4", "Uncharted 2", "Gran Turismo", "Modified Gran Turismo", "Rienhard", "Modified Rienhard", "jt", "robobo1221s", "robo", "reinhardRobo", "jodieRobo", "jodieRobo2", "jodieReinhard", "jodieReinhard2"};

@@ -324,6 +324,273 @@ vec3 jodieReinhard2ElectricBoogaloo(const vec3 color){
 
 
 
+
+
+
+//  ╔╦╗┬ ┬┬╔═╗╦    ╦ ╦┌┬┐┬┬  ┬┌┬┐┬┌─┐┌─┐
+//   ║ ││││║ ╦║    ║ ║ │ ││  │ │ │├┤ └─┐
+//   ╩ └┴┘┴╚═╝╩═╝  ╚═╝ ┴ ┴┴─┘┴ ┴ ┴└─┘└─┘
+//
+// Description : Array and textureless GLSL 2D simplex noise function.
+//      Author : Ian McEwan, Ashima Arts.
+//  Maintainer : stegu
+//     Lastmod : 20110822 (ijm)
+//     License : Copyright (C) 2011 Ashima Arts. All rights reserved.
+//               Distributed under the MIT License. See LICENSE file.
+//               https://github.com/ashima/webgl-noise
+//               https://github.com/stegu/webgl-noise
+//
+
+// (sqrt(5) - 1)/4 = F4, used once below
+#define F4 0.309016994374947451
+float mod289(float x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
+vec2  mod289(vec2 x) {return x - floor(x * (1.0 / 289.0)) * 289.0;}
+vec3  mod289(vec3 x) {return x - floor(x * (1.0 / 289.0)) * 289.0;}
+vec4  mod289(vec4 x) {return x - floor(x * (1.0 / 289.0)) * 289.0;}
+float permute(float x){return mod289(((x*34.0)+1.0)*x);}
+vec3  permute(vec3 x) {return mod289(((x*34.0)+1.0)*x);}
+vec4  permute(vec4 x) {return mod289(((x*34.0)+1.0)*x);}
+float taylorInvSqrt(float r){return 1.79284291400159 - 0.85373472095314 * r;}
+vec4  taylorInvSqrt(vec4 r) {return 1.79284291400159 - 0.85373472095314 * r;}
+float snoise2D(vec2 v){
+  const vec4 C = vec4(0.211324865405187,  // (3.0-sqrt(3.0))/6.0
+                      0.366025403784439,  // 0.5*(sqrt(3.0)-1.0)
+                     -0.577350269189626,  // -1.0 + 2.0 * C.x
+                      0.024390243902439); // 1.0 / 41.0
+  // First corner
+  vec2 i  = floor(v + dot(v, C.yy) );
+  vec2 x0 = v -   i + dot(i, C.xx);
+
+  // Other corners
+  vec2 i1;
+  //i1.x = step( x0.y, x0.x ); // x0.x > x0.y ? 1.0 : 0.0
+  //i1.y = 1.0 - i1.x;
+  i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+  // x0 = x0 - 0.0 + 0.0 * C.xx ;
+  // x1 = x0 - i1 + 1.0 * C.xx ;
+  // x2 = x0 - 1.0 + 2.0 * C.xx ;
+  vec4 x12 = x0.xyxy + C.xxzz;
+  x12.xy -= i1;
+
+  // Permutations
+  i = mod289(i); // Avoid truncation effects in permutation
+  vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+  vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+  m = m * m;
+  m = m * m;
+
+  // Gradients: 41 points uniformly over a line, mapped onto a diamond.
+  // The ring size 17*17 = 289 is close to a multiple of 41 (41*7 = 287)
+
+  vec3 x = 2.0 * fract(p * C.www) - 1.0;
+  vec3 h = abs(x) - 0.5;
+  vec3 ox = floor(x + 0.5);
+  vec3 a0 = x - ox;
+
+  // Normalise gradients implicitly by scaling m
+  // Approximation of: m *= inversesqrt( a0*a0 + h*h );
+  m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+
+  // Compute final noise value at P
+  vec3 g;
+  g.x  = a0.x  * x0.x  + h.x  * x0.y;
+  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+  return 130.0 * dot(m, g);
+}
+
+float snoise3D(vec3 v){
+  const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+
+  // First corner
+  vec3 i  = floor(v + dot(v, C.yyy) );
+  vec3 x0 =   v - i + dot(i, C.xxx) ;
+
+  // Other corners
+  vec3 g = step(x0.yzx, x0.xyz);
+  vec3 l = 1.0 - g;
+  vec3 i1 = min( g.xyz, l.zxy );
+  vec3 i2 = max( g.xyz, l.zxy );
+
+  //   x0 = x0 - 0.0 + 0.0 * C.xxx;
+  //   x1 = x0 - i1  + 1.0 * C.xxx;
+  //   x2 = x0 - i2  + 2.0 * C.xxx;
+  //   x3 = x0 - 1.0 + 3.0 * C.xxx;
+  vec3 x1 = x0 - i1 + C.xxx;
+  vec3 x2 = x0 - i2 + C.yyy; // 2.0*C.x = 1/3 = C.y
+  vec3 x3 = x0 - D.yyy;      // -1.0+3.0*C.x = -0.5 = -D.y
+
+  // Permutations
+  i = mod289(i);
+  vec4 p = permute( permute( permute(
+             i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
+           + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
+           + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+
+  // Gradients: 7x7 points over a square, mapped onto an octahedron.
+  // The ring size 17*17 = 289 is close to a multiple of 49 (49*6 = 294)
+  float n_ = 0.142857142857; // 1.0/7.0
+  vec3  ns = n_ * D.wyz - D.xzx;
+
+  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);  //  mod(p,7*7)
+
+  vec4 x_ = floor(j * ns.z);
+  vec4 y_ = floor(j - 7.0 * x_ );    // mod(j,N)
+
+  vec4 x = x_ *ns.x + ns.yyyy;
+  vec4 y = y_ *ns.x + ns.yyyy;
+  vec4 h = 1.0 - abs(x) - abs(y);
+
+  vec4 b0 = vec4( x.xy, y.xy );
+  vec4 b1 = vec4( x.zw, y.zw );
+
+  //vec4 s0 = vec4(lessThan(b0,0.0))*2.0 - 1.0;
+  //vec4 s1 = vec4(lessThan(b1,0.0))*2.0 - 1.0;
+  vec4 s0 = floor(b0)*2.0 + 1.0;
+  vec4 s1 = floor(b1)*2.0 + 1.0;
+  vec4 sh = -step(h, vec4(0.0));
+
+  vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
+  vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+
+  vec3 p0 = vec3(a0.xy,h.x);
+  vec3 p1 = vec3(a0.zw,h.y);
+  vec3 p2 = vec3(a1.xy,h.z);
+  vec3 p3 = vec3(a1.zw,h.w);
+
+  //Normalise gradients
+  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+  p0 *= norm.x;
+  p1 *= norm.y;
+  p2 *= norm.z;
+  p3 *= norm.w;
+
+  // Mix final noise value
+  vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+  m = m * m;
+  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+}
+vec4 grad4(float j, vec4 ip){
+  const vec4 ones = vec4(1.0, 1.0, 1.0, -1.0);
+  vec4 p,s;
+
+  p.xyz = floor( fract (vec3(j) * ip.xyz) * 7.0) * ip.z - 1.0;
+  p.w = 1.5 - dot(abs(p.xyz), ones.xyz);
+  s = vec4(lessThan(p, vec4(0.0)));
+  p.xyz = p.xyz + (s.xyz*2.0 - 1.0) * s.www;
+
+  return p;
+}
+float snoise4D(vec4 v){
+  const vec4  C = vec4( 0.138196601125011,  // (5 - sqrt(5))/20  G4
+                        0.276393202250021,  // 2 * G4
+                        0.414589803375032,  // 3 * G4
+                       -0.447213595499958); // -1 + 4 * G4
+
+  // First corner
+  vec4 i  = floor(v + dot(v, vec4(F4)) );
+  vec4 x0 = v -   i + dot(i, C.xxxx);
+
+  // Other corners
+
+  // Rank sorting originally contributed by Bill Licea-Kane, AMD (formerly ATI)
+  vec4 i0;
+  vec3 isX = step( x0.yzw, x0.xxx );
+  vec3 isYZ = step( x0.zww, x0.yyz );
+  //  i0.x = dot( isX, vec3( 1.0 ) );
+  i0.x = isX.x + isX.y + isX.z;
+  i0.yzw = 1.0 - isX;
+  //  i0.y += dot( isYZ.xy, vec2( 1.0 ) );
+  i0.y += isYZ.x + isYZ.y;
+  i0.zw += 1.0 - isYZ.xy;
+  i0.z += isYZ.z;
+  i0.w += 1.0 - isYZ.z;
+
+  // i0 now contains the unique values 0,1,2,3 in each channel
+  vec4 i3 = clamp( i0, 0.0, 1.0 );
+  vec4 i2 = clamp( i0-1.0, 0.0, 1.0 );
+  vec4 i1 = clamp( i0-2.0, 0.0, 1.0 );
+
+  //  x0 = x0 - 0.0 + 0.0 * C.xxxx
+  //  x1 = x0 - i1  + 1.0 * C.xxxx
+  //  x2 = x0 - i2  + 2.0 * C.xxxx
+  //  x3 = x0 - i3  + 3.0 * C.xxxx
+  //  x4 = x0 - 1.0 + 4.0 * C.xxxx
+  vec4 x1 = x0 - i1 + C.xxxx;
+  vec4 x2 = x0 - i2 + C.yyyy;
+  vec4 x3 = x0 - i3 + C.zzzz;
+  vec4 x4 = x0 + C.wwww;
+
+  // Permutations
+  i = mod289(i);
+  float j0 = permute( permute( permute( permute(i.w) + i.z) + i.y) + i.x);
+  vec4 j1 = permute( permute( permute( permute (
+             i.w + vec4(i1.w, i2.w, i3.w, 1.0 ))
+           + i.z + vec4(i1.z, i2.z, i3.z, 1.0 ))
+           + i.y + vec4(i1.y, i2.y, i3.y, 1.0 ))
+           + i.x + vec4(i1.x, i2.x, i3.x, 1.0 ));
+
+  // Gradients: 7x7x6 points over a cube, mapped onto a 4-cross polytope
+  // 7*7*6 = 294, which is close to the ring size 17*17 = 289.
+  vec4 ip = vec4(1.0/294.0, 1.0/49.0, 1.0/7.0, 0.0) ;
+
+  vec4 p0 = grad4(j0,   ip);
+  vec4 p1 = grad4(j1.x, ip);
+  vec4 p2 = grad4(j1.y, ip);
+  vec4 p3 = grad4(j1.z, ip);
+  vec4 p4 = grad4(j1.w, ip);
+
+  // Normalise gradients
+  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+  p0 *= norm.x;
+  p1 *= norm.y;
+  p2 *= norm.z;
+  p3 *= norm.w;
+  p4 *= taylorInvSqrt(dot(p4,p4));
+
+  // Mix contributions from the five corners
+  vec3 m0 = max(0.6 - vec3(dot(x0,x0), dot(x1,x1), dot(x2,x2)), 0.0);
+  vec2 m1 = max(0.6 - vec2(dot(x3,x3), dot(x4,x4)            ), 0.0);
+  m0 = m0 * m0;
+  m1 = m1 * m1;
+  return 49.0 * ( dot(m0*m0, vec3( dot( p0, x0 ), dot( p1, x1 ), dot( p2, x2 )))
+                + dot(m1*m1, vec2( dot( p3, x3 ), dot( p4, x4 ) ) ) ) ;
+}
+float fsnoise      (vec2 c){return fract(sin(dot(c, vec2(12.9898, 78.233))) * 43758.5453);}
+float fsnoiseDigits(vec2 c){return fract(sin(dot(c, vec2(0.129898, 0.78233))) * 437.585453);}
+vec3 hsv(float h, float s, float v){
+    vec4 t = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(vec3(h) + t.xyz) * 6.0 - vec3(t.w));
+    return v * mix(vec3(t.x), clamp(p - vec3(t.x), 0.0, 1.0), s);
+}
+mat2 rotate2D(float r){
+    return mat2(cos(r), sin(r), -sin(r), cos(r));
+}
+mat3 rotate3D(float angle, vec3 axis){
+    vec3 a = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float r = 1.0 - c;
+    return mat3(
+        a.x * a.x * r + c,
+        a.y * a.x * r + a.z * s,
+        a.z * a.x * r - a.y * s,
+        a.x * a.y * r - a.z * s,
+        a.y * a.y * r + c,
+        a.z * a.y * r + a.x * s,
+        a.x * a.z * r + a.y * s,
+        a.y * a.z * r - a.x * s,
+        a.z * a.z * r + c
+    );
+}
+
+
+
+
+
+
+
+
 ////////////////////////////////////////////////////////////////
 //
 //                           HG_SDF
@@ -1239,6 +1506,17 @@ vec3 pal( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
 {
     return a + b*cos( 6.28318*(c*t+d) );
 }
+
+
+
+
+float screw_de(vec3 p){
+    float c=.2;
+    p.z+=atan(p.y,p.x)/M_PI*c;
+    p.z=mod(p.z,c*2.)-c;
+    return length(vec2(length(p.xy)-.4,p.z))-.1;
+}
+
 
 
 float fractal_de(vec3 p0){
@@ -3572,24 +3850,815 @@ float fractal_de89(vec3 p){
 
 
 
+// by yonatan - some aliasing
+float fractal_de90(vec3 p){
+    float j = 0.5;
+    for(p.xz=mod(p.xz,6.)-3.;++j<9.;p=3.*p-.9)
+        p.xz=abs(p.xz),
+        p.z>p.x?p=p.zyx:p,
+        p.y>p.z?p=p.xzy:p,
+        p.z--,
+        p.x-=++p.y*.5;
+    return min(.2,p.x/4e3-.2);
+}
 
-float screw_de(vec3 p){
-    float c=.2;
-    p.z+=atan(p.y,p.x)/M_PI*c;
-    p.z=mod(p.z,c*2.)-c;
-    return length(vec2(length(p.xy)-.4,p.z))-.1;
+
+// by gaz
+float fractal_de91(vec3 p){
+    float s=4.;
+    float l=0;
+    p.z-=.9;
+    vec3 q=p;
+    s=2.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-1.,1.)*2.,
+        p=p*(l=8.8*clamp(.72/min(dot(p,p),2.),0.,1.))+q,
+        s*=l;
+    return length(p)/s;
+}
+
+
+// by gaz
+float fractal_de92(vec3 p){
+    float s=3., l=0.;
+    //p=g*d+vec3(0,0,t);
+    vec3 q=p;
+    p=mod(p,4.)-2.;
+    p=abs(p);
+    for(int j=0;j++<8;)
+        p=1.-abs(p-1.),
+        p=p*(l=-1.*max(1./dot(p,p),1.))+.5,
+        s*=l;
+    return max(.2-length(q.xy),length(p)/s);
+}
+
+
+// by eiffie  https://www.shadertoy.com/view/4sy3zh
+float fractal_de93(vec3 p){
+    const int iters=5;
+    const int iter2=3;
+    const float scale=3.48;
+    const vec3 offset=vec3(1.9,0.0,2.56);
+    const float psni=pow(scale,-float(iters));
+    const float psni2=pow(scale,-float(iter2));
+
+    p = abs(mod(p+3., 12.)-6.)-3.;
+	vec3 p2;
+	for (int n = 0; n < iters; n++) {
+		if(n==iter2)p2=p;
+		p = abs(p);
+		if (p.x<p.y)p.xy = p.yx;
+		p.xz = p.zx;
+		p = p*scale - offset*(scale-1.0);
+		if(p.z<-0.5*offset.z*(scale-1.0))
+            p.z+=offset.z*(scale-1.0);
+	}
+    float d1=(length(p.xy)-1.0)*psni;
+    float d2=length(max(abs(p2)-vec3(0.2,5.1,1.3),0.0))*psni2;
+    escape=(d1<d2)?0.:1.;
+	return min(d1,d2);
+}
+
+
+// by yonatan
+float fractal_de94(vec3 p){
+    p=fract(p)-.5;
+    vec3 O=vec3(2.,0,3.);
+    for(int j=0;j++<7;){
+        p=abs(p);
+        p=(p.x<p.y?p.zxy:p.zyx)*3.-O;
+        if(p.z<-.5*O.z)
+            p.z+=O.z;
+    } 
+    return length(p.xy)/3e3;
+}
+
+
+// by yonatan
+float fractal_de95(vec3 p){
+    p=fract(p)-.5;
+    vec3 O=vec3(2.,0,5.);
+    for(int j=0;j++<7;){
+        p=abs(p);
+        p=(p.x<p.y?p.zxy:p.zyx)*3.-O;
+        if(p.z<-.5*O.z)
+            p.z+=O.z;
+    } 
+    return length(p.xy)/3e3;
+}
+
+
+// by gaz
+float fractal_de96(vec3 p){
+    vec3 a=vec3(.5);
+    p.z-=55.;
+    p = abs(p);
+    float s=2., l=0.;
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        s*=l=-2.12/max(.2,dot(p,p)),
+        p=p*l-.55;
+    return dot(p,a)/s;
+}
+
+
+// variant of code by gaz
+float fractal_de97(vec3 p){
+    vec3 a=vec3(.5);
+    p.z-=55.;
+    float s=2., l=0.;
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        s*=l=-2.12/max(.2,dot(p,p)),
+        p=p*l-.55;
+    return dot(p,a)/s;
+}
+
+
+// variant of code by gaz
+float fractal_de98(vec3 p){
+    vec3 a=vec3(.5, 0.1, 0.2);
+    p.z-=55.;
+    float s=2., l=0.;
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        s*=l=-2.12/max(.2,dot(p,p)),
+        p=p*l-.55;
+    return dot(p,a)/s;
+}
+
+
+// by gaz
+float fractal_de99(vec3 p){
+    float i,g,e=1.,s,l;
+    vec3 a=vec3(.5);
+    p.z-=55.;
+    p=abs(p);
+    s=2.;
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        s*=l=-1.55/max(.4,dot(p,p)),
+        p=p*l-.535;
+    return dot(p,a)/s;
+}
+
+
+// by gaz
+float fractal_de100(vec3 p){
+    float i,g,e,R,S;vec3 q;
+    q=p*2.;
+    R=7.;
+    for(int j=0;j++<9;){
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.);
+   
+        S=-9.*clamp(.7/min(dot(p,p),3.),0.,1.);
+        p=p*S+q;
+        R=R*abs(S);
+    }
+    return length(p)/R; 
+}
+
+
+// by gaz
+void rot101(inout vec3 p,vec3 a,float t){
+	a=normalize(a);
+	vec3 u=cross(a,p),v=cross(a,u);
+	p=u*sin(t)+v*cos(t)+a*dot(a,p);   
+}
+#define G dot(p,vec2(1,-1)*.707)
+#define V v=vec2(1,-1)*.707
+void sfold101(inout vec2 p)
+{
+    vec2 v=vec2(1,-1)*.707;
+    float g=dot(p,v);
+    p-=(G-sqrt(G*G+.01))*v;
+}
+#undef G
+#undef V
+float fractal_de101(vec3 p){
+    float k=.01;
+    for(int i=0;i<8;i++)
+    {
+        p=abs(p)-1.;
+        sfold101(p.xz);
+        sfold101(p.yz);
+        sfold101(p.xy);
+        rot101(p,vec3(1,2,2),.6);
+        p*=2.;
+    }
+    return length(p.xy)/exp2(8.)-.01;
+}
+
+
+// by gaz
+float fractal_de102(vec3 p){
+    #define V vec2(.7,-.7)
+    #define G(p)dot(p,V)
+    float i=0.,g=0.,e=1.;
+    float t = 0.34; // this was the time varying parameter - change it to see different behavior
+    for(int j=0;j++<8;){
+        p=abs(rotate3D(0.34,vec3(1,-3,5))*p*2.)-1.,
+        p.xz-=(G(p.xz)-sqrt(G(p.xz)*G(p.xz)+.05))*V;
+    }
+    return length(p.xz)/3e2;
+    #undef V
+    #undef G
+}
+
+
+
+// by Kali
+float fractal_de103(vec3 p) {
+    const float width=.22;
+    const float scale=4.;
+	// float t=iTime;
+	float t=0.2;
+	float dotp=dot(p,p);
+	p.x+=sin(t*40.)*.007;
+	p=p/dotp*scale;
+	p=sin(p+vec3(sin(1.+t)*2.,-t,-t*2.));
+	float d=length(p.yz)-width;
+	d=min(d,length(p.xz)-width);
+	d=min(d,length(p.xy)-width);
+	d=min(d,length(p*p*p)-width*.3);
+	return d*dotp/scale;
+}
+
+
+
+// by yonatan
+float fractal_de104(vec3 p){
+    
+    #define F(X)d=min(d,length(p.X))-3e-4;
+    float d=1.,i,h=0.,D;
+    float t = 1.2; // previously time varying
+    // p=vec3((FC.xy*2.-r)/r.y,1)*h,
+    p*=h;
+    p.z--;
+    p=fract(p*rotate3D(t,vec3(1))/(D=dot(p,p)))-.5;
+    F(xy)
+    F(yz)
+    F(zx)
+    h+=d*D*.5;
+  // o.xyz+=5e-4/abs(D);
+    return D; // it's either d, D, or h, but it's crashing on my desktop so I'll need to do this on the laptop
+}
+
+
+// by butadiene121 - maybe not a valid distance bound, I'd like to figure this one out
+// https://twitter.com/butadiene121/status/1392392236730486786
+// bit.ly/3uIxVQO
+float fractal_de105(vec3 p)
+{   
+    vec3 m=vec3(0,1.3,time*0.15),q;
+    float e=0.,c=0.,d=1.;
+    q=fract(m)-.5,
+    q.y=m.y;
+    for(int j=0;j<12;j++)
+        q=abs(q),
+        q.y-=2.,
+        c=2./clamp(dot(q,q),.4,1.),
+        q*=c,
+        d*=c,
+        q.xz-=.5,
+        q.y--;
+    m+=e*p;
+    if(e>.001)escape+=.02*exp(-3.*e);
+    return length(q)/d-.001;
+}
+
+
+// by yonatan - almost like asteroids
+float fractal_de106(vec3 p){
+    float i,a,n,h,d=1.,t=0.3; // t is the time varying term, change it for different behavior
+    vec3 q;
+    n=.4;
+    for(a=1.;a<2e2;n+=q.x*q.y*q.z/a)
+        p.xy*=rotate2D(a+=a),
+        q=cos(p*a+t);
+    return n*.3;
+}
+
+
+// by yonatan - kind of a landscape sort of thing
+float fractal_de107(vec3 p){
+    vec3 z,q;
+    p.z -= 9.;
+    z=p;
+    float a=1.,n=.9;
+    for(int j=0;j++<15;){
+        p.xy*=rotate2D(float(j*j));
+        a*=.66;
+        q=sin(p*=1.5);
+        n+=q.x*q.y*q.z*a;
+    }
+    return (n*.2-z.z*.2);
+}
+
+
+
+// by yonatan
+float fractal_de108(vec3 p){
+      vec3 q;
+      float s=1., a=1., n=.5;
+      for(int j=0;j++<9;){
+          p.xy*=rotate2D(float(j*j));
+          a*=.5;
+          q=sin(p+=p);
+          n+=q.x*q.y*q.z*a;
+      }
+      return n*.2;
+}
+
+
+
+// by yonatan
+float fractal_de109(vec3 p){
+    float h,d=1.,i,u,s, t = 0.8; // t was the time varying term
+    p+=vec3(1,1,sin(t/4.)*3.);
+    s=2.;
+    for(int j=0;j<9;j++){
+        p.xy*=rotate2D(t/4.);
+        u=4./3./dot(p,p);
+        s*=u;
+        p=mod(1.-p*u,2.)-1.;
+    }
+    return (length(p)/s);
+}
+
+
+
+// by gaz, with some adaptation
+float fractal_de110(vec3 p){
+    float i,g,d=1.,s,h;
+    vec3 e,q;
+    s=2.;h=.3;
+    for(int j=0;j++<8;){
+        p=abs(p)-1.;
+        q=p;
+        for(int k=0;++k<3;)
+            p-=clamp(dot(q,e=vec3(9>>k&1,k>>1&1,k&1)-.5),-h,h)*e*2.;
+        p*=1.4;s*=1.4;
+    }
+    return length(p)/(4.*s); // play with this scale factor to match to a given epsilon
+}
+
+
+
+// by gaz
+float  fractal_de111(vec3 p){
+    float i,g,e=1.,s,l;
+    // vec3 p=rotate3D(t,vec3(1))*vec3(g*(FC.xy*2.-r)/r.y,g-9.);
+    p.z-=9.;
+    s=2.;
+    p=abs(p);
+    for(int j=0;j++<6;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        p*=l=-2./max(.3,sqrt(min(min(p.x,p.y),p.z))),
+        p-=2.,
+        s*=l;
+    return length(p)/s;
+}
+
+
+
+// by gaz
+float fractal_de112(vec3 p){
+    float i,g,e,s;
+    vec3 q=p;
+    s=5.;
+    for(int j=0;j++<6;s*=e)
+        p=sign(p)*(1.7-abs(p-1.7)),
+        p=p*(e=8./clamp(dot(p,p),.3,5.))+q-vec3(.8,12,.8);
+    return length(p.yz)/s;
+}
+
+
+
+// adapted from code by catzpaw
+float fractal_de113(vec3 p){
+    float k = M_PI*2.;
+    vec3 v = vec3(0.,3.,fract(k));
+    return (length(cross(p=cos(p+v),p.zxy))-0.1)*0.4;
+}
+
+
+// happy accident while converting 113
+float fractal_de114(vec3 p){
+    float k = M_PI*2.;
+    vec3 v = vec3(0.,3.,fract(k));
+    return (length(cross(cos(p+v),p.zxy))-0.4)*0.2;
+}
+
+
+// by catzpaw (distance bound doesn't hold)
+float fractal_de115(vec3 p){
+    vec3 v=vec3(0,1.5,6.3);
+    return min(6.-length((p-v).xy+sin(p.yx)), dot(cos(p),sin(p.yzx)))+sin(sin(p.z*3.5)+v.z)*.1+1.;
+}
+
+
+// by gaz
+float fractal_de116(vec3 p){
+    // p=rotate3D(t,vec3(1))*vec3(g*(FC.xy*2.-r)/r.y,g-80.);
+    p.z-=80.;
+    float s=3., l=0.;
+    p=abs(p);
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        p*=l=-.8/min(2.,length(p)),
+        p-=.5,
+        s*=l;
+    return (length(p)/s)-0.1;
+}
+
+
+// by gaz
+float fractal_de117(vec3 p){
+    float s = 1.;
+    for(int j=0;j<7;j++)
+        p=mod(p-1.,2.)-1.,
+        p*=1.2,
+        s*=1.2,
+        p=abs(abs(p)-1.)-1.;
+    return (length(cross(p,normalize(vec3(2,2.03,1))))/s)-0.02;
+}
+
+
+// by gaz
+float fractal_de118(vec3 p){
+    float s=2., l=0.;
+    p=abs(p);
+    for(int j=0;j++<8;)
+        p=1.-abs(abs(p-2.)-1.),
+        p*=l=1.2/dot(p,p),
+        s*=l;
+    return dot(p,normalize(vec3(3,-2,-1)))/s;
+}
+
+
+// by gaz
+float fractal_de119(vec3 p){
+    float s=2., l=0.;
+    p=abs(p);
+    for(int j=0;j++<8;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        p*=l=-1.3/dot(p,p),
+        p-=.15,
+        s*=l;
+    return length(p)/s;
+}
+
+
+// by gaz
+float fractal_de120(vec3 p){
+    p.z-=20;
+    float s=3., l=0.;
+    p=abs(p);
+    for(int j=0;j++<10;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        p*=l=-1./max(.19,dot(p,p)),
+        p-=.24,
+        s*=l;
+    return (length(p)/s);
+}
+
+
+// by gaz
+float fractal_de121(vec3 p){
+      // vec3 p=g*normalize(vec3((FC.xy-.5*r)/r.y,1))+vec3(0,1,t);
+      float s=2., l=0.;
+      p=abs(mod(p-1.,2.)-1.);
+      for(int j=0;j++<8;)
+          p=1.-abs(abs(abs(p-5.)-2.)-2.),
+          p*=l=-1.3/dot(p,p),
+          p-=vec3(.3,.3,.4),
+          s*=l;
+      return length(p.yz)/s;
+}
+
+
+// by gaz
+float fractal_de122(vec3 p){
+    float i,g,e=1.,R,S;
+    vec3 q;
+    q=p*8.;
+    R=8.;
+    for(int j=0;j++<6;)
+        p=-sign(p)*(abs(abs(abs(p)-2.)-1.)-1.),
+        S=-5.*clamp(1.5/dot(p,p),.8,5.),
+        p=p*S+q,
+        R*=S;
+    return length(p)/R;
+}
+
+
+// by gaz - hard crash on desktop
+float fractal_de123(vec3 p){
+    float i,g,e,s,l;
+    vec3 q;
+    s=2.;
+    p=abs(mod(p-1.,2.)-1.)-1.;
+    for(int j=0;j<8;j++)
+        p=1.-abs(abs(abs(p-5.)-2.)-2.),
+        p=p*(l=-1.4/dot(p,p))-vec3(.2),
+        s*=abs(l);
+    return length(p.xy)/s;
+}
+
+
+
+// by gaz
+float fractal_de124(vec3 p){
+    float i,g,e,s,k;
+    vec3 q;
+    p=vec3(length(p.xy)-PI,atan(p.y,p.x)*PI,p.z);
+    p.yz=mod(p.yz,4.)-2.;
+    s=2.;
+    p=abs(p);
+    q=p;
+    for(int j=0;++j<5;)
+        p=1.-abs(p-1.),
+        p=-p*(k=max(3./dot(p,p),3.))+q,
+        s*=k;
+    return length(p.xz)/s;
+}
+
+
+
+// by gaz
+float fractal_de125(vec3 p){
+    float i,g,e,R,S;
+    R=2.;
+    for(int j=0;j++<9;)
+        p=1.-abs(p-1.),
+        p*=S=(j%3>1)?1.3:1.2/dot(p,p),
+        R*=S;
+    return length(cross(p,vec3(.5)))/R-5e-3;
+}
+
+
+
+// by gaz
+float fractal_de126(vec3 p){
+	float s=2.,r2;
+	p=abs(p);
+    for(int i=0; i<12;i++){
+		p=1.-abs(p-1.);
+		r2=(i%3==1)?1.1:1.2/dot(p,p);
+    	p*=r2;
+    	s*=r2;
+	}
+	escape=log2(s*.003);
+	return length(cross(p,normalize(vec3(1))))/s-0.005;
+}
+
+
+
+// by gaz
+float fractal_de127(vec3 p){
+    float i,g,e,s,l;
+    vec3 q;
+    q=p;s=3.;
+    for(int j=0;j++<9;)
+        p=mod(p-1.,2.)-1.,
+        l=1.2/pow(pow(dot(pow(abs(p),vec3(5)),vec3(1)),.2),1.6),
+        p*=l,
+        s*=l;
+    return abs(p.y)/s;
+}
+
+
+// by gaz - https://twitter.com/gaziya5/status/1291673093694357505
+float fractal_de128(vec3 p){
+    float i,g,e,s,l;
+    vec3 q;
+    q=p;
+    s=4.;
+    for(int j=0;j++<9;)
+        p=mod(p-1.,2.)-1.,
+        l=1.2/dot(p,p),
+        p*=l,
+        s*=l;
+    return abs(p.y)/s;
+}
+
+
+// by gaz - hard crash on desktop
+float fractal_de129(vec3 p){
+    float i,g,e,s,l;
+    vec3 q;
+    q=p;
+    s=1.;
+    for(int j=0;j++<4;)
+        p=mod(p-1.,2.)-1.,
+        l=2./dot(p,p),
+        p*=l,
+        s*=l;
+    return length(p.xy)/s;
+}
+
+
+// by gaz
+float fractal_de130(vec3 p){
+#define F1(s)p.s=abs(p.s)-1.
+    p+=vec3(0,3.8,5.);
+    vec3 q=p;
+    p=mod(p,vec3(8,8,2))-vec3(4,4,1);
+    F1(yx);
+    F1(yx);
+    F1(xz);
+    return min(length(cross(p,vec3(.5)))-.03,length(p.xy)-.05);
+#undef F1
+}
+
+
+// by gaz
+float fractal_de131(vec3 p){
+    float l,s=3.;
+    float t = 4.5;
+    for(int j=0;j++<5;p.xy=fract(p.xy+p.x)-.5)
+        p=vec3(log(l=length(p.xy)),atan(p.y,p.x)/PI*2.,p.z/l+1.),
+        s*=.5*l;
+    return abs(p.z)*s;
+}
+
+
+
+
+// by iq - 'Fractal Cave'
+float maxcomp132(in vec3 p ) { return max(p.x,max(p.y,p.z));}
+float sdBox132( vec3 p, vec3 b ){
+  vec3  di = abs(p) - b;
+  float mc = maxcomp132(di);
+  return min(mc,length(max(di,0.0)));
+}
+float fractal_de132(vec3 p){
+    vec3 w = p;
+    vec3 q = p;
+
+    q.xz = mod( q.xz+1.0, 2.0 ) -1.0;
+
+    float d = sdBox132(q,vec3(1.0));
+    float s = 1.0;
+    for( int m=0; m<7; m++ )
+    {
+        float h = float(m)/6.0;
+
+        p =  q.yzx - 0.5*sin( 1.5*p.x + 6.0 + p.y*3.0 + float(m)*5.0 + vec3(1.0,0.0,0.0));
+
+        vec3 a = mod( p*s, 2.0 )-1.0;
+        s *= 3.0;
+        vec3 r = abs(1.0 - 3.0*abs(a));
+
+        float da = max(r.x,r.y);
+        float db = max(r.y,r.z);
+        float dc = max(r.z,r.x);
+        float c = (min(da,min(db,dc))-1.0)/s;
+        d = max( c, d );
+   }
+    
+   return d*0.5;
+}
+
+
+// by gaz
+float fractal_de133(vec3 p){
+    float i,g,e,R,S;
+    vec3 q;
+    q=p;
+    R=2.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-1.,1.)*2.,
+        S=9.*clamp(.7/min(dot(p,p),3.),0.,1.),
+        p=p*S+q,
+        R=R*abs(S)+1.,
+        p=p.yzx;
+    return length(p)/R;
+}
+
+
+// by gaz
+float fractal_de134(vec3 p){
+    float i,g,e,R,S;
+    vec3 q;
+    q=p;
+    R=1.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-1.,1.)*2.,S=6.*clamp(.2/min(dot(p,p),7.),0.,1.),
+        p=p*S+q*.7,
+        R=R*abs(S)+.7;
+    return length(p)/R;
+}
+
+
+// by gaz
+float fractal_de135(vec3 p){
+    float i,g,e,R,S;
+    vec3 q;
+    p.z-=3.;
+    q=p;
+    R=1.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-.9,.9)*2.,
+        S=9.*clamp(.1/min(dot(p,p),1.),0.,1.),
+        p=p*S+q,
+        R=R*S+1.;
+    return .7*length(p)/R;
+}
+
+
+// by gaz
+float fractal_de136(vec3 p){
+    float i,g,e,R,S;
+    vec3 q;
+    p.z-=4.;
+    q=p;
+    R=1.;
+    for(int j=0;j++<9;)
+        p-=clamp(p,-1.,1.)*2.,
+        S=9.*clamp(.3/min(dot(p,p),1.),0.,1.),
+        p=p*S+q*.5,
+        R=R*abs(S)+.5;
+    return .6*length(p)/R-1e-3;
+}
+
+
+// by takusakuw
+float fractal_de137(vec3 p){
+    return length(sin(p)+cos(p*.5))-.4;
+}
+
+
+// by yosshin
+float fractal_de138(vec3 p){
+    return min(.65-length(fract(p+.5)-.5),p.y+.2);
+}
+
+
+// by takusakuw
+float fractal_de139(vec3 p){
+    return (length(sin(p.zxy)-cos(p.zzx))-.5);
+}
+
+
+// by yuruyurau
+float fractal_de140(vec3 p){
+#define b(p)length(max(abs(mod(p,.8)-.4)-.05,0.))
+    vec3 l;
+    p=cos(p)-vec3(.3), p.yx*=mat2(cos(.8+vec4(0,3,5,0)));
+    return min(min(b(p.xy),b(p.xz)),b(p.yz));
+#undef b
+}
+
+
+// by gaz
+float fractal_de141(vec3 p){
+    #define F1(a,n)a=abs(a)-n,a=vec2(a.x*.5+a.y,a.x-a.y*.5)
+    p=fract(p)-.5;
+    for(int j=0;j++<8;)
+      F1(p.zy,.0),
+      F1(p.xz,.55);
+    return .4*length(p.yz)-2e-3;
+    #undef F1
+}
+
+
+// by gaz
+float fractal_de142(vec3 p){
+#define M(a)mat2(cos(a+vec4(0,2,5,0)))
+#define F1(a)for(int j=0;j<5;j++)p.a=abs(p.a*M(3.));(p.a).y-=3.
+    float t = 0.96;
+    p.z-=9.;
+    p.xz*=M(t);
+    F1(xy);
+    F1(zy);
+    return dot(abs(p),vec3(.3))-.5;
+#undef M
+#undef F1
 }
 
 
 
 
 float de(vec3 p){
-     //return smin_op(fractal_de(p), fractal_de4(p), 0.385);
+    // return smin_op(fractal_de(p), fractal_de4(p), 0.385);
     // return fractal_de20(p);
-    return fractal_de89(p);
+    
+    return fractal_de7(p);
+    // return fractal_de6(p);
+
+
     // return smin_op(screw_de(p), fractal_de26(p), 0.333);
     // return old_de(p);
 }
+
+
+
+
+
+
+
 
 // global state tracking
 uint num_steps = 0; // how many steps taken by the raymarch function
@@ -3792,19 +4861,13 @@ void main()
 
         vec3 shadow_ro = hitpos+normal*EPSILON*2.;
 
-        vec3 sresult1, sresult2, sresult3;
+        vec3 sresult1 = vec3(0.);
+        vec3 sresult2 = vec3(0.);
+        vec3 sresult3 = vec3(0.);
         
-        #define VISONLY 0
-        
-        #if VISONLY
-        sresult1 = visibility_only_lighting(1, hitpos);
-        sresult2 = visibility_only_lighting(2, hitpos);
-        sresult3 = visibility_only_lighting(3, hitpos);
-		#else
         sresult1 = phong_lighting(1, hitpos, normal, ro);
         sresult2 = phong_lighting(2, hitpos, normal, ro);
         sresult3 = phong_lighting(3, hitpos, normal, ro);
-		#endif
         
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
         
