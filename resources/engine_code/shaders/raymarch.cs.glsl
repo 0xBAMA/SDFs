@@ -22,6 +22,11 @@ uniform vec3 lightPos1;
 uniform vec3 lightPos2;
 uniform vec3 lightPos3;
 
+// flicker factors
+uniform float flickerfactor1;
+uniform float flickerfactor2;
+uniform float flickerfactor3;
+
 // diffuse light colors
 uniform vec3 lightCol1d;
 uniform vec3 lightCol2d;
@@ -1616,7 +1621,7 @@ float fractal_de6( vec3 p )
 		float k = max((2.)/(r2), .027);
 		p     *= k;
 		scale *= k;
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        escape += exp(-0.00002*dot(p.xyz,p.xyz));
 	}
 	float l = length(p.xy);
 	float rxy = l - 4.0;
@@ -4865,9 +4870,9 @@ void main()
         vec3 sresult2 = vec3(0.);
         vec3 sresult3 = vec3(0.);
         
-        sresult1 = phong_lighting(1, hitpos, normal, ro);
-        sresult2 = phong_lighting(2, hitpos, normal, ro);
-        sresult3 = phong_lighting(3, hitpos, normal, ro);
+        sresult1 = phong_lighting(1, hitpos, normal, ro) * flickerfactor1;
+        sresult2 = phong_lighting(2, hitpos, normal, ro) * flickerfactor2;
+        sresult3 = phong_lighting(3, hitpos, normal, ro) * flickerfactor3;
         
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
         
@@ -4907,6 +4912,7 @@ void main()
         case 7: depth_term = (sqrt(dresult_avg)/8.) * dresult_avg; break;
         case 8: depth_term = sqrt(dresult_avg/9.); break;
         case 9: depth_term = pow(dresult_avg/10., 2.); break;
+        case 10: depth_term = dresult_avg/MAX_DIST;
         default: break;
     }
     // do a mix here, between col and the fog color, with the selected depth falloff term
@@ -4966,10 +4972,10 @@ void main()
     }   
     // gamma correction
     col.rgb = pow(col.rgb, vec3(1/gamma));
-    
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }
+
 
 
 

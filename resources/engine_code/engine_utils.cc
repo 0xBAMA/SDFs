@@ -499,7 +499,7 @@ void engine::control_window()
     // fog terms
     ImGui::SliderFloat(" Depth Scale ", &depth_scale, 0.001, 4.);
     
-    const char* dmodes[] = {"1", "2", "3", "EXP1", "EXP2", "EXP3", "EXP4", "POW1", "POW2", "POW3"};
+    const char* dmodes[] = {"1", "2", "3", "EXP1", "EXP2", "EXP3", "EXP4", "POW1", "POW2", "POW3", "BASIC RATIO"};
     ImGui::Combo("Depth Falloff", &depth_selector, dmodes, IM_ARRAYSIZE(dmodes));
     
     // ao scale
@@ -530,6 +530,7 @@ void engine::control_window()
 
     ImGui::EndTabItem();
   }
+  ImGui::EndTabBar();
 
   ImGui::End();
 }
@@ -605,7 +606,28 @@ void engine::animate_lights(float t){
 
   //query with p.noise(x,y,z); - returns value 0.-1.
 
+  // each of the lights has a flickerfactor (set by this function, passed to GPU), orbitradius, orbitrate, and phaseoffset, which help to set this flickerfactor
+  //  the noise will be sampled along a circle in the xz plane, controlled by sinusoids,
+  //   in the form  x = orbitradius * cos( orbitrate * t + phaseoffset )
+  //   and          z = orbitradius * sin( orbitrate * t + phaseoffset )
 
+  float samplex=0., sampley=0., samplez=0.;
+
+  samplex = orbitradius1 * cos( orbitrate1 * t + phaseoffset1 );
+  sampley = 6.5;
+  samplez = orbitradius1 * sin( orbitrate1 * t + phaseoffset1 );
+  flickerfactor1 = 1. + 0.4 * p.noise(samplex, sampley, samplez);
+  
+  samplex = orbitradius2 * cos( orbitrate2 * t + phaseoffset2 );
+  sampley = -2.5;
+  samplez = orbitradius2 * sin( orbitrate2 * t + phaseoffset2 );
+  flickerfactor2 = 1. + 0.4 * p.noise(samplex, sampley, samplez);
+
+  samplex = orbitradius3 * cos( orbitrate3 * t + phaseoffset3 );
+  sampley = 3.5;
+  samplez = orbitradius3 * sin( orbitrate3 * t + phaseoffset3 );
+  flickerfactor3 = 1. + 0.4 * p.noise(samplex, sampley, samplez);
+  
 }
 
 void engine::draw_everything() {
@@ -653,6 +675,11 @@ void engine::draw_everything() {
     // send light information to the raymarch shader
     // animate light parameters
     animate_lights(SDL_GetTicks() * 0.001);
+
+    // light flicker factor
+    glUniform1f(glGetUniformLocation(raymarch_shader, "flickerfactor1"), flickerfactor1);
+    glUniform1f(glGetUniformLocation(raymarch_shader, "flickerfactor2"), flickerfactor2);
+    glUniform1f(glGetUniformLocation(raymarch_shader, "flickerfactor3"), flickerfactor3);
   
     // diffuse color
     glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1d"), lightCol1d.x, lightCol1d.y, lightCol1d.z);
@@ -801,6 +828,17 @@ void engine::draw_everything() {
         cout << "rotation: " << rotation_about_x << " " << rotation_about_y << " " << rotation_about_z << endl;
       }
 
+      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_p)
+      {
+        auto now = std::chrono::system_clock::now();
+        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&in_time_t), "Screenshot-%Y-%m-%d %X") << ".png";
+        screenshot(ss.str());
+      }
+
+      
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w)
         rotation_about_x -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
@@ -840,6 +878,41 @@ void engine::draw_everything() {
     }
   }
 }
+
+void engine::screenshot(std::string filename){
+  // declare buffer and allocate space
+  std::vector<unsigned char> image_bytes_to_save, temp;
+  image_bytes_to_save.resize(WIDTH * HEIGHT * 4);
+
+  // glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, &image_bytes_to_save[0]);
+   
+  // glBindBuffer(GL_TEXTURE_BUFFER, display_texture);
+  // glGetBufferSubData(GL_TEXTURE_BUFFER, 0, image_bytes_to_save.size(), &image_bytes_to_save[0]);
+  
+  // glGetTextureImage(display_texture, 0, GL_RGBA, GL_UNSIGNED_BYTE,  image_bytes_to_save.size(), &image_bytes_to_save[0]);
+
+  glBindTexture(GL_TEXTURE_RECTANGLE, display_texture);
+  glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &image_bytes_to_save[0]);
+  
+  temp.assign(image_bytes_to_save.begin(), image_bytes_to_save.end());
+
+  // reorder flipped image content
+  for (int x = 0; x < WIDTH; x++)
+    for (int y = 0; y < HEIGHT; y++) {
+      int input_base = 4 * ((HEIGHT - y - 1) * WIDTH + x);
+      int output_base = 3 * (y * WIDTH + x);
+      image_bytes_to_save[output_base + 0] = temp[input_base + 0];
+      image_bytes_to_save[output_base + 1] = temp[input_base + 1];
+      image_bytes_to_save[output_base + 2] = temp[input_base + 2];
+    }
+
+  // save the resulting image - using the same buffer makes it so you don't have to copy it
+  unsigned error;
+  if ((error = lodepng::encode((std::string("screenshots/")+filename).c_str(), image_bytes_to_save, WIDTH, HEIGHT, LCT_RGB, 8))) {
+    std::cout << "encode error during save(\" " + filename + " \") " << error << ": " << lodepng_error_text(error) << std::endl;
+  }
+}
+
 
 void engine::quit() {
   // shutdown everything
