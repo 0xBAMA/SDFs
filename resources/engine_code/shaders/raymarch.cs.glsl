@@ -4644,13 +4644,581 @@ float fractal_de142(vec3 p){
 }
 
 
+// adapted from code by alia
+float fractal_de143(vec3 p){
+    vec3 q=fract(p)-.5;
+    float f=-length(p.xy)+2., g=length(q)-.6;
+    return max(f,-g);
+}
+
+
+// adapted from code by wrighter - aliasing issues
+float fractal_de144(vec3 p){
+   vec3 a = sin(p/dot(p,p)*4);
+   return 0.95*min(length(a.yx),length(a.yz))-0.52+0.2;
+}
+
+
+// by phi16
+float fractal_de145(vec3 p){ 
+    return length(.05*cos(9.*p.y*p.x)+cos(p)-.1*cos(9.*(p.z+.3*p.x-p.y)))-1.; 
+}
+
+
+// by gaz
+float fractal_de146(vec3 p){
+    vec3 q=p;
+    float s=5., e=0.;
+    for(int j=0;j++<8;s*=e)
+        p=sign(p)*(1.-abs(abs(p-2.)-1.)),
+        p=p*(e=6./clamp(dot(p,p),.1,3.))-q*vec3(2,8,5);
+    return length(p)/s;
+}
+
+
+// by gaz
+float fractal_de147(vec3 p){
+    float e=2., s=0., z=0.;
+    // p.y+=sin(t*.1)*e;
+    for(int j=0;++j<6;p=abs(p)-1.5,e/=s=min(dot(p,p),.75),p/=s);
+    z+=length(p.xz)/e;
+    return z;
+}
+
+
+// by yonatan
+float fractal_de148(vec3 p){
+    float i,j,e,g,h,s;
+    p.y-=p.z*.5;
+    for(j=s=h=.01;j++<9.;s+=s)
+        p.xz*=rotate2D(2.),
+        h+=abs(sin(p.x*s)*sin(p.z*s))/s;
+    return max(0.,p.y+h);
+}
+
+
+// by yonatan
+float fractal_de149(vec3 p){
+    float i,g,e,s,q;
+    q=length(p)-1.;
+    p.y++;
+    s=3.;
+    for(int i=0;i++<7;p=vec3(0,5,0)-abs(abs(p)*e-3.))
+        s*=e=max(1.,14./dot(p,p));
+    return max(q,min(1.,length(p.xz)-.3))/s;
+}
+
+
+
+// by gaz
+float fractal_de150(vec3 p){
+    float s=2., e=0.;
+    for(int i=0;i++<8;p=abs(p)*e)
+        p=vec3(.8,2,1)-abs(p-vec3(1,2,1)),
+        s*=e=1.3/clamp(dot(p,p),.1,1.2);
+    return min(length(p.xz),p.y)/s+.001;
+}
+
+
+
+// by gaz
+float fractal_de151(vec3 p){
+    float i,g=.3,e,s=2.,q;
+    for(int i=0;i++<7;p=vec3(2,5,1)-abs(abs(abs(p)*e-3.)-vec3(2,5,1)))
+        s*=e=12./min(dot(p,p),12.);
+    return min(1.,length(p.xz)-.2)/s;
+}
+
+
+
+// by kamoshika
+float fractal_de152(vec3 p){
+    vec3 Q;
+    float i,d=1.,a,b=sqrt(3.);
+    Q=mod(p,b*2.)-b;
+    a=1.;
+    d=9.;
+    for(int j=0;j++<7;){
+        Q=abs(Q);
+        d=min(d,(dot(Q,vec3(1)/b)-1.)/a);
+        Q=Q*3.-6./b;a*=3.;
+    }
+    return d;
+}
+
+
+// by kamoskika
+float fractal_de153(vec3 p){
+    float i,d=1.,b=1.73;
+    vec3 Q=mod(p,b*2.)-b;
+    for(int j=0;j++<6;){
+        Q=abs(Q);
+        if(Q.y>Q.x)Q.xy=Q.yx;
+        if(Q.z>Q.x)Q.zx=Q.xz;
+        Q*=2.;
+        Q.x-=b;
+    }
+    return (dot(abs(Q),vec3(1)/b)-1.)/64.;
+}
+
+
+// by yonatan
+float fractal_de154(vec3 p){
+    return (length(vec2((length(vec2(length(p.xy)-1.3,length(p.zy)-1.3))-.5),dot(cos(p*12.),sin(p.zxy*12.))*.1))-.02)*.3;
+}
+
+
+// by gaz - hangs on desktop
+float fractal_de155(vec3 p){
+    float s=5., e=0.;
+    for(int i=0;i++<5;)
+        p=1.-abs(p),
+        s*=e=1.3/min(dot(p,p),1.7),
+        p*=e-.15;
+    p=abs(p);
+    p.x<p.z?p=p.zyx:p;
+    p.y<p.z?p=p.xzy:p;
+    return dot(p,vec3(1,1,-1))/s-.007;
+}
+
+
+
+// by gaz
+float fractal_de156(vec3 p){
+      p.yz*=rotate2D(-.3);
+      float ss=3., s=1.;
+      for(int j=0; j++<7;){
+          p=abs(p);
+          p.y-=.5;
+
+          // change sphere hold
+          s = 1./clamp(dot(p,p),.0,1.);
+          p*=s;
+          ss*=s;
+          p-=vec2(1,.1).xxy;
+          p.xyz=p.zxy;
+      }
+  
+      // change SDF
+      return length(p.xy)/ss-.01;
+}
+
+
+
+// by gaz
+float fractal_de157(vec3 p){
+    p.yz*=rotate2D(-.3);
+    float ss=3., s=1.;
+    for(int j=0; j++<7;){
+        p=abs(p);
+        p.y-=.5;
+        s = 1./clamp(dot(p,p),.0,1.);
+        p*=s;
+        ss*=s;
+        p-=vec2(1,.1).xxy;
+        p.xyz=p.zxy;
+    }
+    return length(max(abs(p)-.6,0.))/ss-.01;
+}
+
+
+
+// by gaz
+float fractal_de158(vec3 p){
+    float s=2., e;
+    for(int j=0;j++<8;){
+        p=.1-abs(p-.2);
+        p.x<p.z?p=p.zyx:p;
+        s*=e=1.6;
+        p=abs(p)*e-vec3(.1,3,1);
+        p.yz*=rotate2D(.8);
+    }
+    return length(p.yx)/s-.04;
+}
+
+
+
+// by gaz
+float fractal_de159(vec3 p){
+    float s=2., e;
+    for(int i=0;i++<8;){
+        p=.5-abs(p);
+        p.x<p.z?p=p.zyx:p;
+        p.z<p.y?p=p.xzy:p;
+        s*=e=1.6;
+        p=abs(p)*e-vec3(.5,30,5);
+        p.yz*=rotate2D(.3);
+    }
+    return length(p.xy)/s-.005;
+}
+
+
+// by gaz
+float fractal_de160(vec3 p){
+    float s=3.,e;
+    for(int i=0;i++<3;p=vec3(2,4,2)-abs(abs(p)*e-vec3(3,6,1)))
+        s*=e=1./min(dot(p,p),.6);
+    return min(length(p.xz),abs(p.y))/s+.001;
+}
+
+
+
+
+// by gaz
+float fractal_de161(vec3 p){
+    float s=3., e;
+    s*=e=3./min(dot(p,p),50.);
+    p=abs(p)*e;
+    for(int i=0;i++<5;)
+        p=vec3(2,4,2)-abs(p-vec3(4,4,2)),
+            s*=e=8./min(dot(p,p),9.),
+            p=abs(p)*e;
+    return min(length(p.xz)-.1,p.y)/s;
+}
+
+
+
+
+// by yonatan
+float fractal_de162(vec3 p){
+    float s=3., offset=8., e;
+    for(int i=0;i++<9;p=vec3(2,4,2)-abs(abs(p)*e-vec3(4,4,2)))
+        s*=e=max(1.,(8.+offset)/dot(p,p));
+    return min(length(p.xz),p.y)/s;
+}
+
+
+
+// by gaz
+float fractal_de163(vec3 p){
+    p=sin(2.8*p+5.*sin(p*.3));
+    float s=2., e;
+    for(int i=0;i++<6;)
+        p=abs(p-1.7)-1.5,
+        s*=e=2.3/clamp(dot(p,p),.3,1.2),
+        p=abs(p)*e;
+    return length(p.zy)/s;
+}
+
+
+
+// by nameless
+float fractal_de164(vec3 p0){
+    p0=p0/10.;
+    p0 = mod(p0, 2.)-1.;
+    vec4 p = vec4(p0, 1.);
+    escape = 0.;
+    p=abs(p);
+    if(p.x < p.z)p.xz = p.zx;
+    if(p.z < p.y)p.zy = p.yz;
+    if(p.y < p.x)p.yx = p.xy;
+    for(int i = 0; i < 8; i++){
+        if(p.x < p.z)p.xz = p.zx;
+        if(p.z < p.y)p.zy = p.yz;
+        if(p.y < p.x)p.yx = p.xy;
+        
+        p.xyz = abs(p.xyz);
+
+        p*=(1.6/clamp(dot(p.xyz,p.xyz),0.6,1.));
+        p.xyz-=vec3(0.7,1.8,0.5);
+        p*=1.2;
+
+        escape += exp(-0.2*dot(p.xyz,p.xyz));
+    }
+    float m = 1.5;
+    p.xyz-=clamp(p.xyz,-m,m);
+    return (length(p.xyz)/p.w)*10.;
+}
+
+
+
+// by gaz
+float fractal_de165(vec3 p){
+    float s=5., e;
+    p=p/dot(p,p)+1.;
+    for(int i=0;i++<8;p*=e)
+        p=1.-abs(p-1.),
+        s*=e=1.6/min(dot(p,p),1.5);
+    return length(cross(p,normalize(vec3(1))))/s-5e-4;
+}
+
+
+// by gaz
+float fractal_de166(vec3 p){
+    float s=3., e, offset = 1.; //offset can be adjusted 
+    for(int i=0;i++<8;p*=e)
+        p=abs(p-vec3(1,3,1.5+offset*.3))-vec3(1,3.+offset*.3,2),
+        p*=-1.,
+        s*=e=7./clamp(dot(p,p),.7,7.);
+    return (p.z)/s+1e-3;
+}
+
+
+// by gaz
+float fractal_de167(vec3 p){
+    p=sin(p+3.*sin(p*.5));
+    float s=2., e;
+    for(int i=0;i++<5;)
+        p=abs(p-1.7)-1.3,
+        s*=e=2./min(dot(p,p),1.5),
+        p=abs(p)*e-1.;
+    return length(p)/s;
+}
+
+
+// by gaz
+float fractal_de168(vec3 p){
+#define M(p)p=vec2(sin(atan(p.x,p.y)*4.)/3.,1)*length(p),p.y-=2.
+    float i,g,e,s;
+    for(s=3.;s<4e4;s*=3.)
+        M(p.xy),
+        M(p.zy),
+        p*=3.;
+    return length(p.xy)/s-.001;
+#undef M
+}
+
+
+
+// by gaz
+float fractal_de169(vec3 p){
+    p=1.-abs(abs(p+sin(p))-1.);
+    p=p.x<p.y?p.zxy:p.zyx;
+    float s=5., l;
+    for(int j=0;j++<4;)
+        s*=l=2./min(dot(p,p),1.5),
+        p=abs(p)*l-vec3(2,1,3);
+    return length(p.yz)/s;
+}
+
+
+// by gaz
+float fractal_de170(vec3 p){
+    float s=3., e;
+    for(int j=0;++j<5;)
+        s*=e=1./min(dot(p,p),1.),
+        p=abs(p)*e-1.5;
+    return length(p.yz)/s;
+}
+
+
+
+// by gaz - pillar
+float fractal_de171(vec3 p){
+    float s=2., e;
+    for(int j=0;j++<8;)
+        s*=e=2./clamp(dot(p,p),.2,1.),
+        p=abs(p)*e-vec3(.5,8,.5);
+    return length(cross(p,vec3(1,1,-1)))/s;
+}
+
+
+
+// by yonatan
+float fractal_de172(vec3 p){
+    p.xz=mod(p.xz,2.)-1.;
+    vec3 q=p;
+    float s=2., e;
+    for(int j=0;j++<8;)
+        s*=e=2./clamp(dot(p,p),.5,1.),
+        p=abs(p)*e-vec3(.5,8,.5);
+    return max(q.y,length(p.xz)/s);
+}
+
+
+
+// by gaz
+float fractal_de173(vec3 p){
+    p.xz=abs(p.xz)-1.;
+    p.x>p.z?p=p.zyx:p;
+    float s=2., e;
+    for(int j=0;j++<7;)
+        s*=e=2.2/clamp(dot(p,p),.3,1.2),
+        p=abs(p)*e-vec3(1,8,.03);
+    return length(p.yz)/s;
+}
+
+
+
+// by gaz
+float fractal_de174(vec3 p){
+    // Enclose with this fold
+    //p.xz=abs(p.xz)-1.;p.x>p.z?p=p.zyx:p;
+    float s=2., e;
+    for(int j=0;j++<7;)
+        s*=e=2.2/clamp(dot(p,p),.3,1.2),
+        // Eliminate the thickness with this fold offset
+        //p=abs(p)*e-vec3(1,8,.03);
+        p=abs(p)*e-vec3(1,8,1);
+    // Changed sdf to make it easier to understand
+    return length(cross(p,vec3(1,1,-1)))/s;
+}
+
+
+
+// by gaz
+float fractal_de175(vec3 p){
+    p.xz=mod(p.xz,2.)-1.;
+    float s=2., e;
+    for(int j=0;j++<8;)
+        s*=e=2./clamp(dot(p,p),.5,1.),
+        p=abs(p)*e-vec3(.5,8,.5);
+    return length(p.xz)/s;
+}
+
+
+// by gaz
+float fractal_de176(vec3 p){
+    float s=2.,e;
+    for(int i=0;i<9;i++){
+        p=.5-abs(p-.5);
+        p.x<p.z?p=p.zyx:p;
+        p.z<p.y?p=p.xzy:p;
+        s*=e=2.4;
+        p=abs(p)*e-vec3(.1,13,5);
+    }
+    return length(p)/s-0.01;
+}
+
+
+// by gaz
+float fractal_de177(vec3 p){
+    float s=2., e;
+    for(int i=0;i++<7;){
+        p.xz=.8-abs(p.xz);
+        p.x<p.z?p=p.zyx:p;
+        s*=e=2.1/min(dot(p,p),1.);
+        p=abs(p)*e-vec3(1,18,9);
+    }
+    return length(p)/s-0.01;
+}
+
+
+
+// by kamoshika
+float fractal_de178(vec3 p){
+    float e, offset = 1.;
+    e=length(max(abs(p)-.5,0.))-.1;
+    return max(abs(e)-.05,sin((acos(p.y/length(p))*5.+sign(p.z)*acos(p.x/length(p.zx))+offset*3.)*3.)*.01);
+}
+
+
+// by yonatan
+float fractal_de179(vec3 p){
+    float n=1.+snoise3D(p), s=4., e;
+    for(int i=0;i++<7;p.y-=20.*n)
+        p.xz=.8-abs(p.xz),
+        p.x<p.z?p=p.zyx:p,
+        s*=e=2.1/min(dot(p,p),1.),
+        p=abs(p)*e-n;
+    return length(p)/s+1e-4;
+}
+
+
+// by gaz
+float fractal_de180(vec3 p){
+    float s=3., e;
+    for(int i=0;i++<8;)
+        p=mod(p-1.,2.)-1.,
+        s*=e=1.4/dot(p,p),
+        p*=e;
+    return length(p.yz)/s;
+}
+
+
+// by gaz
+float fractal_de181(vec3 p){
+    float s=4., e;
+    for(int i=0;i++<7;p.y-=10.)
+        p.xz=.8-abs(p.xz),
+        p.x<p.z?p=p.zyx:p,
+        s*=e=2.5/clamp(dot(p,p),.1,1.2),
+        p=abs(p)*e-1.;
+    return length(p)/s+.001;
+}
+
+
+// by gaz
+float fractal_de182(vec3 p){
+    float s=2., e;
+    for(int i=0;i++<10;){
+        p=.3-abs(p-.8);
+        p.x<p.z?p=p.zyx:p;
+        p.z<p.y?p=p.xzy:p;
+        s*=e=1.7;
+        p=abs(p)*e-vec3(1,50,5);
+    }
+    return length(p.xy)/s+.001;
+}
+
+
+// by gaz
+float fractal_de183(vec3 p){
+    float s=1., e, offset=0.2; // vary between 0 and 1
+    for(int i=0;i++<5;){
+        s*=e=2./min(dot(p,p),1.);
+        p=abs(p)*e-vec3(1,10.*offset,1);
+    }
+    return length(max(abs(p)-1.,0.))/s;
+}
+
+
+// by gaz - takes a second to compile but does work
+float fractal_de184(vec3 p){
+    float s=2.5, e;
+    p=abs(mod(p-1.,2.)-1.)-1.;
+    for(int j=0;j++<10;)
+        p=1.-abs(p-1.),
+        s*=e=-1.8/dot(p,p),
+        p=p*e-.7;
+    return abs(p.z)/s+.001;
+}
+
+
+
+// by gaz
+float fractal_de185(vec3 p){
+    float s=2., e;
+    for(int j=0;++j<8;s*=e=2./clamp(dot(p,p),.4,1.),p=abs(p)*e-vec3(2,1,.7));
+    return length(p)/s;
+}
+
+
+// by gaz
+float fractal_de186(vec3 p){
+    float s=2., e;
+    for(int j=0;++j<8;s*=e=2./clamp(dot(p,p),.4,1.),p=abs(p)*e-vec3(2,1,.7));
+    return length(p-clamp(p,-2.,2.))/s;
+}
+
+
+// by gaz
+float fractal_de187(vec3 p){
+    float s=2., e;
+    for(int j=0;++j<18;s*=e=2./clamp(dot(p,p),.4,1.),p=abs(p)*e-vec3(2,1,.7));
+    return length(p)/s;
+}
+
+
+// by amini
+float fractal_de188(vec3 p){
+    float s=3., e;
+    s*=e=3./min(dot(p,p),50.);
+    p=abs(p)*e;
+    for(int i=0;i++<5;)
+        p=vec3(8,4,2)-abs(p-vec3(8,4,2)),
+        s*=e=8./min(dot(p,p),9.),
+        p=abs(p)*e;
+    return min(length(p.xz)-.1,p.y)/s;
+}
+
 
 
 float de(vec3 p){
     // return smin_op(fractal_de(p), fractal_de4(p), 0.385);
     // return fractal_de20(p);
     
-    return fractal_de7(p);
+    return fractal_de188(p);
     // return fractal_de6(p);
 
 
