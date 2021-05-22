@@ -5367,7 +5367,6 @@ float sharp_shadow( in vec3 ro, in vec3 rd, float mint, float maxt ){
             return 0.0;
         t += h;
     }
-        
     return 1.0;
 }
 

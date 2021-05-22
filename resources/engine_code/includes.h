@@ -63,7 +63,7 @@ constexpr double pi = 3.14159265358979323846;
 // png loading library - very powerful
 #include "../lodev_lodePNG/lodepng.h"
 
-// shader compilation wrapper - may need to be extended
+// shader compilation wrapper
 #include "shader.h"
 
 // up to 3d perlin noise generation
@@ -88,7 +88,7 @@ using json = nlohmann::json;
 // #define WIDTH 512
 // #define HEIGHT 256
 
-#define WIDTH 640
+#define WIDTH 720
 #define HEIGHT 480
 
 // #define WIDTH 2048
