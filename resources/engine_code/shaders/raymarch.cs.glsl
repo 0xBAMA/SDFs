@@ -6544,19 +6544,3 @@ void main()
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
