@@ -82,18 +82,18 @@ private:
 	// light animation factors
 	void animate_lights(float t);
 	float flickerfactor1 = 1.0;
-	float orbitradius1 = 1.0;
-	float orbitrate1 = 0.2;
+	float orbitradius1 = 2.0;
+	float orbitrate1 = 1.2;
 	float phaseoffset1 = 0.5;
 		
 	float flickerfactor2 = 1.0;
-	float orbitradius2 = 1.2;
-	float orbitrate2 = 0.3;
+	float orbitradius2 = 2.2;
+	float orbitrate2 = 1.3;
 	float phaseoffset2 = 5.6;
 
 	float flickerfactor3 = 1.0;
-	float orbitradius3 = 1.9;
-	float orbitrate3 = 0.8;
+	float orbitradius3 = 2.9;
+	float orbitrate3 = 1.8;
 	float phaseoffset3 = 4.4;
 		
 	// diffuse light colors
@@ -118,9 +118,9 @@ private:
 	float orbit3 = 100;
 
 	// light positions
-	glm::vec3 lightPos1 = glm::vec3( 2.3, 1, 1);
-    glm::vec3 lightPos2 = glm::vec3( 1, 2.3, 1);
-    glm::vec3 lightPos3 = glm::vec3( 1, 1, 2.3);
+	glm::vec3 lightPos1 = glm::vec3( 0.75, 0.25, 0.25);
+    glm::vec3 lightPos2 = glm::vec3( 0.25, 0.75, 0.25);
+    glm::vec3 lightPos3 = glm::vec3( 0.25, 0.25, 0.75);
 
 	float AO_scale = 1.;
 	float depth_scale = 1.;
