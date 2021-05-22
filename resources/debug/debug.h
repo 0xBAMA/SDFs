@@ -16,7 +16,7 @@ void MessageCallback( GLenum source,
   bool show_high_severity         = true;
   if(severity == GL_DEBUG_SEVERITY_HIGH && show_high_severity)
     fprintf( stderr, "        GL CALLBACK: %s type = 0x%x, severity = GL_DEBUG_SEVERITY_HIGH, message = %s\n",
-           ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ), type, message );
+           ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ), type, message ), abort(); // this makes life easier
 
   bool show_medium_severity       = true;
   if(severity == GL_DEBUG_SEVERITY_MEDIUM && show_medium_severity)

@@ -78,8 +78,23 @@ private:
 
 	// base color
 	glm::vec3 basic_diffuse = glm::vec3(45./255., 45./255., 45./255.);
-
+		
+	// light animation factors
 	void animate_lights(float t);
+	float flickerfactor1 = 1.0;
+	float orbitradius1 = 1.0;
+	float orbitrate1 = 0.2;
+	float phaseoffset1 = 0.5;
+		
+	float flickerfactor2 = 1.0;
+	float orbitradius2 = 1.2;
+	float orbitrate2 = 0.3;
+	float phaseoffset2 = 5.6;
+
+	float flickerfactor3 = 1.0;
+	float orbitradius3 = 1.9;
+	float orbitrate3 = 0.8;
+	float phaseoffset3 = 4.4;
 		
 	// diffuse light colors
 	glm::vec3 lightCol1d = glm::vec3( 0.6f, 0.6f, 0.6f);
@@ -103,9 +118,9 @@ private:
 	float orbit3 = 100;
 
 	// light positions
-	glm::vec3 lightPos1;
-	glm::vec3 lightPos2;
-	glm::vec3 lightPos3;
+	glm::vec3 lightPos1 = glm::vec3( 2.3, 1, 1);
+    glm::vec3 lightPos2 = glm::vec3( 1, 2.3, 1);
+    glm::vec3 lightPos3 = glm::vec3( 1, 1, 2.3);
 
 	float AO_scale = 1.;
 	float depth_scale = 1.;
@@ -123,7 +138,9 @@ private:
     int current_dither_mode = EXPONENTIAL;
 
 	int num_bits = 4; 
-		
+
+	void screenshot(std::string name);
+
 // main loop functions
 	void create_window();
 	void gl_setup();

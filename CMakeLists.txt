@@ -72,3 +72,5 @@ add_executable(exe
   resources/lodev_lodePNG/lodepng.cc)
 
 target_link_libraries(exe PUBLIC imgui BigInt opengl sdl2 stdc++fs FastNoise CompilerFlags)
+target_compile_options(exe PUBLIC -fsanitize=address)
+target_link_options(exe PUBLIC -fsanitize=address)

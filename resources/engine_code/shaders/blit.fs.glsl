@@ -30,6 +30,6 @@ void main()
 	// fragment_output = imageLoad(image_data, ivec2(gl_FragCoord.xy));
 
 	ivec2 position = ivec2((gl_FragCoord.xy / resolution.xy) * imageSize(image_data));
-	fragment_output = imageLoad(image_data, position) / 255.;
+	fragment_output = vec4(imageLoad(image_data, position)) / 255.;
 
 }

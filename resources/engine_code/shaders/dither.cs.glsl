@@ -753,7 +753,7 @@ vec3 get_uniform_noise(){
 // interleaved gradient noise
 vec3 get_interleaved_gradient_noise(){
   // Jimenez 2014, "Next Generation Post-Processing in Call of Duty"
-  float f = 0.06711056 * gl_GlobalInvocationID.x + 0.00583715 * gl_GlobalInvocationID.y;
+  float f = 0.06711056 * float(gl_GlobalInvocationID.x) + 0.00583715 * float(gl_GlobalInvocationID.y);
   return vec3(fract(52.9829189 * fract(f)));
 }
 
@@ -809,8 +809,8 @@ vec3 get_monochrome_triangle(){
 // triangle noise RGB
 vec3 get_rgb_triangle(){
     return vec3(triangleNoise(vec2(gl_GlobalInvocationID.xy) / vec2(gl_WorkGroupSize.xy)),
-                triangleNoise(vec2(gl_GlobalInvocationID.xy + 0.1337) / vec2(gl_WorkGroupSize.xy)),
-                triangleNoise(vec2(gl_GlobalInvocationID.xy + 0.3141) / vec2(gl_WorkGroupSize.xy)));
+                triangleNoise(vec2(vec2(gl_GlobalInvocationID.xy) + vec2(0.1337)) / vec2(gl_WorkGroupSize.xy)),
+                triangleNoise(vec2(vec2(gl_GlobalInvocationID.xy) + vec2(0.3141)) / vec2(gl_WorkGroupSize.xy)));
 }
 
 
