@@ -5212,16 +5212,159 @@ float fractal_de188(vec3 p){
     return min(length(p.xz)-.1,p.y)/s;
 }
 
+/*
+// by butadiene121 using twigl geekest(300es) preset
+//  source: https://twitter.com/butadiene121/status/1392392236730486786
+
+vec3 p=vec3((FC.xy*2.-r)/min(r.x,r.y),.4),m=vec3(0,1.3,t*0.15),q;
+for(int i,j=0;i<77;i++){
+  float e,c,d=1.;
+  q=fract(m)-.5,q.y=m.y;
+  for(j=0;j<12;j++)
+    q=abs(q),
+    q.y-=2.,
+    c=2./clamp(dot(q,q),.4,1.),
+    q*=c,
+    d*=c,
+    q.xz-=.5,
+    q.y--;
+  e=length(q)/d-.001;
+  m+=e*p;
+  if(e>.001)
+    o+=.02*exp(-3.*e);
+}
+
+// attempted conversion of above - not working correctly
+float fractal_de189(vec3 p){
+    float e,c,d=1.;
+    vec3 q=fract(vec3(0,1.2,0.15))-.5;
+    q.y=1.3;
+    for(int j=0;j<12;j++)
+        q=abs(q),
+        q.y-=2.,
+        c=2./clamp(dot(q,q),.4,1.),
+        q*=c,
+        d*=c,
+        q.xz-=.5,
+        q.y--;
+    return length(q)/d-.001;
+}
+*/
+
+
+
+
+// adapted from code by sdfgeoff
+float sdRoundBox189( vec3 p, vec3 b, float r )
+{
+  vec3 q = abs(p) - b;
+  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0) - r;
+}
+
+float df189(vec3 co) {
+    float rad = clamp(co.z * 0.05 + 0.45, 0.1, 0.3);
+    co = mod(co, vec3(1.0)) - 0.5;
+    return sdRoundBox189(co, vec3(rad, rad, 0.3), 0.1);
+}
+
+float fractal_de189(vec3 p){
+
+    float body = 999.0;
+    float scale = 0.2;
+    vec3 co = p;
+    mat4 m = mat4(
+		vec4(0.6373087, -0.0796581,  0.7664804, 0.0),
+  		vec4(0.2670984,  0.9558195, -0.1227499, 0.0),
+  		vec4(-0.7228389,  0.2829553,  0.6304286, 0.0),
+        vec4(0.1, 0.6, 0.2, 0.0));
+    
+    for (int i=0; i<3; i++) {
+        co = (m * vec4(co, float(i))).xyz;
+        scale *= (3.0);
+        
+        float field = df189(co * scale) / scale;
+        body = smin_op(body, field, 0.05);
+    }
+
+    return -body;
+}
+
+
+// by kali (xor3d)
+float fractal_de190(vec3 p){
+    float f = 1.;
+    p=abs(p);
+    float d=100.;
+    ivec3 ip=ivec3(p*d);
+    float c = float(ip.x^ip.y^ip.z)/d;
+    return step(f,c);
+}
+
+
+// by kali
+float fractal_de191(vec3 p){
+    p.x = abs(p.x) - 3.3;
+    p.z = mod(p.z + 2.0, 4.0) -  2.0;
+    vec4 q = vec4(p, 1);
+    q.xyz -= 1.0;
+
+    q.xyz = q.zxy;
+    for(int i = 0; i < 6; i++) {
+        q.xyz = abs(q.xyz + 1.0) - 1.0;
+        q /= clamp(dot(q.xyz, q.xyz), 0.25, 1.0);
+        q *= 1.1;
+
+        float s = sin(-0.35);
+        float c = cos(-0.35);
+        
+        q.xy = mat2(c,s,-s,c)*q.xy;
+    }
+    return (length(q.xyz) - 1.5)/q.w;
+}
+
+
+
+// by kali
+float fractal_de192(vec3 p){
+    p.xz=abs(.5-mod(p.xz,1.))+.01;
+    float DEfactor=1.;
+    for (int i=0; i<14; i++) {
+        p = abs(p)-vec3(0.,2.,0.);  
+        float r2 = dot(p, p);
+        float sc=2./clamp(r2,0.4,1.);
+        p*=sc; 
+        DEfactor*=sc;
+        p = p - vec3(0.5,1.,0.5);
+    }
+    return length(p)/DEfactor-.0005;
+}
+
+
+// by kali
+float fractal_de193(vec3 pos){
+    vec3 tpos=pos;
+    tpos.xz=abs(.5-mod(tpos.xz,1.));
+    vec4 p=vec4(tpos,1.);
+    float y=max(0.,.35-abs(pos.y-3.35))/.35;
+    for (int i=0; i<7; i++) {//LOWERED THE ITERS
+        p.xyz = abs(p.xyz)-vec3(-0.02,1.98,-0.02);
+        p=p*(2.0+0.*y)/clamp(dot(p.xyz,p.xyz),.4,1.)-vec4(0.5,1.,0.4,0.);
+        p.xz*=mat2(-0.416,-0.91,0.91,-0.416);
+    }
+    return (length(max(abs(p.xyz)-vec3(0.1,5.0,0.1),vec3(0.0)))-0.05)/p.w;
+}
+
+
+
 
 
 float de(vec3 p){
-    // return smin_op(fractal_de(p), fractal_de4(p), 0.385);
-    // return fractal_de20(p);
-    
-    return fractal_de188(p);
     // return fractal_de6(p);
-
-
+    // return fractal_de20(p);
+    // return fractal_de78(p);
+    return fractal_de193(p);
+    
+    // return smin_op(fractal_de(p), fractal_de4(p), 0.385);
     // return smin_op(screw_de(p), fractal_de26(p), 0.333);
     // return old_de(p);
 }
