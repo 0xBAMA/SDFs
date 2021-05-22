@@ -5348,15 +5348,16 @@ float raymarch(vec3 ro, vec3 rd) {
 }
 
 vec3 norm(vec3 p) { // to get the normal vector for a point in space, this function
+#define GAZ_METHOD 1
+    
+#if GAZ_METHOD
+    // this is from gaz, https://www.shadertoy.com/view/wsBfDt - is this better? it's a bit of a different operation, plus it may be more representative of the distance gradient to get samples on positive and negative sides
+    vec2 e = vec2(1,-1) * EPSILON;
+    return normalize(e.xyy*de(p+e.xyy)+e.yyx*de(p+e.yyx)+e.yxy*de(p+e.yxy)+e.xxx*de(p+e.xxx));
+#else
     vec2 e = vec2( EPSILON, 0.); // computes the gradient of the estimator function
     return normalize( vec3(de(p)) - vec3( de(p-e.xyy), de(p-e.yxy), de(p-e.yyx) ));
-
-// this is from gaz, https://www.shadertoy.com/view/wsBfDt - is this better? maybe more representative of the distance gradient to get samples on positive and negative sides
-  // vec2 e = vec2(1,-1) * EPSILON;
-  // return normalize(
-  //   e.xyy*map(pos+e.xyy)+e.yyx*map(pos+e.yyx)+ 
-  //   e.yxy*map(pos+e.yxy)+e.xxx*map(pos+e.xxx)
-  // );
+#endif
 }
 
 float sharp_shadow( in vec3 ro, in vec3 rd, float mint, float maxt ){

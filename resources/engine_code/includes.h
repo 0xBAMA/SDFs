@@ -85,7 +85,14 @@ using json = nlohmann::json;
 // #define WIDTH 400
 // #define HEIGHT 240
 
-#define WIDTH 512
-#define HEIGHT 256
+// #define WIDTH 512
+// #define HEIGHT 256
+
+#define WIDTH 640
+#define HEIGHT 480
+
+// #define WIDTH 2048
+// #define HEIGHT 2048
+
 
 #endif
