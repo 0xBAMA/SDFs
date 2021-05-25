@@ -1801,30 +1801,31 @@ float fractal_de13(vec3 p0){
 }
 
 
-// float fractal_de14(vec3 pos) {
-// 	vec3 z = pos;
-// 	float dr = 1.0;
-// 	float r = 0.0;
-//     int iterations = 10;
-// 	for (int i = 0; i < Iterations ; i++) {
-// 		r = length(z);
-// 		if (r>Bailout) break;
+float fractal_de14(vec3 pos) {
+	vec3 z = pos;
+	float dr = 1.0;
+	float r = 0.0;
+    int iterations = 10;
+    float Power = 2.2;
+	for (int i = 0; i < iterations ; i++) {
+		r = length(z);
+		if (r>EPSILON) break;
 		
-// 		// convert to polar coordinates
-// 		float theta = acos(z.z/r);
-// 		float phi = atan(z.y,z.x);
-// 		dr =  pow( r, Power-1.0)*Power*dr + 1.0;
-// 		// scale and rotate the point
-// 		float zr = pow( r,Power);
-// 		theta = theta*Power;
-// 		phi = phi*Power;
+		// convert to polar coordinates
+		float theta = acos(z.z/r);
+		float phi = atan(z.y,z.x);
+		dr =  pow( r, Power-1.0)*Power*dr + 1.0;
+		// scale and rotate the point
+		float zr = pow( r,Power);
+		theta = theta*Power;
+		phi = phi*Power;
 		
-// 		// convert back to cartesian coordinates
-// 		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
-// 		z+=pos;
-// 	}
-// 	return 0.5*log(r)*r/dr;
-// }
+		// convert back to cartesian coordinates
+		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
+		z+=pos;
+	}
+	return 0.5*log(r)*r/dr;
+}
 
 float fractal_de15(vec3 p){
     p=abs(p)-1.2;
@@ -5317,13 +5318,248 @@ float fractal_de193(vec3 pos){
 }
 
 
+
+// by Shane
+float fractal_de194(vec3 p){
+    // I'm never sure whether I should take constant stuff like the following outside the function, 
+    // or not. My 1990s CPU brain tells me outside, but it doesn't seem to make a difference to frame 
+    // rate in this environment one way or the other, so I'll keep it where it looks tidy. If a GPU
+    // architecture\compiler expert is out there, feel free to let me know.
+    
+    const vec3 offs = vec3(1, .75, .5); // Offset point.
+    const vec2 a = sin(vec2(0, 1.57079632) + 1.57/2.);
+    const mat2 m = mat2(a.y, -a.x, a);
+    const vec2 a2 = sin(vec2(0, 1.57079632) + 1.57/4.);
+    const mat2 m2 = mat2(a2.y, -a2.x, a2);
+    
+    const float s = 5.; // Scale factor.
+    float d = 1e5; // Distance.
+    
+    p  = abs(fract(p*.5)*2. - 1.); // Standard spacial repetition.
+     
+    float amp = 1./s; // Analogous to layer amplitude.
+    
+    // With only two iterations, you could unroll this for more speed,
+    // but I'm leaving it this way for anyone who wants to try more
+    // iterations.
+    for(int i=0; i<2; i++){
+        // Rotating.
+        p.xy = m*p.xy;
+        p.yz = m2*p.yz;
+        
+        p = abs(p);
+        //p = sqrt(p*p + .03);
+        //p = smin(p, -p, -.5); // Etc.
+        
+        // Folding about tetrahedral planes of symmetry... I think, or is it octahedral? 
+        // I should know this stuff, but topology was many years ago for me. In fact, 
+        // everything was years ago. :)
+        // Branchless equivalent to: if (p.x<p.y) p.xy = p.yx;
+        p.xy += step(p.x, p.y)*(p.yx - p.xy);
+        p.xz += step(p.x, p.z)*(p.zx - p.xz);
+        p.yz += step(p.y, p.z)*(p.zy - p.yz);
+ 
+        // Stretching about an offset.
+        p = p*s + offs*(1. - s);
+        
+        // Branchless equivalent to:
+        // if( p.z < offs.z*(1. - s)*.5)  p.z -= offs.z*(1. - s);
+        p.z -= step(p.z, offs.z*(1. - s)*.5)*offs.z*(1. - s);
+        
+        // Loosely speaking, construct an object, and combine it with
+        // the object from the previous iteration. The object and
+        // comparison are a cube and minimum, but all kinds of 
+        // combinations are possible.
+        p=abs(p);
+        d = min(d, max(max(p.x, p.y), p.z)*amp);
+        
+        amp /= s; // Decrease the amplitude by the scaling factor.
+    }
+    return d - .035; // .35 is analous to the object size.
+}
+
+
+// by avi
+float fractal_de195(vec3 p) {
+    const vec3 va = vec3(  0.0,  0.57735,  0.0 );
+    const vec3 vb = vec3(  0.0, -1.0,  1.15470 );
+    const vec3 vc = vec3(  1.0, -1.0, -0.57735 );
+    const vec3 vd = vec3( -1.0, -1.0, -0.57735 );
+
+    float a = 0.0;
+    float s = 1.0;
+    float r = 1.0;
+    float dm;
+    vec3 v;
+    for(int i=0; i<16; i++) {
+        float d, t;
+        d = dot(p-va,p-va);              v=va; dm=d; t=0.0;
+        d = dot(p-vb,p-vb); if( d<dm ) { v=vb; dm=d; t=1.0; }
+        d = dot(p-vc,p-vc); if( d<dm ) { v=vc; dm=d; t=2.0; }
+        d = dot(p-vd,p-vd); if( d<dm ) { v=vd; dm=d; t=3.0; }
+        p = v + 2.0*(p - v); r*= 2.0;
+        a = t + 4.0*a; s*= 4.0;
+    }
+    
+    return (sqrt(dm)-1.0)/r;
+}
+
+
+
+
+// by guil
+vec3 foldY196(vec3 P, float c)
+{
+	float r = length(P.xz);
+	float a = atan(P.z, P.x);
+
+	a = mod(a, 2.0 * c) - c; 
+
+	P.x = r * cos(a);
+	P.z = r * sin(a);
+
+	return P;
+}
+float fractal_de196(vec3 p)
+{ 
+    float l= length(p)-1.;
+    float dr = 1.0, g = 1.25;
+    vec4 ot=vec4(.3,.5,0.21,1.);
+    ot = vec4(1.);
+    mat3 tr = rotate3D(-0.55, normalize(vec3(-1., -1., -0.5)));
+				
+	for(int i=0;i<15;i++) {
+
+		if(i-(i/3)*5==0)
+			p = foldY196(p, .95);
+		p.yz = abs(p.yz);				
+        p = tr * p * g -1.;		
+		dr *= g;
+		ot=min(ot,vec4(abs(p),dot(p,p)));
+        l = min (l ,(length(p)-1.) / dr);
+	}
+			
+    return l;    
+}
+
+
+// by marvelousbilly
+mat3 rotmat197(float angle, vec3 axis){
+	axis = normalize(axis);
+	float s = sin(angle);
+	float c = cos(angle);
+	float oc = 1.0 - c;
+	return mat3(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s, 
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c         );
+} //rotate a matrix
+float fractal_de197(vec3 p){    
+    mat3 r = rotmat197(3.14159, vec3(0.,1.,0.)); //rotation matrix
+    float scale= 2.;
+    int Iterations = 10;
+    int i;
+    vec3 C = vec3(1.,5.4,10.+10.*sin(0.5));
+    for(i = 0; i < Iterations; i++){ 
+        p = r * (p);
+        float x = p.x; float y = p.y; float z = p.z; float x1 = x; float y1 = y;
+
+        x=abs(x);y = abs(y);
+        if(x-y<0.){x1=y;y=x;x=x1;}
+        if(x-z<0.){x1=z;z=x;x=x1;}
+        if(y-z<0.){y1=z;z=y;y=y1;}
+
+        z-=0.5*C.z*(scale-1.)/scale;
+        z=-abs(-z);
+        z+=0.5*C.z*(scale-1.)/scale;
+        
+        p = vec3(x,y,z);
+        r = rotmat197(31.4159/4.+5.60,vec3(1.,0.5,0.6));
+        p = r * (p);
+        x = p.x; y = p.y; z = p.z;
+        
+        
+        x=scale*x-C.y*(scale-1.);
+        y=scale*y-C.y*(scale-1.);
+        z=scale*z;
+
+        p = vec3(x,y,z);
+    }
+    return (length(p) - 2.) * pow(scale,float(-i)); 
+}
+
+
+
+
+// adapted from above
+float fractal_de198(vec3 p){    
+    mat3 r = rotate3D(3.14159, vec3(0.,1.,0.)); //rotation matrix
+    float scale= 2.;
+    int Iterations = 10;
+    int i;
+    vec3 C = vec3(1.,5.4,10.+10.*sin(0.5));
+    for(i = 0; i < Iterations; i++){ 
+        p = r * (p);
+        float x = p.x; float y = p.y; float z = p.z; float x1 = x; float y1 = y;
+
+        x=abs(x);y = abs(y);
+        if(x-y<0.){x1=y;y=x;x=x1;}
+        if(x-z<0.){x1=z;z=x;x=x1;}
+        if(y-z<0.){y1=z;z=y;y=y1;}
+
+        z-=0.5*C.z*(scale-1.)/scale;
+        z=-abs(-z);
+        z+=0.5*C.z*(scale-1.)/scale;
+        
+        p = vec3(x,y,z);
+        r = rotate3D(31.4159/4.+5.60,vec3(1.,0.5,0.6));
+        p = r * (p);
+        x = p.x; y = p.y; z = p.z;
+        
+        
+        x=scale*x-C.y*(scale-1.);
+        y=scale*y-C.y*(scale-1.);
+        z=scale*z;
+
+        p = vec3(x,y,z);
+    }
+    return (length(p) - 2.) * pow(scale,float(-i)); 
+}
+
+
+
+// by nameless
+float fractal_de199(vec3 p0){
+    vec4 p = vec4(p0, 1.);
+        p.xyz=abs(p.xyz);
+        if(p.x > p.z)p.xz = p.zx;
+        if(p.z < p.y)p.zy = p.yz;
+        if(p.y > p.x)p.yx = p.xy;
+    for(int i = 0; i < 8; i++){
+        if(p.x > p.z)p.xz = p.zx;
+        if(p.z < p.y)p.zy = p.yz;
+        if(p.y > p.x)p.yx = p.xy;
+        
+        p.xyz = abs(p.xyz);
+
+        p*=(2.15/clamp(dot(p.xyz,p.xyz),.4,1.));
+        p.xyz-=vec3(0.3,0.2,1.6);
+
+    }
+    float m = 1.5;
+    p.xyz-=clamp(p.xyz,-m,m);
+    return length(p.xyz)/p.w;
+}
+
+
+
+
 float de(vec3 p){
     // return fractal_de6(p);
     // return fractal_de20(p);
     // return fractal_de78(p);
-    return fractal_de193(p);
+    return fractal_de199(p);
     
-    // return smin_op(fractal_de(p), fractal_de4(p), 0.385);
+    // return smin_op(fractal_de6(p), fractal_de193(p), 0.385);
     // return smin_op(screw_de(p), fractal_de26(p), 0.333);
     // return old_de(p);
 }
