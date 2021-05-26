@@ -1541,22 +1541,23 @@ float fractal_de(vec3 p0){
 }
 
 
-// hard crash - probably hardware related 
-float torus(vec3 pos, vec3 p, vec2 s){    
-    vec2 a = normalize(p.xz-pos.xz);
-    pos.xz += a*s.x;
-    return length(pos-p)-s.y;
-}
-float fractal_de2(vec3 p0){
-    vec4 p = vec4(p0, 1.);
-    for(int i = 0; i < 8; i++){
-        p.xyz = mod(p.xyz-1., 2.)-1.;
-        p*=(1.8/dot(p.xyz,p.xyz));
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
-    }
-    p.xyz /= p.w;
-    return 0.25*torus(p0, p.xyz, vec2(5.,0.7));
-}
+// // hard crash on desktop - probably hardware related - looks like shit on laptop
+// // not indexed in the DEC
+// float torus(vec3 pos, vec3 p, vec2 s){    
+//     vec2 a = normalize(p.xz-pos.xz);
+//     pos.xz += a*s.x;
+//     return length(pos-p)-s.y;
+// }
+// float fractal_de2(vec3 p0){
+//     vec4 p = vec4(p0, 1.);
+//     for(int i = 0; i < 8; i++){
+//         p.xyz = mod(p.xyz-1., 2.)-1.;
+//         p*=(1.8/dot(p.xyz,p.xyz));
+//         escape += exp(-0.2*dot(p.xyz,p.xyz));
+//     }
+//     p.xyz /= p.w;
+//     return 0.25*torus(p0, p.xyz, vec2(5.,0.7));
+// }
 
 float fractal_de3(vec3 p0){
     vec4 p = vec4(p0, 1.);
@@ -1605,7 +1606,7 @@ float fractal_de5(vec3 pos)
 
 		// scale, translate
 		p = p*scale + p0;
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 	return ((length(p.xyz) - absScalem1) / p.w - AbsScaleRaisedTo1mIters);
 #undef MINRAD2
@@ -1613,7 +1614,7 @@ float fractal_de5(vec3 pos)
 #undef scale
 }
 
-
+// highly varied domain - take a look around
 float fractal_de6( vec3 p )
 {
 	p = p.xzy;
@@ -1647,7 +1648,7 @@ float fractal_de7( vec3 p )
 		float k = max((2.)/(r2), .027);
 		p     *= k;
 		scale *= k;
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 	float l = length(p.xy);
 	float rxy = l - 4.0;
@@ -1674,7 +1675,7 @@ float fractal_de8( vec3 p )
 		scale *= k;
 
         orb = min( orb, r2);
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 
     float d1 = sqrt( min( min( dot(p.xy,p.xy), dot(p.yz,p.yz) ), dot(p.zx,p.zx) ) ) - 0.02;
@@ -1701,7 +1702,7 @@ float fractal_de9( vec3 p )
 		float k = max((2.)/(r2), .5);
 		p     *= k;
 		scale *= k;
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 	float l = length(p.xy);
 	float rxy = l - 1.0;
@@ -1722,7 +1723,7 @@ float fractal_de10( vec3 p )
 		float k = max((2.)/(r2), .5);
 		p     *= k;
 		scale *= k;
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
 	}
 	float l = length(p.xy);
 	float rxy = l - 1.0;
@@ -1746,12 +1747,8 @@ float fractal_de11(vec3 p0){
 
 vec3 fold(vec3 p0){
     vec3 p = p0;
-    //if(abs(p.x) > 1.)p.x = 1.0-p.x;
-    //if(abs(p.y) > 1.)p.y = 1.0-p.y;
-    //if(abs(p.z) > 1.)p.z = 1.0-p.z;
-    if(length(p) > 1.2)return p;
-        p = mod(p,2.)-1.;
-
+    if(length(p) > 1.2) return p;
+    p = mod(p,2.)-1.;
     return p;
 }
 float fractal_de12(vec3 p0){
@@ -1764,7 +1761,7 @@ float fractal_de12(vec3 p0){
         p.xyz = fold(p.xyz);
         p.xyz = mod(p.xyz-1., 2.)-1.;
         p*=(1.2/dot(p.xyz,p.xyz));
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
     }
     p/=p.w;
     return abs(p.x)*0.25;
@@ -1797,7 +1794,7 @@ float fractal_de13(vec3 p0){
 
     }
     p/=p.w;
-    return (abs(p.x)*0.25)/10;
+    return (abs(p.x)*0.25)/10.;
 }
 
 
@@ -1873,7 +1870,6 @@ void sFold90(inout vec2 p)
     float g=dot(p,v);
     p-=(g-sqrt(g*g+1e-1))*v;
 }
-
 float fractal_de17(vec3 p){
 #define rot(a) mat2(cos(a),sin(a),-sin(a),cos(a))
     p=abs(p)-1.8;
@@ -1903,7 +1899,6 @@ float lpNorm(vec3 p, float n)
     p = pow(abs(p), vec3(n));
     return pow(p.x+p.y+p.z, 1.0/n);
 }
-
 float fractal_de18(vec3 p){
     vec3 offset=p*.5;
     float s=2.;
@@ -5557,7 +5552,7 @@ float de(vec3 p){
     // return fractal_de6(p);
     // return fractal_de20(p);
     // return fractal_de78(p);
-    return fractal_de199(p);
+    return fractal_de7(p);
     
     // return smin_op(fractal_de6(p), fractal_de193(p), 0.385);
     // return smin_op(screw_de(p), fractal_de26(p), 0.333);

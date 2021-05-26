@@ -150,6 +150,12 @@ private:
 	void control_window();
 	void editor_window();
 
+
+	// performance reporting
+	int dither_microseconds;
+	int raymarch_microseconds;
+	int display_microseconds;
+		
 	// render flags (toggle shader execution)
 	bool raymarch_stage = true;
 	bool dither_stage = true;

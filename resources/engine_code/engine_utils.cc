@@ -511,6 +511,23 @@ void engine::control_window()
 
     // gamma correction
     ImGui::SliderFloat("gamma", &gamma_correction, 0.15, 4.0);
+
+    ImGui::Text("");
+    ImGui::Text("Raymarch Timing ");
+    ImGui::SameLine();
+    ImGui::Text("%d us", raymarch_microseconds);
+    ImGui::Text("");
+    ImGui::Text("Dither Timing ");
+    ImGui::SameLine();
+    ImGui::Text("%d us", dither_microseconds);
+    ImGui::Text("");
+    ImGui::Text("Display Timing ");
+    ImGui::SameLine();
+    ImGui::Text("%d us", display_microseconds);
+    ImGui::Text("");
+    ImGui::Text("");
+
+
     
     ImGui::EndTabItem();
   }
@@ -647,7 +664,8 @@ void engine::draw_everything() {
   basis_x = (rotation*glm::vec4(1,0,0,0)).xyz();
   basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
   basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
-
+  
+  auto t_raymarch_start = std::chrono::high_resolution_clock::now();
   if(raymarch_stage){ // toggles invocation of the raymarch step
     //  ╦═╗┌─┐┬ ┬┌┬┐┌─┐┬─┐┌─┐┬ ┬
     //  ╠╦╝├─┤└┬┘│││├─┤├┬┘│  ├─┤
@@ -727,7 +745,11 @@ void engine::draw_everything() {
     // sync to ensure the raymarched image is in the texture
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
   }
+  auto t_raymarch_end = std::chrono::high_resolution_clock::now();
+  raymarch_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(t_raymarch_end - t_raymarch_start).count();
 
+
+  auto t_dither_start = std::chrono::high_resolution_clock::now();
   if(dither_stage){ // toggles invocation of the dither step
     //  ╔╦╗┬┌┬┐┬ ┬┌─┐┬─┐
     //   ║║│ │ ├─┤├┤ ├┬┘
@@ -756,10 +778,15 @@ void engine::draw_everything() {
     // sync to ensure the dithered image is in the texture
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
   }
+  auto t_dither_end = std::chrono::high_resolution_clock::now();
+  dither_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(t_dither_end - t_dither_start).count();
 
+  
   //  ╔╦╗┬┌─┐┌─┐┬  ┌─┐┬ ┬
   //   ║║│└─┐├─┘│  ├─┤└┬┘
   //  ═╩╝┴└─┘┴  ┴─┘┴ ┴ ┴
+  
+  auto t_display_start = std::chrono::high_resolution_clock::now();
   // texture display
   glUseProgram(display_shader);
   glBindVertexArray(display_vao);
@@ -777,6 +804,9 @@ void engine::draw_everything() {
 
   // blit dithered raymarch result to the screen
   glDrawArrays(GL_TRIANGLES, 0, 3);
+
+  auto t_display_end = std::chrono::high_resolution_clock::now();
+  display_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(t_display_end - t_display_start).count();
 
   //  ╦┌┬┐╔═╗┬ ┬┬
   //  ║│││║ ╦│ ││
