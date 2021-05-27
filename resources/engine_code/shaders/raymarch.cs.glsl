@@ -6,8 +6,8 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 #define M_PI 3.1415926535897932384626433832795
 
-#define MAX_STEPS 500
-#define MAX_DIST  400.
+#define MAX_STEPS 400
+#define MAX_DIST  100.
 #define EPSILON   0.002 // closest surface distance
 
 #define AA 2
@@ -2170,7 +2170,8 @@ float fractal_de31(vec3 p)
   for(int j=0;j<3;j++)
   {
      p.xy=abs(p.xy)-.3;
-     p.yz=abs(p.yz)-sin(time*2.)*.3+.1,
+     // p.yz=abs(p.yz)-sin(time*2.)*.3+.1,
+     p.yz=abs(p.yz)-.3+.1,
      p.xz=abs(p.xz)-.2;
   }
    return length(cross(p,vec3(.5)))-.1;
@@ -2196,7 +2197,7 @@ float fractal_de32(vec3 p0){
         p.xyz = fold32(p.xyz);
         p.xyz = fract(p.xyz*0.5 - 1.)*2.-1.0;
         p*=(1.1/clamp(dot(p.xyz,p.xyz),-0.1,1.));
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
     }
     p/=p.w;
     return abs(p.x)*0.25;
@@ -2869,7 +2870,7 @@ float de1_60(vec3 p) {
     return d;
 }
 float fractal_de60(vec3 p) {
-    return min(de1_60(p), de2_60(p));;
+    return min(de1_60(p), de2_60(p));
 }
 
 
@@ -2919,7 +2920,7 @@ vec3 pmin62(vec3 a, vec3 b, vec3 k) {
   return mix(b, a, h) - k*h*(1.0-h);
 }
 void box_fold62(float k, inout vec3 z, inout float dz) {
-  // Soft clamp after suggestion from ollij
+  // soft clamp after suggestion from ollij
   const vec3  folding_limit = vec3(1.0);
   vec3 zz = sign(z)*pmin62(abs(z), folding_limit, vec3(k));
   z = zz * 2.0 - z;
@@ -3501,7 +3502,7 @@ float fractal_de78(vec3 p){
     for(int i=0;i++<8;){
         s*=e=2./clamp(dot(p,p),.004+tan(12.)*.002,1.35);
         p=abs(p)*e-vec2(.5*l,12.).xxy;
-        escape+=exp(-0.002*dot(vec3(e),p));
+        // escape+=exp(-0.002*dot(vec3(e),p));
     }
     return length(p-clamp(p,-1.,1.))/s;
 }
@@ -3787,7 +3788,7 @@ float fractal_de86(vec3 p0){
 return (length(p.xyz)/p.w)*10.;
 }
 
-// by nameless - has some strange artifacts
+// by nameless
 float fractal_de87(vec3 p0){
     vec4 p = vec4(p0/10., 1.);
     escape = 0.;
@@ -3802,7 +3803,7 @@ float fractal_de87(vec3 p0){
         p = abs(p);
         p*=(1.9/clamp(dot(p.xyz,p.xyz),0.1,1.));
         p.xyz-=vec3(0.2,1.9,0.6);
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
     }
     float m = 1.2;
     p.xyz-=clamp(p.xyz,-m,m);
@@ -3810,7 +3811,7 @@ float fractal_de87(vec3 p0){
 }
 
 
-// by nameless - has some strange artifacts
+// by nameless
 float fractal_de88(vec3 p0){
     vec4 p = vec4(p0/10., 1.);
     escape = 0.;
@@ -3826,7 +3827,7 @@ float fractal_de88(vec3 p0){
 
         p*=(2./clamp(dot(p.xyz,p.xyz),0.1,1.));
         p.xyz-=vec3(0.9,1.9,0.9);
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
     }
     float m = 1.5;
     p.xyz-=clamp(p.xyz,-m,m);
@@ -4413,7 +4414,6 @@ float fractal_de126(vec3 p){
     	p*=r2;
     	s*=r2;
 	}
-	escape=log2(s*.003);
 	return length(cross(p,normalize(vec3(1))))/s-0.005;
 }
 
@@ -4494,34 +4494,26 @@ float fractal_de131(vec3 p){
 float maxcomp132(in vec3 p ) { return max(p.x,max(p.y,p.z));}
 float sdBox132( vec3 p, vec3 b ){
   vec3  di = abs(p) - b;
-  float mc = maxcomp132(di);
+  float mc = maxcomp132(abs(p)-b);
   return min(mc,length(max(di,0.0)));
 }
 float fractal_de132(vec3 p){
-    vec3 w = p;
-    vec3 q = p;
-
+    vec3 w = p; vec3 q = p;
     q.xz = mod( q.xz+1.0, 2.0 ) -1.0;
-
     float d = sdBox132(q,vec3(1.0));
     float s = 1.0;
-    for( int m=0; m<7; m++ )
-    {
+    for( int m=0; m<7; m++ ){
         float h = float(m)/6.0;
-
         p =  q.yzx - 0.5*sin( 1.5*p.x + 6.0 + p.y*3.0 + float(m)*5.0 + vec3(1.0,0.0,0.0));
-
         vec3 a = mod( p*s, 2.0 )-1.0;
         s *= 3.0;
         vec3 r = abs(1.0 - 3.0*abs(a));
-
         float da = max(r.x,r.y);
         float db = max(r.y,r.z);
         float dc = max(r.z,r.x);
         float c = (min(da,min(db,dc))-1.0)/s;
         d = max( c, d );
    }
-    
    return d*0.5;
 }
 
@@ -4922,7 +4914,7 @@ float fractal_de164(vec3 p0){
         p.xyz-=vec3(0.7,1.8,0.5);
         p*=1.2;
 
-        escape += exp(-0.2*dot(p.xyz,p.xyz));
+        // escape += exp(-0.2*dot(p.xyz,p.xyz));
     }
     float m = 1.5;
     p.xyz-=clamp(p.xyz,-m,m);
@@ -5153,7 +5145,7 @@ float fractal_de182(vec3 p){
 
 // by gaz
 float fractal_de183(vec3 p){
-    float s=1., e, offset=0.2; // vary between 0 and 1
+    float s=1., e, offset=0.26; // vary between 0 and 1
     for(int i=0;i++<5;){
         s*=e=2./min(dot(p,p),1.);
         p=abs(p)*e-vec3(1,10.*offset,1);
@@ -5447,7 +5439,7 @@ mat3 rotmat197(float angle, vec3 axis){
 	return mat3(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s, 
                 oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,
                 oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c         );
-} //rotate a matrix
+}
 float fractal_de197(vec3 p){    
     mat3 r = rotmat197(3.14159, vec3(0.,1.,0.)); //rotation matrix
     float scale= 2.;
@@ -5471,7 +5463,6 @@ float fractal_de197(vec3 p){
         r = rotmat197(31.4159/4.+5.60,vec3(1.,0.5,0.6));
         p = r * (p);
         x = p.x; y = p.y; z = p.z;
-        
         
         x=scale*x-C.y*(scale-1.);
         y=scale*y-C.y*(scale-1.);
@@ -5547,13 +5538,73 @@ float fractal_de199(vec3 p0){
 
 
 
+void ry200(inout vec3 p, float a){  
+    float c,s;vec3 q=p;  
+    c = cos(a); s = sin(a);  
+    p.x = c * q.x + s * q.z;  
+    p.z = -s * q.x + c * q.z; 
+}  
+float plane200(vec3 p, float y) {
+    return length(vec3(p.x, y, p.z) - p);
+}
+float menger_spone200(in vec3 z0){
+    z0=z0.yzx;
+    vec4 z=vec4(z0,1.0);
+    vec3 offset =0.83*normalize(vec3(3.4,2., .2));
+    float scale = 2.;
+    for (int n = 0; n < 8; n++) {
+        z = abs(z);
+        ry200(z.xyz, 1.5);
+        if (z.x<z.y)z.xy = z.yx;
+        if (z.x<z.z)z.xz = z.zx;
+        if (z.y<z.z)z.yz = z.zy;
+        ry200(z.xyz, -1.21);
+        z = z*scale;
+        z.xyz -= offset*(scale-1.0);
+    }
+    return (length(max(abs(z.xyz)-vec3(1.0),0.0))-0.01)/z.w;
+}
+float fractal_de200(vec3 p){ 
+    float d1 = plane200(p, -0.5);
+    float d2 = menger_spone200(p+vec3(0.,-0.1,0.));
+    float d = d1;
+    vec3 res = vec3(d1, 0., 0.);
+    if(d > d2){
+        d = d2;
+        res = vec3(d2, 1., 0.0);
+    }
+    return res.x;
+} 
+
+
+
+
 
 float de(vec3 p){
     // return fractal_de6(p);
     // return fractal_de20(p);
     // return fractal_de78(p);
-    return fractal_de7(p);
+    // return fractal_de165(p);
+
+    escape = 0.;
     
+    float d45 = fractal_de45(p);
+    float d46 = fractal_de46(p+vec3(0,3,-1));
+    float d195 = fractal_de195(rotate3D(2.3, vec3(1))*p/10.)*10.;
+
+    float d45smind46 = smin_op(d45, d46, 0.2);
+    float dfinal = smin_op(d45smind46, d195, 0.4);
+
+
+    float sminfactor1 = exp(0.02*(dfinal - d45smind46) / (d195 - d45smind46));
+    // float sminfactor2 = (dfinal - d46) / (d195 - d46);
+
+    escape = mix(0.1, 0.5, sminfactor1);
+    
+    return dfinal;
+    
+    // return smin_op(fractal_de6(p), fractal_de192(rotate3D(1.4,vec3(1.,1.,1.))*p), 0.123);
+    // return smin_op(smin_op(fractal_de127(p), fractal_de130(rotate3D(2.3,vec3(1.,1.,1.))*p*4.)/4., 0.04), fractal_de195(rotate3D(0.2*time, vec3(1,2,1))*(p-vec3(0,1,0))), 0.1);
     // return smin_op(fractal_de6(p), fractal_de193(p), 0.385);
     // return smin_op(screw_de(p), fractal_de26(p), 0.333);
     // return old_de(p);
@@ -5579,7 +5630,7 @@ float raymarch(vec3 ro, vec3 rd) {
 }
 
 vec3 norm(vec3 p) { // to get the normal vector for a point in space, this function
-#define GAZ_METHOD 1
+#define GAZ_METHOD 0
     
 #if GAZ_METHOD
     // this is from gaz, https://www.shadertoy.com/view/wsBfDt - is this better? it's a bit of a different operation, plus it may be more representative of the distance gradient to get samples on positive and negative sides

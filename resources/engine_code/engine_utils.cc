@@ -194,7 +194,7 @@ void engine::create_window() {
   ImGui_ImplSDL2_InitForOpenGL(window, GLcontext);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  clear_color = ImVec4(1.0, 0.2, 0., 1.0f); // initial value for clear color
+  clear_color = ImVec4(52./255., 141./255., 188./255., 1.0f); // initial value for clear color
 
   // really excited by the fact imgui has an hsv picker to set this
   glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -525,6 +525,10 @@ void engine::control_window()
     ImGui::SameLine();
     ImGui::Text("%d us", display_microseconds);
     ImGui::Text("");
+    ImGui::Text("Total Loop Timing ");
+    ImGui::SameLine();
+    ImGui::Text("%d us", total_loop_microseconds);
+    ImGui::Text("");
     ImGui::Text("");
 
 
@@ -648,6 +652,7 @@ void engine::animate_lights(float t){
 }
 
 void engine::draw_everything() {
+  auto t_loop_start = std::chrono::high_resolution_clock::now();
   //  ╦ ╦┌─┐┌┬┐┌─┐┌┬┐┌─┐  ╔═╗┌┬┐┌─┐┌┬┐┌─┐
   //  ║ ║├─┘ ││├─┤ │ ├┤   ╚═╗ │ ├─┤ │ ├┤
   //  ╚═╝┴  ─┴┘┴ ┴ ┴ └─┘  ╚═╝ ┴ ┴ ┴ ┴ └─┘
@@ -907,6 +912,9 @@ void engine::draw_everything() {
         position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_y;
     }
   }
+  auto t_loop_end =  std::chrono::high_resolution_clock::now();
+  total_loop_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(t_loop_end - t_loop_start).count();
+
 }
 
 void engine::screenshot(std::string filename){

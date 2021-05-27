@@ -122,17 +122,17 @@ private:
     glm::vec3 lightPos2 = glm::vec3( 0.25, 0.75, 0.25);
     glm::vec3 lightPos3 = glm::vec3( 0.25, 0.25, 0.75);
 
-	float AO_scale = 1.;
+	float AO_scale = 0.7;
 	float depth_scale = 1.;
-	int depth_selector = 4;	
+	int depth_selector = 7;	
 
 	// position
 	glm::vec3 position = glm::vec3(1., 1., 1.);
 
 	glm::vec3 basis_x, basis_y, basis_z;
 
-	float gamma_correction = 0.675;
-	int current_tmode = 6;
+	float gamma_correction = 1.244;
+	int current_tmode = 3;
     int current_colorspace = CHROMAMAX;
     int current_noise_func = BAYER;
     int current_dither_mode = EXPONENTIAL;
@@ -155,6 +155,8 @@ private:
 	int dither_microseconds;
 	int raymarch_microseconds;
 	int display_microseconds;
+		
+	int total_loop_microseconds=0;
 		
 	// render flags (toggle shader execution)
 	bool raymarch_stage = true;
