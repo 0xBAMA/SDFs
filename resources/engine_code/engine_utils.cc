@@ -493,6 +493,8 @@ void engine::control_window()
   if(ImGui::BeginTabItem("Render Settings"))
   {    
     ImGui::Text("");
+    ImGui::SliderFloat(" FoV ", &fov, 0.001, 4.);
+    ImGui::Text("");
     ImGui::ColorEdit3("Fog Color", (float*)&clear_color);
     ImGui::Text("");
     
@@ -732,6 +734,9 @@ void engine::draw_everything() {
     glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos2"), lightPos2.x, lightPos2.y, lightPos2.z);
     glUniform3f(glGetUniformLocation(raymarch_shader, "lightPos3"), lightPos3.x, lightPos3.y, lightPos3.z);
 
+    // fov term
+    glUniform1f(glGetUniformLocation(raymarch_shader, "fov"), fov);
+    
     // depth scale term
     glUniform1f(glGetUniformLocation(raymarch_shader, "depth_scale"), depth_scale);
     

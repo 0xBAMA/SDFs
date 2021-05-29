@@ -50,6 +50,8 @@ uniform vec3 basis_x;
 uniform vec3 basis_y;
 uniform vec3 basis_z;
 
+uniform float fov;
+
 uniform vec3 ray_origin;
 uniform float time;
 
@@ -5578,6 +5580,263 @@ float fractal_de200(vec3 p){
 
 
 
+// by plento
+float sdBox201( vec3 p, vec3 b ){
+  vec3 d = abs(p) - b;
+  return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+}
+
+vec2 rotate201(vec2 k,float t){
+  return vec2(cos(t) * k.x - sin(t) * k.y, sin(t) * k.x + cos(t) * k.y);
+}
+
+float fractal_de201(vec3 pos)
+{
+    vec3 b = vec3(0.9 , 4.5, 0.70);
+    float p = sin(pos.z * 0.1) * 2.0;
+  
+    pos = vec3(rotate201(pos.xy, p), pos.z);
+    
+    pos.y += 1.2;
+    pos = mod(pos, b) -0.5 * b;
+    
+    pos.x *= sin(length(pos * 1.8) * 2.0) * 1.4;
+    
+    float boxScale = 0.4;
+    
+    return sdBox201(pos - vec3(0.0, 0.0, 0.0), vec3(boxScale));
+}
+
+
+
+
+// dr2
+float sdGyroidTorus (vec3 q, float rt, float rg, float ws) {
+    // workable args
+    // float rt = 15.;
+    // float rg = 4.;
+    // float ws = 0.3;
+  q.xz = vec2 (rt * atan (q.z, - q.x), length (q.xz) - rt);
+  q.yz = vec2 (rg * atan (q.z, - q.y), length (q.yz) - rg);
+  return .6* max(abs(dot(sin(q), cos(q).yzx)) - ws, abs(q.z) - .5*PI);
+}
+
+// FabriceNeyret2
+float sdGyroid(vec3 p, float scale, float thickness, float bias) {
+  p *= scale;
+  return (abs(dot(sin(p*.5), cos(p.zxy * 1.23)) - bias) / scale - thickness)*0.55;
+}
+
+// by iq
+float sdEllipsoid( in vec3 p ) {
+    vec3 r = vec3(0.2, 0.25, 0.05); // the radii on each axis
+    float k0 = length(p/r);
+    float k1 = length(p/(r*r));
+    return k0*(k0-1.0)/k1;
+}
+
+// by iq
+float sdBoundingBox( vec3 p){
+    float e = 0.05;
+    vec3 b = vec3(.3,.5,.4);
+       p = abs(p  )-b;
+  vec3 q = abs(p+e)-e;
+
+  return min(min(
+      length(max(vec3(p.x,q.y,q.z),0.0))+min(max(p.x,max(q.y,q.z)),0.0),
+      length(max(vec3(q.x,p.y,q.z),0.0))+min(max(q.x,max(p.y,q.z)),0.0)),
+      length(max(vec3(q.x,q.y,p.z),0.0))+min(max(q.x,max(q.y,p.z)),0.0));
+}
+
+// iq
+float sdCappedCone(vec3 p){
+    float h = 1.;
+    float r1 = 0.5;
+    float r2 = 0.2;
+    
+    vec2 q = vec2( length(p.xz), p.y );
+    
+    vec2 k1 = vec2(r2,h);
+    vec2 k2 = vec2(r2-r1,2.0*h);
+    vec2 ca = vec2(q.x-min(q.x,(q.y < 0.0)?r1:r2), abs(q.y)-h);
+    vec2 cb = q - k1 + k2*clamp( dot(k1-q,k2)/dot(k2,k2), 0.0, 1.0 );
+    float s = (cb.x < 0.0 && ca.y < 0.0) ? -1.0 : 1.0;
+    return s*sqrt( min(dot(ca,ca),dot(cb,cb)) );
+}
+
+
+// // iq
+// float sdCappedCone(vec3 p){
+//     vec3 a = vec3(0,0,0); // point a
+//     vec3 b = vec3(0,1,0); // point b
+//     float ra = .5; // radius at a
+//     float rb = .2; // radius at b
+    
+//     float rba  = rb-ra;
+//     float baba = dot(b-a,b-a);
+//     float papa = dot(p-a,p-a);
+//     float paba = dot(p-a,b-a)/baba;
+
+//     float x = sqrt( papa - paba*paba*baba );
+
+//     float cax = max(0.0,x-((paba<0.5)?ra:rb));
+//     float cay = abs(paba-0.5)-0.5;
+
+//     float k = rba*rba + baba;
+//     float f = clamp( (rba*(x-ra)+paba*baba)/k, 0.0, 1.0 );
+
+//     float cbx = x-ra - f*rba;
+//     float cby = paba - f;
+    
+//     float s = (cbx < 0.0 && cay < 0.0) ? -1.0 : 1.0;
+    
+//     return s*sqrt( min(cax*cax + cay*cay*baba,
+//                        cbx*cbx + cby*cby*baba) );
+// }
+
+// iq
+float sdSolidAngle(vec3 p){
+    float angle = 1+0.2*sin(time); // desired cone angle
+    
+    vec2 c = vec2(cos(angle), sin(angle));
+    float ra = 1.; // radius of the sphere from which it is cut
+    
+    vec2 p0 = vec2( length(p.xz), p.y );
+    float l = length(p0) - ra;
+    float m = length(p0 - c*clamp(dot(p0,c),0.0,ra) );
+    return max(l,m*sign(c.y*p0.x-c.x*p0.y));
+}
+
+//iq
+float sdCappedTorus(vec3 p){
+    float angle = 2.0; // angle spanned 
+    float ra = 0.25; // major radius
+    float rb = 0.05; // minor radius
+    
+    vec2 sc = vec2(sin(angle), cos(angle));
+    p.x = abs(p.x);
+    float k = (sc.y*p.x>sc.x*p.y) ? dot(p.xy,sc) : length(p.xy);
+    return sqrt( dot(p,p) + ra*ra - 2.0*ra*k ) - rb;
+}
+
+// iq
+float sdPyramid(vec3 p){
+    float h = 1.;
+    float m2 = h*h + 0.25;
+    
+    // symmetry
+    p.xz = abs(p.xz);
+    p.xz = (p.z>p.x) ? p.zx : p.xz;
+    p.xz -= 0.5;
+
+    // project into face plane (2D)
+    vec3 q = vec3( p.z, h*p.y - 0.5*p.x, h*p.x + 0.5*p.y);
+   
+    float s = max(-q.x,0.0);
+    float t = clamp( (q.y-0.5*p.z)/(m2+0.25), 0.0, 1.0 );
+    
+    float a = m2*(q.x+s)*(q.x+s) + q.y*q.y;
+    float b = m2*(q.x+0.5*t)*(q.x+0.5*t) + (q.y-m2*t)*(q.y-m2*t);
+    
+    float d2 = min(q.y,-q.x*m2-q.y*0.5) > 0.0 ? 0.0 : min(a,b);
+    
+    // recover 3D and scale, and add sign
+    return sqrt( (d2+q.z*q.z)/m2 ) * sign(max(q.z,-p.y));;
+}
+
+// iq
+float sdTriPrism( vec3 p ){
+    vec2 h = vec2(0.5, 0.2); // height, thickness
+    const float k = sqrt(3.0);
+    h.x *= 0.5*k;
+    p.xy /= h.x;
+    p.x = abs(p.x) - 1.0;
+    p.y = p.y + 1.0/k;
+    if( p.x+k*p.y>0.0 ) p.xy=vec2(p.x-k*p.y,-k*p.x-p.y)/2.0;
+    p.x -= clamp( p.x, -2.0, 0.0 );
+    float d1 = length(p.xy)*sign(-p.y)*h.x;
+    float d2 = abs(p.z)-h.y;
+    return length(max(vec2(d1,d2),0.0)) + min(max(d1,d2), 0.);
+}
+
+
+// la,lb=semi axis, h=height, ra=corner
+float sdRhombus(vec3 p){
+    float la = 0.15; // first axis
+    float lb = 0.25; // second axis
+    float h  = 0.04; // thickness
+    float ra = 0.08; // corner radius
+
+    p = abs(p);
+    vec2 b = vec2(la,lb);
+    vec2 bb = b-2.0*p.xz;
+    
+    float f = clamp((b.x*bb.x-b.y*bb.y)/dot(b,b), -1.0, 1.0 );
+	vec2 q = vec2(length(p.xz-0.5*b*vec2(1.0-f,1.0+f))*sign(p.x*b.y+p.z*b.x-b.x*b.y)-ra, p.y-h);
+    return min(max(q.x,q.y),0.0) + length(max(q,0.0));
+}
+
+
+// float sdRoundCone( in vec3 p, in float r1, float r2, float h )
+// {
+//     vec2 q = vec2( length(p.xz), p.y );
+    
+//     float b = (r1-r2)/h;
+//     float a = sqrt(1.0-b*b);
+//     float k = dot(q,vec2(-b,a));
+    
+//     if( k < 0.0 ) return length(q) - r1;
+//     if( k > a*h ) return length(q-vec2(0.0,h)) - r2;
+        
+//     return dot(q, vec2(a,b) ) - r1;
+// }
+
+float sdRoundCone(vec3 p){
+    vec3 a = vec3(0,0,0);
+    vec3 b = vec3(0,3,0);
+    float r1 = 1.0;
+    float r2 = 0.1;
+    
+    vec3  ba = b - a;
+    float l2 = dot(ba,ba);
+    float rr = r1 - r2;
+    float a2 = l2 - rr*rr;
+    float il2 = 1.0/l2;
+    
+    vec3 pa = p - a;
+    float y = dot(pa,ba);
+    float z = y - l2;
+    vec3 d2 =  pa*l2 - ba*y;
+    float x2 = dot(d2, d2);
+    float y2 = y*y*l2;
+    float z2 = z*z*l2;
+
+    float k = sign(rr)*rr*rr*x2;
+    if( sign(z)*a2*z2 > k ) return  sqrt(x2 + z2)        *il2 - r2;
+    if( sign(y)*a2*y2 < k ) return  sqrt(x2 + y2)        *il2 - r1;
+                            return (sqrt(x2*a2*il2)+y*rr)*il2 - r1;
+}
+
+
+float sdOctagonPrism(vec3 p){
+  float r = 2.;
+  float h = 0.2;
+
+  const vec3 k = vec3(-0.9238795325,   // sqrt(2+sqrt(2))/2 
+                       0.3826834323,   // sqrt(2-sqrt(2))/2
+                       0.4142135623 ); // sqrt(2)-1 
+  // reflections
+  p = abs(p);
+  p.xy -= 2.0*min(dot(vec2( k.x,k.y),p.xy),0.0)*vec2( k.x,k.y);
+  p.xy -= 2.0*min(dot(vec2(-k.x,k.y),p.xy),0.0)*vec2(-k.x,k.y);
+  // polygon side
+  p.xy -= vec2(clamp(p.x, -k.z*r, k.z*r), r);
+  vec2 d = vec2( length(p.xy)*sign(p.y), p.z-h );
+  return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
+
+
 
 
 float de(vec3 p){
@@ -5585,23 +5844,15 @@ float de(vec3 p){
     // return fractal_de20(p);
     // return fractal_de78(p);
     // return fractal_de165(p);
+    // return fractal_de201(p);
 
-    escape = 0.;
+
+    // return opSmoothSubtraction(fractal_de70(p), fractal_de(p), 0.04); 
+
+
+    // return max(fSphere(p, 4.+0.1*sin(time)),sdGyroid(p, 7., 0.05, 0.1));
     
-    float d45 = fractal_de45(p);
-    float d46 = fractal_de46(p+vec3(0,3,-1));
-    float d195 = fractal_de195(rotate3D(2.3, vec3(1))*p/10.)*10.;
-
-    float d45smind46 = smin_op(d45, d46, 0.2);
-    float dfinal = smin_op(d45smind46, d195, 0.4);
-
-
-    float sminfactor1 = exp(0.02*(dfinal - d45smind46) / (d195 - d45smind46));
-    // float sminfactor2 = (dfinal - d46) / (d195 - d46);
-
-    escape = mix(0.1, 0.5, sminfactor1);
-    
-    return dfinal;
+    return egg(p);
     
     // return smin_op(fractal_de6(p), fractal_de192(rotate3D(1.4,vec3(1.,1.,1.))*p), 0.123);
     // return smin_op(smin_op(fractal_de127(p), fractal_de130(rotate3D(2.3,vec3(1.,1.,1.))*p*4.)/4., 0.04), fractal_de195(rotate3D(0.2*time, vec3(1,2,1))*(p-vec3(0,1,0))), 0.1);
@@ -5803,7 +6054,7 @@ void main()
         float aspect_ratio;
         // aspect_ratio = 1.618;
         aspect_ratio = float(imageSize(current).x) / float(imageSize(current).y);
-        vec3 rd = normalize(aspect_ratio*pixcoord.x*basis_x + pixcoord.y*basis_y + basis_z);
+        vec3 rd = normalize(aspect_ratio*pixcoord.x*basis_x + pixcoord.y*basis_y + (1./fov)*basis_z);
 
         escape = 0.;
         float dresult = raymarch(ro, rd);
@@ -5842,18 +6093,19 @@ void main()
         float depth_term = depth_scale * dresult;
         switch(depth_falloff)
         {
-            case 0: depth_term = 2.-2.*(1./(1.-depth_term)); break;
-            case 1: depth_term = 1.-(1./(1+0.1*depth_term*depth_term)); break;
-            case 2: depth_term = (1-pow(depth_term/30., 1.618)); break;
+            case 0: depth_term = 0.;
+            case 1: depth_term = 2.-2.*(1./(1.-depth_term)); break;
+            case 2: depth_term = 1.-(1./(1+0.1*depth_term*depth_term)); break;
+            case 3: depth_term = (1-pow(depth_term/30., 1.618)); break;
 
-            case 3: depth_term = clamp(exp(0.25*depth_term-3.), 0., 10.); break;
-            case 4: depth_term = exp(0.25*depth_term-3.); break;
-            case 5: depth_term = exp( -0.002 * depth_term * depth_term * depth_term ); break;
-            case 6: depth_term = exp(-0.6*max(depth_term-3., 0.0)); break;
+            case 4: depth_term = clamp(exp(0.25*depth_term-3.), 0., 10.); break;
+            case 5: depth_term = exp(0.25*depth_term-3.); break;
+            case 6: depth_term = exp( -0.002 * depth_term * depth_term * depth_term ); break;
+            case 7: depth_term = exp(-0.6*max(depth_term-3., 0.0)); break;
     
-            case 7: depth_term = (sqrt(depth_term)/8.) * depth_term; break;
-            case 8: depth_term = sqrt(depth_term/9.); break;
-            case 9: depth_term = pow(depth_term/10., 2.); break;
+            case 8: depth_term = (sqrt(depth_term)/8.) * depth_term; break;
+            case 9: depth_term = sqrt(depth_term/9.); break;
+            case 10: depth_term = pow(depth_term/10., 2.); break;
             default: break;
         }
         // do a mix here, between col and the fog color, with the selected depth falloff term

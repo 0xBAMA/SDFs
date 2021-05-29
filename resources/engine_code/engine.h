@@ -118,13 +118,15 @@ private:
 	float orbit3 = 100;
 
 	// light positions
-	glm::vec3 lightPos1 = glm::vec3( 0.75, 0.25, 0.25);
-    glm::vec3 lightPos2 = glm::vec3( 0.25, 0.75, 0.25);
-    glm::vec3 lightPos3 = glm::vec3( 0.25, 0.25, 0.75);
+	glm::vec3 lightPos1 = glm::vec3( 0.1, 0., 0.);
+    glm::vec3 lightPos2 = glm::vec3( 0., 0.1, 0.);
+    glm::vec3 lightPos3 = glm::vec3( 0., 0., 0.1);
 
 	float AO_scale = 0.7;
 	float depth_scale = 1.;
-	int depth_selector = 7;	
+	int depth_selector = 8;	
+
+	float fov = 1.;
 
 	// position
 	glm::vec3 position = glm::vec3(1., 1., 1.);
