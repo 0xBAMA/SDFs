@@ -6074,7 +6074,7 @@ float sdSponge202(vec3 z)
     return dis * 0.6 * pow(3.0, -float(9)); 
 }
 
-float DE202(vec3 p)
+float fractal_de202(vec3 p)
 {
     float d1 = mandelbulb202(p);
     float d2 = sdSponge202(p);
@@ -6111,6 +6111,203 @@ float fractal_de203( vec3 p ){
     return d;
 }
 
+
+float fractal_de204(in vec3 z0){
+    const float mr=0.25, mxr=1.0;
+    const vec4 scale=vec4(-3.12,-3.12,-3.12,3.12),p0=vec4(0.0,1.59,-1.0,0.0);
+    vec4 z = vec4(z0,1.0);
+    for (int n = 0; n < 3; n++) {
+        z.xyz=clamp(z.xyz, -0.94, 0.94)*2.0-z.xyz;
+        z*=scale/clamp(dot(z.xyz,z.xyz),mr,mxr);
+        z+=p0;
+    }
+    z.y-=3.0*sin(3.0+floor(z0.x+0.5)+floor(z0.z+0.5));
+    float dS=(length(max(abs(z.xyz)-vec3(1.2,49.0,1.4),0.0))-0.06)/z.w;
+    return dS;
+}
+
+
+
+
+
+
+float sdHexPrism205( vec3 p, vec2 h ){
+  const vec3 k = vec3(-0.8660254, 0.5, 0.57735);
+  p = abs(p);
+  p.xy -= 2.0*min(dot(k.xy, p.xy), 0.0)*k.xy;
+  vec2 d = vec2(
+       length(p.xy-vec2(clamp(p.x,-k.z*h.x,k.z*h.x), h.x))*sign(p.y-h.x),
+       p.z-h.y );
+  return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
+float sdCrossHex205( in vec3 p ){
+    
+    float sdh1= sdHexPrism205(  p-vec3(0.0), vec2(1.0,1.0) );
+    float sdh2= sdHexPrism205(  p-vec3(0.0), vec2(0.5,1.5) );
+    float sdh3= sdHexPrism205(  p.xzy-vec3(0.0), vec2(0.5,1.1) );
+    float sdh4= sdHexPrism205(  p.yzx-vec3(0.0), vec2(0.5,1.5) );
+    
+     return max( max( max(sdh1, -sdh2), -sdh3),-sdh4);
+}
+
+float sdCrossRep205(vec3 p) {
+	vec3 q = mod(p + 1.0, 2.0) - 1.0;
+	return sdCrossHex205(q);
+}
+
+float sdCrossRepScale205(vec3 p, float s) {
+	return sdCrossRep205(p * s) / s;	
+}
+
+//--------------------------
+
+float fractal_de205(vec3 p) {
+    float scale = 3.025;
+    float dist= sdHexPrism205(p, vec2(1.0,2.0) );
+	for (int i = 0; i < 5; i++) {
+		dist = max(dist, -sdCrossRepScale205(p, scale));
+		scale *= 3.0;
+	}
+    
+	return dist;
+}
+
+
+
+
+mat2 rot206(float r){
+    vec2 s = vec2(cos(r),sin(r));
+    return mat2(s.x,s.y,-s.y,s.x);
+}
+float cube206(vec3 p,vec3 s){
+    vec3 q = abs(p);
+    vec3 m = max(s-q,0.);
+    return length(max(q-s,0.))-min(min(m.x,m.y),m.z);
+}
+float tetcol206(vec3 p,vec3 offset,float scale,vec3 col){
+    vec4 z = vec4(p,1.);
+    for(int i = 0;i<12;i++){
+        if(z.x+z.y<0.0)z.xy = -z.yx,col.z+=1.;
+        if(z.x+z.z<0.0)z.xz = -z.zx,col.y+=1.;
+        if(z.z+z.y<0.0)z.zy = -z.yz,col.x+=1.;
+        z *= scale;
+        z.xyz += offset*(1.0-scale);
+    }
+    return (cube206(z.xyz,vec3(1.5)))/z.w;
+}
+float fractal_de206(vec3 p){
+    float s = 1.;
+    p = abs(p)-4.*s;
+    p = abs(p)-2.*s;
+    p = abs(p)-1.*s;
+
+    return tetcol206(p,vec3(1),1.8,vec3(0.));
+}
+
+
+
+
+
+float sdTriPrism( vec3 p, vec2 h ){
+    vec3 q = abs(p);
+    return max(q.z-h.y,max(q.x*0.866025+p.y*0.5,-p.y)-h.x*0.5);
+}
+float sdCrossHex( in vec3 p ){
+    float sdfin=1000.0;
+    float sdt1= sdTriPrism( p- vec3(0.0), vec2(1.0) );
+    float sdt2= sdTriPrism( -p.xyz- vec3(0.0), vec2(0.5,1.2) );
+    float sdt3= sdTriPrism( p.xzy- vec3(0.0), vec2(0.5,1.2) );
+    sdfin =max(sdt1, -sdt2);
+    sdfin =max(sdfin, -sdt3);
+    return sdfin;
+}
+float sdCrossRep(vec3 p) {
+	vec3 q = mod(p + 1.0, 2.0) - 1.0;
+	return sdCrossHex(q);
+}
+float sdCrossRepScale(vec3 p, float s) {
+	return sdCrossRep(p * s) / s;	
+}
+float fractal_de207(vec3 p) {
+    float scale = 4.0;
+    float dist=sdTriPrism( p-vec3(0.0), vec2(1.0,1.0) );
+	for (int i = 0; i < 5; i++) {
+		dist = max(dist, -sdCrossRepScale(p, scale));
+		scale *= 3.0;
+	}
+	return dist;
+}
+
+
+
+
+
+float cylUnion(vec3 p){
+    float xy = dot(p.xy,p.xy);
+    float xz = dot(p.xz,p.xz);
+    float yz = dot(p.yz,p.yz);
+    return sqrt(min(xy,min(xz,yz))) - 1.;
+}
+
+float cylIntersection(vec3 p){
+    float xy = dot(p.xy,p.xy);
+    float xz = dot(p.xz,p.xz);
+    float yz = dot(p.yz,p.yz);
+    return sqrt(max(xy,max(xz,yz))) - 1.;
+}
+
+float fractal_de208(vec3 p){
+    float d = cylIntersection(p);
+    float s = 1.;
+    for(int i = 0;i<5;i++){
+        p *= 3.;
+    	s*=3.;
+    	float d2 = cylUnion(p) / s;
+        float m = 1.; // -1 or 1
+    	d = max(d,m*d2);
+   	 	p = mod(p+1. , 2.) - 1.; 	
+    }
+    return d;
+}
+
+
+
+
+float maxcomp(in vec3 p ) { return max(p.x,max(p.y,p.z));}
+float sdBox( vec3 p, vec3 b ){
+  vec3  di = abs(p) - b;
+  float mc = maxcomp(di);
+  return min(mc,length(max(di,0.0)));
+}
+
+float dsCapsule(vec3 point_a, vec3 point_b, float r, vec3 point_p)
+{
+ 	vec3 ap = point_p - point_a;
+    vec3 ab = point_b - point_a;
+    float ratio = dot(ap, ab) / dot(ab , ab);
+    ratio = clamp(ratio, 0.0, 1.0);
+    vec3 point_c = point_a + ratio * ab;
+    return length(point_c - point_p) - r;
+}
+
+float DE(vec3 p){
+    float distToCapsule = dsCapsule(vec3(-0.0,0.0,0.0), vec3(2.0,1.0,0.1), 1.0, p);    
+    float d=distToCapsule;
+    float s = 1.;
+    for(int i = 0;i<5;i++){
+        p *= 3.; s*=3.;
+    	float d2 = cylUnion(p) / s;
+        float d3=sdBox(p, vec3(2.0,1.0,2.5));
+    	d = max(d,-d2);
+   	 	p = mod(p+1. , 2.) - 1.; 	
+    }
+    return d;
+}
+
+
+
+
 float de(vec3 p){
     // return fractal_de6(p);
     // return fractal_de20(p);
@@ -6119,7 +6316,7 @@ float de(vec3 p){
     // return fractal_de192(p);
     // return fractal_de193(p);
     // return fractal_de201(p);
-    return map(p);
+    return DE(p);
 
     // return opSmoothSubtraction(fractal_de192(p), fractal_de193(p), 0.04); 
     // return smin_op(fractal_de192(p-vec3(1,1,0)), fractal_de193(p), 0.04); 

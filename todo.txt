@@ -1,0 +1,20 @@
+https://www.shadertoy.com/view/3tjczm iq bilinear patch
+https://www.shadertoy.com/view/3ld3DM iq 3d joint
+https://www.shadertoy.com/view/ldj3Wh iq quadratic bezier
+https://www.shadertoy.com/view/XtycD1 iq Leizex
+https://www.shadertoy.com/view/wtfBWB jorge landscape
+https://www.shadertoy.com/view/3lSyDV jorge catacombs
+https://www.shadertoy.com/view/WdGyW3 shane desert passage
+
+https://www.shadertoy.com/user/Shane this guy's stuff
+
+
+OPERATORS
+Elongation  : https://www.shadertoy.com/view/Ml3fWj
+Rounding    : https://www.shadertoy.com/view/Mt3BDj
+Onion       : https://www.shadertoy.com/view/MlcBDj
+Metric      : https://www.shadertoy.com/view/ltcfDj
+Combination : https://www.shadertoy.com/view/lt3BW2
+Repetition  : https://www.shadertoy.com/view/3syGzz
+Extrusion2D : https://www.shadertoy.com/view/4lyfzw
+Revolution2D: https://www.shadertoy.com/view/4lyfzw
