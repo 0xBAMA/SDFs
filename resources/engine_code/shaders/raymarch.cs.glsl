@@ -5835,24 +5835,296 @@ float sdOctagonPrism(vec3 p){
   return min(max(d.x,d.y),0.0) + length(max(d,0.0));
 }
 
+float sdLink(vec3 p){
+    float le = 0.13;  // length
+    float r1 = 0.20;  // major radius
+    float r2 = 0.09;  // minor radius
+    
+    vec3 q = vec3( p.x, max(abs(p.y)-le,0.0), p.z );
+    return length(vec2(length(q.xy)-r1,q.z)) - r2;
+}
+
+float udRoundBox(vec3 p){
+    vec3 b = vec3(1,2,3); // box dimensions
+    float r = 0.1;      // rounding radius
+    return length(max(abs(p)-b, 0.0))-r;
+}
+
+float sdCross(vec3 p){
+  float s = 0.2;
+  float da = max (abs(p.x), abs(p.y));
+  float db = max (abs(p.y), abs(p.z));
+  float dc = max (abs(p.z), abs(p.x));
+  return min(da,min(db,dc)) - s;
+}
+
+float sdWaveSphere(vec3 p){
+    float radius = .3; // radius of sphere
+    int waves = 7; // number of waves
+    float waveSize = 0.4; // displacement of waves
+    
+    //bounding Sphere
+    float d = length(p) - radius*2.2;
+    if(d > 0.0) return 0.2;
+
+    // deformation of radius
+    d = waveSize * (radius*radius-(p.y*p.y));
+    radius += d * cos(atan(p.x,p.z) * float(waves));
+    return 0.5*(length(p) - radius);
+}
+
+// Dodecahedron: radius = circumsphere radius
+float sdDodecahedron(vec3 p, float radius)
+{
+  const float phi = 1.61803398875;  // Golden Ratio = (sqrt(5)+1)/2;
+  const vec3 n = normalize(vec3(phi,1,0));
+
+  p = abs(p / radius);
+  float a = dot(p, n.xyz);
+  float b = dot(p, n.zxy);
+  float c = dot(p, n.yzx);
+  return (max(max(a,b),c)-n.x) * radius;
+}
+
+// Icosahedron: radius = circumsphere radius
+float sdIcosahedron(vec3 p, float radius)
+{
+  const float q = 2.61803398875;  // Golden Ratio + 1 = (sqrt(5)+3)/2;
+  const vec3 n1 = normalize(vec3(q,1,0));
+  const vec3 n2 = vec3(0.57735026919);  // = sqrt(3)/3);
+
+  p = abs(p / radius);
+  float a = dot(p, n1.xyz);
+  float b = dot(p, n1.zxy);
+  float c = dot(p, n1.yzx);
+  float d = dot(p, n2) - n1.x;
+  return max(max(max(a,b),c)-n1.x,d) * radius;
+}
+
+
+float sdIcosDodecaStar(vec3 p, float radius)
+{
+  return min(sdDodecahedron(p,radius),  sdIcosahedron(p.zyx,radius));
+}
+
+float sdRoundedCylinder( vec3 p){
+  float ra = 0.5;  // radius of cylinder
+  float rb = 0.1;  // radius of rounding
+  float h  = 0.4;  // height of cylinder
+
+  vec2 d = vec2( length(p.xz)-2.0*ra+rb, abs(p.y) - h );
+  return min(max(d.x,d.y),0.0) + length(max(d,0.0)) - rb;
+}
+
+float length2( vec2 p )  // sqrt(x^2+y^2)
+{
+  return sqrt( p.x*p.x + p.y*p.y );
+}
+
+float length6( vec2 p )  // (x^6+y^6)^(1/6)
+{
+  p = p*p*p;
+  p = p*p;
+  return pow( p.x + p.y, 1.0/6.0 );
+}
+
+float length8( vec2 p )  // (x^8+y^8)^(1/8)
+{
+  p = p*p;
+  p = p*p;
+  p = p*p;
+  return pow( p.x + p.y, 1.0/8.0 );
+}
+// Cylinder: h=dimension, h.y=height
+float sdCylinder (in vec3 p, in vec3 h)
+{
+  return length(p.xz - h.xy) - h.z;
+}
+#define opRepeat(p,c) (mod(p,c)-0.5*c)
+#define opDifference(a,b) max(a,-b)
+float sdTorus82( vec3 p)
+{
+  vec2 t = vec2(1,0.2);
+  vec2 q = vec2(length8(p.xz)-t.x, p.y);
+  return length8(q) - t.y;
+}
+
+
+// float sdRackWheel(vec3 pos)
+// {
+//   return opDifference(sdTorus82(pos, vec2(0.20, 0.1)),
+//     sdCylinder (opRepeat (vec3 (atan(pos.x, pos.z)/6.2831
+//                                 ,pos.y
+//                                 ,0.02+0.5*length(pos))
+//                           ,vec3(0.05, 1.0, 0.05))
+//                 ,vec2(0.02, 0.6)));
+// }
 
 
 
+float dot2( in vec3 v ) { return dot(v,v); }
+
+float udTriangle( in vec3 v1, in vec3 v2, in vec3 v3, in vec3 p )
+{
+    vec3 v21 = v2 - v1; vec3 p1 = p - v1;
+    vec3 v32 = v3 - v2; vec3 p2 = p - v2;
+    vec3 v13 = v1 - v3; vec3 p3 = p - v3;
+    vec3 nor = cross( v21, v13 );
+
+    return sqrt( (sign(dot(cross(v21,nor),p1)) + 
+                  sign(dot(cross(v32,nor),p2)) + 
+                  sign(dot(cross(v13,nor),p3))<2.0) 
+                  ?
+                  min( min( 
+                  dot2(v21*clamp(dot(v21,p1)/dot2(v21),0.0,1.0)-p1), 
+                  dot2(v32*clamp(dot(v32,p2)/dot2(v32),0.0,1.0)-p2) ), 
+                  dot2(v13*clamp(dot(v13,p3)/dot2(v13),0.0,1.0)-p3) )
+                  :
+                  dot(nor,p1)*dot(nor,p1)/dot2(nor) );
+}
+
+float udQuad( in vec3 v1, in vec3 v2, in vec3 v3, in vec3 v4, in vec3 p )
+{
+    #if 1
+    // handle ill formed quads
+    if( dot( cross( v2-v1, v4-v1 ), cross( v4-v3, v2-v3 )) < 0.0 )
+    {
+        vec3 tmp = v3;
+        v3 = v4;
+        v4 = tmp;
+    }
+    #endif
+
+    
+    vec3 v21 = v2 - v1; vec3 p1 = p - v1;
+    vec3 v32 = v3 - v2; vec3 p2 = p - v2;
+    vec3 v43 = v4 - v3; vec3 p3 = p - v3;
+    vec3 v14 = v1 - v4; vec3 p4 = p - v4;
+    vec3 nor = cross( v21, v14 );
+
+    return sqrt( (sign(dot(cross(v21,nor),p1)) + 
+                  sign(dot(cross(v32,nor),p2)) + 
+                  sign(dot(cross(v43,nor),p3)) + 
+                  sign(dot(cross(v14,nor),p4))<3.0) 
+                  ?
+                  min( min( dot2(v21*clamp(dot(v21,p1)/dot2(v21),0.0,1.0)-p1), 
+                            dot2(v32*clamp(dot(v32,p2)/dot2(v32),0.0,1.0)-p2) ), 
+                       min( dot2(v43*clamp(dot(v43,p3)/dot2(v43),0.0,1.0)-p3),
+                            dot2(v14*clamp(dot(v14,p4)/dot2(v14),0.0,1.0)-p4) ))
+                  :
+                  dot(nor,p1)*dot(nor,p1)/dot2(nor) );
+}
+
+
+float sdCylinder6 (vec3 p){
+    float diameter = 0.2;
+    float height = 0.1;
+  return max( length6(p.xz) - diameter, abs(p.y) - height );
+}
+
+float sdCylinder(vec3 p){
+  float radius = 1.;
+  return length(p.xz)-radius;
+}
+
+
+
+
+
+
+
+float mandelbulb202(vec3 p)
+{
+    p /= 1.192;
+    p.xyz = p.xzy;
+    vec3 z = p;
+    vec3 dz = vec3(0.0);
+    float dr = 1.0;
+    float power = 8.0;
+    float r, theta, phi;
+    for (int i = 0; i < 7; i++)
+    {
+        r = length(z);
+        if (r > 2.0)
+            break;
+        float theta = atan(z.y / z.x);
+        float phi = asin(z.z / r);
+        dr = pow(r, power - 1.0) * power * dr + 1.0;
+        r = pow(r, power);
+        theta = theta * power;
+        phi = phi * power;
+        z = r * vec3(cos(theta) * cos(phi), cos(phi) * sin(theta), sin(phi)) + p;
+    }
+    return 0.5 * log(r) * r / dr;
+}
+
+float sdSponge202(vec3 z)
+{
+    for(int i = 0; i < 9; i++)
+    {
+        z = abs(z);
+        z.xy = (z.x < z.y) ? z.yx : z.xy;
+        z.xz = (z.x < z.z) ? z.zx : z.xz;
+        z.zy = (z.y < z.z) ? z.yz : z.zy;	 
+        z = z * 3.0 - 2.0;
+        z.z += (z.z < -1.0) ? 2.0 : 0.0;
+    }
+    z = abs(z) - vec3(1.0);
+    float dis = min(max(z.x, max(z.y, z.z)), 0.0) + length(max(z, 0.0)); 
+    return dis * 0.6 * pow(3.0, -float(9)); 
+}
+
+float DE202(vec3 p)
+{
+    float d1 = mandelbulb202(p);
+    float d2 = sdSponge202(p);
+    return max(d1, d2);
+    
+}
+
+
+
+
+float fractal_de203( vec3 p ){
+    vec3  di = abs(p) - vec3(1.);
+    float mc = max(di.x, max(di.y, di.z));
+    float d =  min(mc,length(max(di,0.0)));
+    vec4 res = vec4( d, 1.0, 0.0, 0.0 );
+
+    const mat3 ma = mat3( 0.60, 0.00,  0.80,
+                          0.00, 1.00,  0.00,
+                          -0.20, 0.00,  0.30 );
+    float off = 0.0005;
+    float s = 1.0;
+    for( int m=0; m<4; m++ ){
+        p = ma*(p+off);
+        vec3 a = mod( p*s, 2.0 )-1.0;
+        s *= 3.0;
+        vec3 r = abs(1.0 - 3.0*abs(a));
+        float da = max(r.x,r.y);
+        float db = max(r.y,r.z);
+        float dc = max(r.z,r.x);
+        float c = (min(da,min(db,dc))-1.0)/s;
+        if( c > d )
+            d = c;
+    }
+    return d;
+}
 
 float de(vec3 p){
     // return fractal_de6(p);
     // return fractal_de20(p);
     // return fractal_de78(p);
     // return fractal_de165(p);
+    // return fractal_de192(p);
+    // return fractal_de193(p);
     // return fractal_de201(p);
+    return map(p);
 
-
-    // return opSmoothSubtraction(fractal_de70(p), fractal_de(p), 0.04); 
-
-
+    // return opSmoothSubtraction(fractal_de192(p), fractal_de193(p), 0.04); 
+    // return smin_op(fractal_de192(p-vec3(1,1,0)), fractal_de193(p), 0.04); 
     // return max(fSphere(p, 4.+0.1*sin(time)),sdGyroid(p, 7., 0.05, 0.1));
-    
-    return egg(p);
+
     
     // return smin_op(fractal_de6(p), fractal_de192(rotate3D(1.4,vec3(1.,1.,1.))*p), 0.123);
     // return smin_op(smin_op(fractal_de127(p), fractal_de130(rotate3D(2.3,vec3(1.,1.,1.))*p*4.)/4., 0.04), fractal_de195(rotate3D(0.2*time, vec3(1,2,1))*(p-vec3(0,1,0))), 0.1);
@@ -5880,16 +6152,25 @@ float raymarch(vec3 ro, vec3 rd) {
     }
 }
 
-vec3 norm(vec3 p) { // to get the normal vector for a point in space, this function
-#define GAZ_METHOD 0
-    
-#if GAZ_METHOD
-    // this is from gaz, https://www.shadertoy.com/view/wsBfDt - is this better? it's a bit of a different operation, plus it may be more representative of the distance gradient to get samples on positive and negative sides
+vec3 norm(vec3 p) { // to get the normal vector for a point in space, this function evaluates the gradient of the distance function
+#define METHOD 2
+#if METHOD == 0 
+    // tetrahedron version, unknown source - 4 evaluations
     vec2 e = vec2(1,-1) * EPSILON;
     return normalize(e.xyy*de(p+e.xyy)+e.yyx*de(p+e.yyx)+e.yxy*de(p+e.yxy)+e.xxx*de(p+e.xxx));
-#else
+
+#elif METHOD == 1
+    // by iq = more efficient, 4 evaluations
     vec2 e = vec2( EPSILON, 0.); // computes the gradient of the estimator function
     return normalize( vec3(de(p)) - vec3( de(p-e.xyy), de(p-e.yxy), de(p-e.yyx) ));
+
+#elif METHOD == 2
+    // by iq - less efficient, 6 evaluations
+    vec3 eps = vec3(EPSILON,0.0,0.0);
+    return normalize( vec3(
+                          de(p+eps.xyy) - de(p-eps.xyy),
+                          de(p+eps.yxy) - de(p-eps.yxy),
+                          de(p+eps.yyx) - de(p-eps.yyx)));
 #endif
 }
 
