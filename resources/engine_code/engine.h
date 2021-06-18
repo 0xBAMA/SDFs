@@ -122,9 +122,9 @@ private:
     glm::vec3 lightPos2 = glm::vec3( 0., 0.1, 0.);
     glm::vec3 lightPos3 = glm::vec3( 0., 0., 0.1);
 
-	float AO_scale = 0.7;
-	float depth_scale = 1.;
-	int depth_selector = 8;	
+	float AO_scale = 0.75;
+	float depth_scale = 8.;
+	int depth_selector = 10;	
 
 	float fov = 1.;
 
@@ -134,7 +134,7 @@ private:
 	glm::vec3 basis_x, basis_y, basis_z;
 
 	float gamma_correction = 1.244;
-	int current_tmode = 3;
+	int current_tmode = 6;
     int current_colorspace = CHROMAMAX;
     int current_noise_func = BAYER;
     int current_dither_mode = EXPONENTIAL;

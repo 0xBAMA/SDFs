@@ -194,7 +194,7 @@ void engine::create_window() {
   ImGui_ImplSDL2_InitForOpenGL(window, GLcontext);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  clear_color = ImVec4(52./255., 141./255., 188./255., 1.0f); // initial value for clear color
+  clear_color = ImVec4(196./255., 68./255., 14./255., 1.0f); // initial value for clear color
 
   // really excited by the fact imgui has an hsv picker to set this
   glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -499,9 +499,9 @@ void engine::control_window()
     ImGui::Text("");
     
     // fog terms
-    ImGui::SliderFloat(" Depth Scale ", &depth_scale, 0.001, 4.);
+    ImGui::SliderFloat(" Depth Scale ", &depth_scale, 0.001, 15.);
     
-    const char* dmodes[] = {"1", "2", "3", "EXP1", "EXP2", "EXP3", "EXP4", "POW1", "POW2", "POW3", "BASIC RATIO"};
+    const char* dmodes[] = {"1", "2", "3", "EXP1", "EXP2", "EXP3", "EXP4", "POW1", "POW2", "POW3", "SIGMOID", "BASIC RATIO"};
     ImGui::Combo("Depth Falloff", &depth_selector, dmodes, IM_ARRAYSIZE(dmodes));
     
     // ao scale

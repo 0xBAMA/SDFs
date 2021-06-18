@@ -6,9 +6,9 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 #define M_PI 3.1415926535897932384626433832795
 
-#define MAX_STEPS 400
+#define MAX_STEPS 200
 #define MAX_DIST  100.
-#define EPSILON   0.002 // closest surface distance
+#define EPSILON   0.0015 // closest surface distance
 
 #define AA 2
 
@@ -6442,19 +6442,34 @@ float fractal_de216(vec3 p0){
 }
 
 
+// float DEs(vec3 p0){
+//     vec4 p = vec4(p0,1.);
+//     float t = 99.;
+//     float escape = 0.;
+//     for(int i = 0; i < 16; i++){
+//         sphere_fold(p.xyz,p.w);
+//         box_fold(p.xyz);
+//         p.xyz-=vec3(6.4,2.,2.5);
+//         p*=1.6;
 
+//         t = min(t, box(p.xyz,vec3(1.))/p.w);
+//         escape = t;
+//     }
+//     return t;
+// }
 
 float de(vec3 p){
     // return fractal_de6(p);
     // return fractal_de20(p);
-    // return fractal_de78(p);
+    return fractal_de78(p);
     // return fractal_de165(p);
     // return fractal_de192(p);
     // return fractal_de193(p);
     // return fractal_de201(p);
-    return smin_op(smin_op(fractal_de102(p+vec3(0.14, 0., -0.5)), fractal_de165(p), 0.1), fractal_de51((rotate3D(-0.03,vec3(1.,1.,1.))*p*2.)+vec3(1.,0.2,0.5))/2., 0.03);
+    // return smin_op(smin_op(fractal_de102(p+vec3(0.14, 0., -0.5)), fractal_de165(p), 0.1), fractal_de51((rotate3D(-0.03,vec3(1.,1.,1.))*p*2.)+vec3(1.,0.2,0.5))/2., 0.03);
     // return smin_op(fractal_de102(p+vec3(0.14, 0., -0.5)), fractal_de165(p), 0.1);
     
+    // return DEs(p);
 
     // return opSmoothSubtraction(fractal_de192(p), fractal_de193(p), 0.04); 
     // return smin_op(fractal_de192(p-vec3(1,1,0)), fractal_de193(p), 0.04); 
@@ -6705,28 +6720,29 @@ void main()
 
         temp *= ((1./AO_scale) * calcAO(shadow_ro, normal)); // ambient occlusion calculation
 
-        // do the depth scaling here
-        // compute the depth scale term
-        float depth_term = depth_scale * dresult;
-        switch(depth_falloff)
-        {
-            case 0: depth_term = 0.;
-            case 1: depth_term = 2.-2.*(1./(1.-depth_term)); break;
-            case 2: depth_term = 1.-(1./(1+0.1*depth_term*depth_term)); break;
-            case 3: depth_term = (1-pow(depth_term/30., 1.618)); break;
+        // // do the depth scaling here
+        // // compute the depth scale term
+        // float depth_term = depth_scale * dresult;
+        dresult_avg += dresult;
+        // switch(depth_falloff)
+        // {
+        //     case 0: depth_term = 0.;
+        //     case 1: depth_term = 2.-2.*(1./(1.-depth_term)); break;
+        //     case 2: depth_term = 1.-(1./(1+0.1*depth_term*depth_term)); break;
+        //     case 3: depth_term = (1-pow(depth_term/30., 1.618)); break;
 
-            case 4: depth_term = clamp(exp(0.25*depth_term-3.), 0., 10.); break;
-            case 5: depth_term = exp(0.25*depth_term-3.); break;
-            case 6: depth_term = exp( -0.002 * depth_term * depth_term * depth_term ); break;
-            case 7: depth_term = exp(-0.6*max(depth_term-3., 0.0)); break;
+        //     case 4: depth_term = clamp(exp(0.25*depth_term-3.), 0., 10.); break;
+        //     case 5: depth_term = exp(0.25*depth_term-3.); break;
+        //     case 6: depth_term = exp( -0.002 * depth_term * depth_term * depth_term ); break;
+        //     case 7: depth_term = exp(-0.6*max(depth_term-3., 0.0)); break;
     
-            case 8: depth_term = (sqrt(depth_term)/8.) * depth_term; break;
-            case 9: depth_term = sqrt(depth_term/9.); break;
-            case 10: depth_term = pow(depth_term/10., 2.); break;
-            default: break;
-        }
-        // do a mix here, between col and the fog color, with the selected depth falloff term
-        temp.rgb = mix(temp.rgb, fog_color.rgb, depth_term);
+        //     case 8: depth_term = (sqrt(depth_term)/8.) * depth_term; break;
+        //     case 9: depth_term = sqrt(depth_term/9.); break;
+        //     case 10: depth_term = pow(depth_term/10., 2.); break;
+        //     default: break;
+        // }
+        // // do a mix here, between col and the fog color, with the selected depth falloff term
+        // temp.rgb = mix(temp.rgb, fog_color.rgb, depth_term);
         
         col.rgb += temp;
     }
@@ -6741,23 +6757,46 @@ void main()
 
     switch(depth_falloff)
     {
-        case 0: depth_term = 2.-2.*(1./(1.-dresult_avg)); break;
-        case 1: depth_term = 1.-(1./(1+0.1*dresult_avg*dresult_avg)); break;
-        case 2: depth_term = (1-pow(dresult_avg/30., 1.618)); break;
+        case 0: depth_term = 2.-2.*(1./(1.-dresult_avg));
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
+        case 1: depth_term = 1.-(1./(1+0.1*dresult_avg*dresult_avg));
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
+        case 2: depth_term = (1-pow(dresult_avg/30., 1.618));
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
 
-        case 3: depth_term = clamp(exp(0.25*dresult_avg-3.), 0., 10.); break;
-        case 4: depth_term = exp(0.25*dresult_avg-3.); break;
-        case 5: depth_term = exp( -0.002 * dresult_avg * dresult_avg * dresult_avg ); break;
-        case 6: depth_term = exp(-0.6*max(dresult_avg-3., 0.0)); break;
+        case 3: depth_term = clamp(exp(0.25*dresult_avg-3.), 0., 10.);
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
+        case 4: depth_term = exp(0.25*dresult_avg-3.);
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
+        case 5: depth_term = exp( -0.002 * dresult_avg * dresult_avg * dresult_avg );
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
+        case 6: depth_term = exp(-0.6*max(dresult_avg-3., 0.0));
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
     
         case 7: depth_term = (sqrt(dresult_avg)/8.) * dresult_avg; break;
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
         case 8: depth_term = sqrt(dresult_avg/9.); break;
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
         case 9: depth_term = pow(dresult_avg/10., 2.); break;
-        case 10: depth_term = dresult_avg/MAX_DIST;
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
+        case 10: col.rgb += 1./(1.+exp(-2.*(dresult_avg*0.1-2.))) * fog_color.rgb;
+ // col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
+        case 11: depth_term = dresult_avg/MAX_DIST;
+            col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
+            break;
         default: break;
     }
-    // do a mix here, between col and the fog color, with the selected depth falloff term
-    col.rgb = mix(col.rgb, fog_color.rgb, depth_term);
 
     // color stuff happens here, because the imageStore will be quantizing to 8 bit
     // tonemapping 
