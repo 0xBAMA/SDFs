@@ -1850,7 +1850,7 @@ float de(vec3 p){
 
 
 
-    return fractal_de218(p);
+    return fractal_de132(p);
 
     // return fractal_de78(p);
 

@@ -7,6 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "-std=c++17 -lstdc++fs -O4")
 set(CMAKE_REQUIRED_FLAGS -lstdc++fs)
 
+# set( CMAKE_BUILD_TYPE Debug )
+
+
 # this makes SDL2 work
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -29,7 +32,7 @@ add_library(opengl INTERFACE)
 target_link_libraries(opengl INTERFACE OpenGL::GL)
 
 
-# FastNoise2 
+# FastNoise2
 add_subdirectory(${PROJECT_SOURCE_DIR}/resources/FastNoise2)
 
 # this is for ImGUI
@@ -40,7 +43,7 @@ add_library(imgui
   resources/ocornut_imgui/imgui_demo.cc
   resources/ocornut_imgui/imgui_draw.cc
   resources/ocornut_imgui/imgui_widgets.cc
-  resources/ocornut_imgui/imgui_tables.cc  
+  resources/ocornut_imgui/imgui_tables.cc
   resources/ocornut_imgui/imgui_gl3w.c
   resources/ocornut_imgui/TextEditor.cpp)
 

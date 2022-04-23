@@ -206,24 +206,28 @@ class UShader // very similar to above, but compiles strings
 public:
   GLuint Program;
   std::string report;
+	GLint success = 0;
 
   // Constructor generates the shader on the fly
   UShader(std::string text, bool verbose = false) {
 
-    auto t1 = std::chrono::high_resolution_clock::now();
+		auto t1 = std::chrono::high_resolution_clock::now();
 
-    const GLchar *cstrCode = text.c_str();
-    std::stringstream ss;
+		const GLchar *cstrCode = text.c_str();
+		std::stringstream ss;
 
-    // 2. Compile shaders
-    GLuint shader;
-    GLint success;
-    GLchar infoLog[512];
+		// 2. Compile shaders
+		GLuint shader;
+		GLchar infoLog[ 512 ];
+		cout << "compile stage start" << endl << std::flush;
 
-    // Vertex Shader
-    shader = glCreateShader(GL_COMPUTE_SHADER);
-    glShaderSource(shader, 1, &cstrCode, NULL);
-    glCompileShader(shader);
+		// Compute Shader
+		shader = glCreateShader( GL_COMPUTE_SHADER );
+		const GLint shaderLength = int( text.size() ) - 1;
+		glShaderSource( shader, 1, &cstrCode, &shaderLength );
+		glCompileShader( shader );
+
+		cout << "compile stage done" << endl << std::flush;
 
     // Print compile errors if any
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -231,17 +235,16 @@ public:
       // report compilation failure + error
       glGetShaderInfoLog(shader, 512, NULL, infoLog);
       ss << "Compilation Failed: " << infoLog;
+			return;
     } else {
       // report compilation successful
       ss << "Compilation Success. ";
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();
-    float time_microseconds =
-        std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    float time_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
 
-    ss << std::setw(4) << " (" << time_microseconds / 1000. << " ms)" << endl;
-
+    ss << std::setw( 4 ) << " (" << time_microseconds / 1000.0 << " ms)" << endl;
     t1 = std::chrono::high_resolution_clock::now();
 
     // Shader Program

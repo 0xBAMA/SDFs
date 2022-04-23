@@ -491,19 +491,19 @@ void engine::control_window()
     ImGui::EndTabItem();
   }
   if(ImGui::BeginTabItem("Render Settings"))
-  {    
+  {
     ImGui::Text("");
     ImGui::SliderFloat(" FoV ", &fov, 0.001, 4.);
     ImGui::Text("");
     ImGui::ColorEdit3("Fog Color", (float*)&clear_color);
     ImGui::Text("");
-    
+
     // fog terms
     ImGui::SliderFloat(" Depth Scale ", &depth_scale, 0.001, 15.);
-    
+
     const char* dmodes[] = {"1", "2", "3", "EXP1", "EXP2", "EXP3", "EXP4", "POW1", "POW2", "POW3", "SIGMOID", "BASIC RATIO"};
     ImGui::Combo("Depth Falloff", &depth_selector, dmodes, IM_ARRAYSIZE(dmodes));
-    
+
     // ao scale
     ImGui::SliderFloat(" AO Scale ", &AO_scale, 0.001, 1.);
 
@@ -534,7 +534,7 @@ void engine::control_window()
     ImGui::Text("");
 
 
-    
+
     ImGui::EndTabItem();
   }
 
@@ -587,22 +587,26 @@ void engine::editor_window(){
   editor.Render("TextEditor", ImVec2(-FLT_MIN, total_screen_height / 2));
 
   ImGui::Text(" ");
-  ImGui::Text(" ");
   ImGui::SameLine();
-  if(ImGui::SmallButton(" Compile "))
-  {
-   // compile the shader
-    auto shader = UShader(editor.GetText());
-    raymarch_shader = shader.Program;
-    
-    cout << std::string(shader.report);
+	if( ImGui::SmallButton( " Compile " ) ) {
+		// compile the shader
+		UShader shader = UShader( editor.GetText() );
+		cout << "Shader object declared" << endl;
+
+		if ( !shader.success ) {
+			cout << "Shader Compilation Failed." << endl;
+		} else {
+			raymarch_shader = shader.Program;
+			cout << std::string( shader.report ) << endl;
+		}
+
   }
   ImGui::SameLine();
   ImGui::Text(" ");
   ImGui::SameLine();
   if(ImGui::SmallButton(" Reload "))
   {
-    std::ifstream t(fileToEdit);
+    std::ifstream t( fileToEdit );
     if (t.good()) {
       editor.SetText(std::string((std::istreambuf_iterator<char>(t)),
                                   std::istreambuf_iterator<char>()));
@@ -618,12 +622,12 @@ void engine::editor_window(){
     std::string savetext(editor.GetText());
     file << savetext;
   }
-  
+
   ImGui::End();
 }
 
 void engine::animate_lights(float t){
-  
+
   // use some perlin noise to animate brightness and move position around a little
   PerlinNoise p;
 
@@ -640,7 +644,7 @@ void engine::animate_lights(float t){
   sampley = 6.5;
   samplez = orbitradius1 * sin( orbitrate1 * t + phaseoffset1 );
   flickerfactor1 = 1. + 0.4 * p.noise(samplex, sampley, samplez);
-  
+
   samplex = orbitradius2 * cos( orbitrate2 * t + phaseoffset2 );
   sampley = -2.5;
   samplez = orbitradius2 * sin( orbitrate2 * t + phaseoffset2 );
@@ -650,7 +654,7 @@ void engine::animate_lights(float t){
   sampley = 3.5;
   samplez = orbitradius3 * sin( orbitrate3 * t + phaseoffset3 );
   flickerfactor3 = 1. + 0.4 * p.noise(samplex, sampley, samplez);
-  
+
 }
 
 void engine::draw_everything() {
@@ -671,7 +675,7 @@ void engine::draw_everything() {
   basis_x = (rotation*glm::vec4(1,0,0,0)).xyz();
   basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
   basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
-  
+
   auto t_raymarch_start = std::chrono::high_resolution_clock::now();
   if(raymarch_stage){ // toggles invocation of the raymarch step
     //  ╦═╗┌─┐┬ ┬┌┬┐┌─┐┬─┐┌─┐┬ ┬
@@ -693,10 +697,10 @@ void engine::draw_everything() {
 
     // tonemapping mode
     glUniform1i(glGetUniformLocation(raymarch_shader, "tonemap_mode"), current_tmode);
-    
+
     // gamma correction
     glUniform1f(glGetUniformLocation(raymarch_shader, "gamma"), gamma_correction);
-  
+
     // send light information to the raymarch shader
     // animate light parameters
     animate_lights(SDL_GetTicks() * 0.001);
@@ -705,7 +709,7 @@ void engine::draw_everything() {
     glUniform1f(glGetUniformLocation(raymarch_shader, "flickerfactor1"), flickerfactor1);
     glUniform1f(glGetUniformLocation(raymarch_shader, "flickerfactor2"), flickerfactor2);
     glUniform1f(glGetUniformLocation(raymarch_shader, "flickerfactor3"), flickerfactor3);
-  
+
     // diffuse color
     glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol1d"), lightCol1d.x, lightCol1d.y, lightCol1d.z);
     glUniform3f(glGetUniformLocation(raymarch_shader, "lightCol2d"), lightCol2d.x, lightCol2d.y, lightCol2d.z);
@@ -720,7 +724,7 @@ void engine::draw_everything() {
     glUniform1f(glGetUniformLocation(raymarch_shader, "specpower1"), specpower1);
     glUniform1f(glGetUniformLocation(raymarch_shader, "specpower2"), specpower2);
     glUniform1f(glGetUniformLocation(raymarch_shader, "specpower3"), specpower3);
-  
+
     // shadow sharpness
     glUniform1f(glGetUniformLocation(raymarch_shader, "shadow1"), shadow1);
     glUniform1f(glGetUniformLocation(raymarch_shader, "shadow2"), shadow2);
@@ -736,10 +740,10 @@ void engine::draw_everything() {
 
     // fov term
     glUniform1f(glGetUniformLocation(raymarch_shader, "fov"), fov);
-    
+
     // depth scale term
     glUniform1f(glGetUniformLocation(raymarch_shader, "depth_scale"), depth_scale);
-    
+
     // depth falloff calculation selector
     glUniform1i(glGetUniformLocation(raymarch_shader, "depth_falloff"), depth_selector);
 
@@ -751,7 +755,7 @@ void engine::draw_everything() {
 
     // invoke the shader on the GPU
     glDispatchCompute( WIDTH/8, HEIGHT/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8
-    
+
     // sync to ensure the raymarched image is in the texture
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
   }
@@ -771,10 +775,10 @@ void engine::draw_everything() {
     static unsigned int frame = 0;
     frame++; // increment
     glUniform1i(glGetUniformLocation(dither_shader, "frame"), frame); // send
-    glUniform1i(glGetUniformLocation(dither_shader, "bits"), num_bits); 
-    glUniform1i(glGetUniformLocation(dither_shader, "spaceswitch"), current_colorspace); 
-    glUniform1i(glGetUniformLocation(dither_shader, "dithermode"), current_dither_mode); 
-    glUniform1i(glGetUniformLocation(dither_shader, "noise_function"), current_noise_func); 
+    glUniform1i(glGetUniformLocation(dither_shader, "bits"), num_bits);
+    glUniform1i(glGetUniformLocation(dither_shader, "spaceswitch"), current_colorspace);
+    glUniform1i(glGetUniformLocation(dither_shader, "dithermode"), current_dither_mode);
+    glUniform1i(glGetUniformLocation(dither_shader, "noise_function"), current_noise_func);
 
     // parameters controlling the dither process
     // current_colorspace
@@ -791,11 +795,11 @@ void engine::draw_everything() {
   auto t_dither_end = std::chrono::high_resolution_clock::now();
   dither_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(t_dither_end - t_dither_start).count();
 
-  
+
   //  ╔╦╗┬┌─┐┌─┐┬  ┌─┐┬ ┬
   //   ║║│└─┐├─┘│  ├─┤└┬┘
   //  ═╩╝┴└─┘┴  ┴─┘┴ ┴ ┴
-  
+
   auto t_display_start = std::chrono::high_resolution_clock::now();
   // texture display
   glUseProgram(display_shader);
@@ -823,7 +827,7 @@ void engine::draw_everything() {
   //  ╩┴ ┴╚═╝└─┘┴
   {// in this scope, everything related to imgui happens
     start_imgui(); // Start the Dear ImGui frame
-    
+
     quit_conf(&quitconfirm); // show quit confirm window, if relevant
     control_window(); // do the controls window
     editor_window(); // do the window with the text editor
@@ -878,7 +882,7 @@ void engine::draw_everything() {
         screenshot(ss.str());
       }
 
-      
+
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w)
         rotation_about_x -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
@@ -928,15 +932,15 @@ void engine::screenshot(std::string filename){
   image_bytes_to_save.resize(WIDTH * HEIGHT * 4);
 
   // glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, &image_bytes_to_save[0]);
-   
+
   // glBindBuffer(GL_TEXTURE_BUFFER, display_texture);
   // glGetBufferSubData(GL_TEXTURE_BUFFER, 0, image_bytes_to_save.size(), &image_bytes_to_save[0]);
-  
+
   // glGetTextureImage(display_texture, 0, GL_RGBA, GL_UNSIGNED_BYTE,  image_bytes_to_save.size(), &image_bytes_to_save[0]);
 
   glBindTexture(GL_TEXTURE_RECTANGLE, display_texture);
   glGetTexImage(GL_TEXTURE_RECTANGLE, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &image_bytes_to_save[0]);
-  
+
   temp.assign(image_bytes_to_save.begin(), image_bytes_to_save.end());
 
   // reorder flipped image content
