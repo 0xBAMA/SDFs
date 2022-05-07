@@ -68,7 +68,6 @@ target_compile_options(CompilerFlags INTERFACE -Wall -O3 -std=c++17 -lGL -lstdc+
 # this builds the final executable
 add_executable(exe
   resources/engine_code/main.cc
-  resources/engine_code/gpu_data.cc
   resources/engine_code/engine.cc
   resources/engine_code/engine_utils.cc
   resources/perlin/perlin.cc

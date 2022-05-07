@@ -4,7 +4,7 @@
 #include "includes.h"
 
 // These defines are used to simplify the ImGui::Combo things in engine_utils.cc
- 
+
 // colorspace
 #define RGB       0
 #define SRGB      1
@@ -56,14 +56,20 @@ private:
 	int total_screen_width, total_screen_height;
 
 // OpenGL Handles
-    GLuint display_texture;
-    GLuint display_shader;
+	GLuint display_texture;
+	GLuint display_shader;
 	GLuint display_vao;
 	GLuint display_vbo;
 
 	// dither patterns
 	GLuint dither_bayer;
 	GLuint dither_blue;
+
+// RGB parade graph
+	GLuint RGBParadeComputeShader;
+	GLuint RGBParadeCompositeShader;
+	GLuint RGBParadeAccumulators[ 3 ];
+	GLuint RGBParadePresentTex;
 
 	// compute shaders
 	GLuint dither_shader;
@@ -78,14 +84,14 @@ private:
 
 	// base color
 	glm::vec3 basic_diffuse = glm::vec3(45./255., 45./255., 45./255.);
-		
+
 	// light animation factors
 	void animate_lights(float t);
 	float flickerfactor1 = 1.0;
 	float orbitradius1 = 2.0;
 	float orbitrate1 = 1.2;
 	float phaseoffset1 = 0.5;
-		
+
 	float flickerfactor2 = 1.0;
 	float orbitradius2 = 2.2;
 	float orbitrate2 = 1.3;
@@ -95,12 +101,12 @@ private:
 	float orbitradius3 = 2.9;
 	float orbitrate3 = 1.8;
 	float phaseoffset3 = 4.4;
-		
+
 	// diffuse light colors
 	glm::vec3 lightCol1d = glm::vec3( 0.6f, 0.6f, 0.6f);
 	glm::vec3 lightCol2d = glm::vec3( 0.75f, 0.3f, 0.0f);
 	glm::vec3 lightCol3d = glm::vec3( 0.1f, 0.35f, 0.65f);
-	// specular light colors	
+	// specular light colors
 	glm::vec3 lightCol1s = glm::vec3( 0.5f, 0.5f, 0.5f);
 	glm::vec3 lightCol2s = glm::vec3( 0.5f, 0.5f, 0.5f);
 	glm::vec3 lightCol3s = glm::vec3( 0.5f, 0.5f, 0.5f);
@@ -124,7 +130,7 @@ private:
 
 	float AO_scale = 0.75;
 	float depth_scale = 8.;
-	int depth_selector = 10;	
+	int depth_selector = 10;
 
 	float fov = 1.;
 
@@ -139,7 +145,7 @@ private:
     int current_noise_func = BAYER;
     int current_dither_mode = EXPONENTIAL;
 
-	int num_bits = 4; 
+	int num_bits = 4;
 
 	void screenshot(std::string name);
 
@@ -157,9 +163,9 @@ private:
 	int dither_microseconds;
 	int raymarch_microseconds;
 	int display_microseconds;
-		
+
 	int total_loop_microseconds=0;
-		
+
 	// render flags (toggle shader execution)
 	bool raymarch_stage = true;
 	bool dither_stage = true;

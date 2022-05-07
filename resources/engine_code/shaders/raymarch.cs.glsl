@@ -1842,41 +1842,67 @@ float fractal_de132(vec3 p){
 }
 
 
+// Jos Leys / Knighty
+// https://www.shadertoy.com/view/XlVXzh
+vec2 wrap(vec2 x, vec2 a, vec2 s){
+	x -= s;
+	return (x-a*floor(x/a)) + s;
+}
+
+void TransA(inout vec3 z, inout float DF, float a, float b){
+	float iR = 1. / dot(z,z);
+	z *= -iR;
+	z.x = -b - z.x; z.y = a + z.y;
+	DF *= max(1.,iR);
+}
+
+float JosKleinian(vec3 z) {
+	float adjust = 6.2; // use this for time varying behavior
+
+	float box_size_x=1.;
+	float box_size_z=1.;
+
+	float KleinR = 1.94+0.05*abs(sin(-adjust*0.5));//1.95859103011179;
+	float KleinI = 0.03*cos(-adjust*0.5);//0.0112785606117658;
+	vec3 lz=z+vec3(1.), llz=z+vec3(-1.);
+	float d=0.; float d2=0.;
+
+	float DE=1e10;
+	float DF = 1.0;
+	float a = KleinR;
+	float b = KleinI;
+	float f = sign(b)*1.;
+	for (int i = 0; i < 20 ; i++) {
+		z.x=z.x+b/a*z.y;
+		z.xz = wrap(z.xz, vec2(2. * box_size_x, 2. * box_size_z), vec2(- box_size_x, - box_size_z));
+		z.x=z.x-b/a*z.y;
+
+		//If above the separation line, rotate by 180° about (-b/2, a/2)
+		if  (z.y >= a * 0.5 + f *(2.*a-1.95)/4. * sign(z.x + b * 0.5)* (1. - exp(-(7.2-(1.95-a)*15.)* abs(z.x + b * 0.5))))
+		{z = vec3(-b, a, 0.) - z;}
+
+		//Apply transformation a
+		TransA(z, DF, a, b);
+
+		//If the iterated points enters a 2-cycle , bail out.
+		if(dot(z-llz,z-llz) < 1e-5) {break;}
+
+		//Store prévious iterates
+		llz=lz; lz=z;
+	}
+
+	float y =  min(z.y, a-z.y) ;
+	DE=min(DE,min(y,0.3)/max(DF,2.));
+	// if (SI) {DE=DE*d2/(rad+d*DE);}
+	return DE;
+}
+
 
 
 float de(vec3 p){
-    // return fractal_de6(p);
-    // return fractal_de20(p);
 
+    return JosKleinian(p);
 
-
-    return fractal_de132(p);
-
-    // return fractal_de78(p);
-
-
-
-
-
-    // return fractal_de165(p);
-    // return fractal_de192(p);
-    // return fractal_de193(p);
-    // return fractal_de201(p);
-    // return smin_op(smin_op(fractal_de102(p+vec3(0.14, 0., -0.5)), fractal_de165(p), 0.1), fractal_de51((rotate3D(-0.03,vec3(1.,1.,1.))*p*2.)+vec3(1.,0.2,0.5))/2., 0.03);
-    // return smin_op(fractal_de102(p+vec3(0.14, 0., -0.5)), fractal_de165(p), 0.1);
-
-    // return DEs(p);
-
-    // return opSmoothSubtraction(fractal_de192(p), fractal_de193(p), 0.04);
-    // return smin_op(fractal_de192(p-vec3(1,1,0)), fractal_de193(p), 0.04);
-    // return max(fSphere(p, 4.+0.1*sin(time)),sdGyroid(p, 7., 0.05, 0.1));
-
-
-    // return smin_op(fractal_de6(p), fractal_de192(rotate3D(1.4,vec3(1.,1.,1.))*p), 0.123);
-    // return smin_op(smin_op(fractal_de127(p), fractal_de130(rotate3D(2.3,vec3(1.,1.,1.))*p*4.)/4., 0.04), fractal_de195(rotate3D(0.2*time, vec3(1,2,1))*(p-vec3(0,1,0))), 0.1);
-    // return smin_op(fractal_de6(p), fractal_de193(p), 0.385);
-    // return smin_op(screw_de(p), fractal_de26(p), 0.333);
-    // return old_de(p);
 }
 
 
@@ -1891,10 +1917,10 @@ float dmin = 1e10; // minimum distance initially large
 float raymarch(vec3 ro, vec3 rd) {
     float d0 = 0.0, d1 = 0.0;
     for(int i = 0; i < MAX_STEPS; i++) {
-        vec3 p = ro + rd * d0;      // point for distance query from parametric form
-        d1 = de(p); d0 += d1;       // increment distance by de evaluated at p
-        dmin = min( dmin, d1);      // tracking minimum distance
-        num_steps++;                // increment step count
+        vec3 p = ro + rd * d0;        // point for distance query from parametric form
+        d1 = de(p); d0 += 0.618 * d1; // increment distance by de evaluated at p, scaled by an understepping factor
+        dmin = min( dmin, d1);        // tracking minimum distance
+        num_steps++;                  // increment step count
         if(d0 > MAX_DIST || d1 < EPSILON || i == (MAX_STEPS-1)) return d0; // return the final ray distance
     }
 }

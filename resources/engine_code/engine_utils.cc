@@ -339,6 +339,21 @@ void engine::gl_setup() {
     glVertexAttribPointer(points_attrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
   }
 
+	// texture buffer breakdown:
+		// 0: render texture - holds result of raycast + dither steps
+		// 1: bayer dither texture
+		// 2: blue noise dither texture
+
+	// todo - 3x single channel, for atomics:
+		// GLuint RGBParadeAccumulators[ 3 ];
+		// 3: red parade histogram graph
+		// 4: green parade histogram graph
+		// 5: blue parade histogram graph
+
+	// todo - image buffer to read and combine to display - 3 channel
+		// GLuint RGBParadePresentTex;
+		// 6: composite parade graph
+
 //  ╦═╗┌─┐┌┐┌┌┬┐┌─┐┬─┐  ╔╦╗┌─┐─┐ ┬┌┬┐┬ ┬┬─┐┌─┐
 //  ╠╦╝├┤ │││ ││├┤ ├┬┘   ║ ├┤ ┌┴┬┘ │ │ │├┬┘├┤
 //  ╩╚═└─┘┘└┘─┴┘└─┘┴└─   ╩ └─┘┴ └─ ┴ └─┘┴└─└─┘
@@ -414,19 +429,60 @@ void engine::gl_setup() {
     // glBindImageTexture(2, dither_blue, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
   }
 
+
+
+
+
+	// RGBParadeAccumulators[ 3 ]
+	// 3x 1-channel [ buffers 3, 4, 5 ]
+	glGenTextures( 3, &RGBParadeAccumulators[ 0 ] );
+	glActiveTexture( GL_TEXTURE0 + 3 );
+	glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 0 ] );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL );
+	glBindImageTexture( 3, RGBParadeAccumulators[ 0 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+	glActiveTexture( GL_TEXTURE0 + 4 );
+	glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 1 ] );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL );
+	glBindImageTexture( 4, RGBParadeAccumulators[ 1 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+	glActiveTexture( GL_TEXTURE0 + 5 );
+	glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 2 ] );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, NULL );
+	glBindImageTexture( 5, RGBParadeAccumulators[ 2 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+
+	// RGBParadePresentTex
+	// 1x 3-channel [ buffer 6 ]
+	glGenTextures( 1, &RGBParadePresentTex ); // using dual texture/image interface - image for write, tex for filtered read
+	glActiveTexture( GL_TEXTURE0 + 6 );
+	glBindTexture( GL_TEXTURE_2D, RGBParadePresentTex );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, NULL );
+	glBindImageTexture( 6, RGBParadePresentTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8 );
+
+
+
 //  ╔═╗┌─┐┌┬┐┌─┐┬ ┬┌┬┐┌─┐  ╔═╗┬ ┬┌─┐┌┬┐┌─┐┬─┐┌─┐
 //  ║  │ ││││├─┘│ │ │ ├┤   ╚═╗├─┤├─┤ ││├┤ ├┬┘└─┐
 //  ╚═╝└─┘┴ ┴┴  └─┘ ┴ └─┘  ╚═╝┴ ┴┴ ┴─┴┘└─┘┴└─└─┘
-  {// raymarch shader
-    cout << "compiling raymarch shader... " << std::flush;
-    raymarch_shader = CShader("resources/engine_code/shaders/raymarch.cs.glsl").Program;
-    cout << "done." << endl << std::flush;
+	{// raymarch shader
+		cout << "compiling raymarch shader... " << std::flush;
+		raymarch_shader = CShader("resources/engine_code/shaders/raymarch.cs.glsl").Program;
+		cout << "done." << endl << std::flush;
 
-    // monolithicc dither shader
-    // contains all color space conversions, and the bitcrush logic
-    cout << "compiling dither shader... " << std::flush;
-    dither_shader = CShader("resources/engine_code/shaders/dither.cs.glsl").Program;
-    cout << "done." << endl << std::flush;
+		// monolithicc dither shader
+		// contains all color space conversions, and the bitcrush logic
+		cout << "compiling dither shader... " << std::flush;
+		dither_shader = CShader("resources/engine_code/shaders/dither.cs.glsl").Program;
+		cout << "done." << endl << std::flush;
+
+		cout << "compiling RGB parade shaders... " << std::flush;
+		RGBParadeComputeShader = CShader( "resources/engine_code/shaders/RGBParadeCompute.cs.glsl" );
+		RGBParadeCompositeShader = CShader( "resources/engine_code/shaders/RGBParadeComposite.cs.glsl" );
+		cout << "done." << endl << std::flush;
+
   }
 }
 
@@ -619,7 +675,7 @@ void engine::editor_window(){
   if(ImGui::SmallButton(" Save "))
   {
     std::ofstream file("resources/engine_code/shaders/raymarch.cs.glsl");
-    std::string savetext(editor.GetText());
+    std::string savetext( editor.GetText() );
     file << savetext;
   }
 
