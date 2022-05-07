@@ -479,8 +479,8 @@ void engine::gl_setup() {
 		cout << "done." << endl << std::flush;
 
 		cout << "compiling RGB parade shaders... " << std::flush;
-		RGBParadeComputeShader = CShader( "resources/engine_code/shaders/RGBParadeCompute.cs.glsl" );
-		RGBParadeCompositeShader = CShader( "resources/engine_code/shaders/RGBParadeComposite.cs.glsl" );
+		RGBParadeComputeShader = CShader( "resources/engine_code/shaders/RGBParadeCompute.cs.glsl" ).Program;
+		RGBParadeCompositeShader = CShader( "resources/engine_code/shaders/RGBParadeComposite.cs.glsl" ).Program;
 		cout << "done." << endl << std::flush;
 
   }
