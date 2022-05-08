@@ -1,116 +1,6 @@
 #include "engine.h"
 // This contains the lower level code
 
-// TinyOBJLoader - This has to be included in a .cc file, so it's here for right
-// now
-#define TINYOBJLOADER_IMPLEMENTATION
-// #define TINYOBJLOADER_USE_DOUBLE
-#include "../TinyOBJLoader/tiny_obj_loader.h"
-// tinyobj callbacks
-//  user_data is passed in as void, then cast as 'engine' class to push
-//  vertices, normals, texcoords, index, material info
-void vertex_cb(void *user_data, float x, float y, float z, float w) {
-  engine *t = reinterpret_cast<engine *>(user_data);
-
-  t->vertices.push_back(glm::vec4(x, y, z, w));
-}
-
-void normal_cb(void *user_data, float x, float y, float z) {
-  engine *t = reinterpret_cast<engine *>(user_data);
-
-  t->normals.push_back(glm::vec3(x, y, z));
-}
-
-void texcoord_cb(void *user_data, float x, float y, float z) {
-  engine *t = reinterpret_cast<engine *>(user_data);
-
-  t->texcoords.push_back(glm::vec3(x, y, z));
-}
-
-void index_cb(void *user_data, tinyobj::index_t *indices, int num_indices) {
-  engine *t = reinterpret_cast<engine *>(user_data);
-
-  if (num_indices == 3) // this is a triangle
-  {
-    // OBJ uses 1-indexing, convert to 0-indexing
-    t->triangle_indices.push_back(glm::ivec3(indices[0].vertex_index - 1,
-                                             indices[1].vertex_index - 1,
-                                             indices[2].vertex_index - 1));
-    t->normal_indices.push_back(glm::ivec3(indices[0].normal_index - 1,
-                                           indices[1].normal_index - 1,
-                                           indices[2].normal_index - 1));
-    t->texcoord_indices.push_back(glm::ivec3(indices[0].texcoord_index - 1,
-                                             indices[1].texcoord_index - 1,
-                                             indices[2].texcoord_index - 1));
-  }
-
-  // lines, points have a different number of indicies
-  //  might want to handle these
-}
-
-void usemtl_cb(void *user_data, const char *name, int material_idx) {
-  engine *t = reinterpret_cast<engine *>(user_data);
-  (void)t;
-}
-
-void mtllib_cb(void *user_data, const tinyobj::material_t *materials,
-               int num_materials) {
-  engine *t = reinterpret_cast<engine *>(user_data);
-  (void)t;
-}
-
-void group_cb(void *user_data, const char **names, int num_names) {
-  engine *t = reinterpret_cast<engine *>(user_data);
-  (void)t;
-}
-
-void object_cb(void *user_data, const char *name) {
-  engine *t = reinterpret_cast<engine *>(user_data);
-  (void)t;
-}
-
-// this is where the callbacks are used
-void engine::load_OBJ(std::string filename) {
-  tinyobj::callback_t cb;
-  cb.vertex_cb = vertex_cb;
-  cb.normal_cb = normal_cb;
-  cb.texcoord_cb = texcoord_cb;
-  cb.index_cb = index_cb;
-  cb.usemtl_cb = usemtl_cb;
-  cb.mtllib_cb = mtllib_cb;
-  cb.group_cb = group_cb;
-  cb.object_cb = object_cb;
-
-  std::string warn;
-  std::string err;
-
-  std::ifstream ifs(filename.c_str());
-  tinyobj::MaterialFileReader mtlReader(".");
-
-  bool ret =
-      tinyobj::LoadObjWithCallback(ifs, cb, this, &mtlReader, &warn, &err);
-
-  if (!warn.empty()) {
-    std::cout << "WARN: " << warn << std::endl;
-  }
-
-  if (!err.empty()) {
-    std::cerr << err << std::endl;
-  }
-
-  if (!ret) {
-    std::cerr << "Failed to parse .obj" << std::endl;
-  }
-
-  cout << "vertex list length: " << vertices.size() << endl;
-  cout << "normal list length: " << normals.size() << endl;
-  cout << "texcoord list length: " << texcoords.size() << endl;
-
-  cout << "vertex index list length: " << triangle_indices.size() << endl;
-  cout << "normal index length: " << normal_indices.size() << endl;
-  cout << "texcoord index length: " << texcoord_indices.size() << endl;
-}
-
 void engine::create_window() {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     printf("Error: %s\n", SDL_GetError());
@@ -365,7 +255,6 @@ void engine::gl_setup() {
     glGenTextures(1, &display_texture);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_RECTANGLE, display_texture);
-    // glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image_data[0]);
     glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, WIDTH, HEIGHT, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &image_data[0]);
     glBindImageTexture(0, display_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
   }
@@ -430,8 +319,8 @@ void engine::gl_setup() {
   }
 
 
-
-
+	std::vector< uint8_t > imageData;
+	imageData.resize( WIDTH * HEIGHT * 4, 255 );
 
 	// RGBParadeAccumulators[ 3 ]
 	// 3x 1-channel [ buffers 3, 4, 5 ]
@@ -457,10 +346,10 @@ void engine::gl_setup() {
 	glGenTextures( 1, &RGBParadePresentTex ); // using dual texture/image interface - image for write, tex for filtered read
 	glActiveTexture( GL_TEXTURE0 + 6 );
 	glBindTexture( GL_TEXTURE_2D, RGBParadePresentTex );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, NULL );
-	glBindImageTexture( 6, RGBParadePresentTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8 );
+	// glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	// glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, WIDTH, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[ 0 ] );
+	glBindImageTexture( 6, RGBParadePresentTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
 
 
@@ -852,6 +741,36 @@ void engine::draw_everything() {
   dither_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(t_dither_end - t_dither_start).count();
 
 
+	static std::vector< uint8_t > imageData;
+	static bool firstTime = false;
+	if( firstTime ) {
+		imageData.resize( WIDTH * HEIGHT * 4, 0 );
+		firstTime = false;
+	} else {
+		// clear the buffers
+
+		glActiveTexture( GL_TEXTURE0 + 3 );
+		glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 0 ] );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &imageData[ 0 ] );
+		glBindImageTexture( 3, RGBParadeAccumulators[ 0 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+		glActiveTexture( GL_TEXTURE0 + 4 );
+		glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 1 ] );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &imageData[ 0 ] );
+		glBindImageTexture( 4, RGBParadeAccumulators[ 1 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+		glActiveTexture( GL_TEXTURE0 + 5 );
+		glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 2 ] );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &imageData[ 0 ] );
+		glBindImageTexture( 5, RGBParadeAccumulators[ 2 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+		glActiveTexture( GL_TEXTURE0 + 6 );
+		glBindTexture( GL_TEXTURE_2D, RGBParadePresentTex );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, WIDTH, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[ 0 ] );
+		glBindImageTexture( 6, RGBParadePresentTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+
+		glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+	}
 
 	// dispatch the parade shaders
 	glUseProgram( RGBParadeComputeShader );
@@ -861,6 +780,7 @@ void engine::draw_everything() {
 	glUseProgram( RGBParadeCompositeShader );
 	glDispatchCompute( WIDTH / 8, 256 / 8, 1 ); // images only 256px tall, for intensity bins
 	glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
 
   //  ╔╦╗┬┌─┐┌─┐┬  ┌─┐┬ ┬
   //   ║║│└─┐├─┘│  ├─┤└┬┘

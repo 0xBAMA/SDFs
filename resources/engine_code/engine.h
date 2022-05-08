@@ -178,20 +178,6 @@ private:
 	void quit();
 	bool pquit = false;
 
-public:
-// OBJ data (per mesh)
-	void load_OBJ(std::string filename);
-
-	// this may vary in length
-	std::vector<glm::vec4> vertices;
-	std::vector<glm::vec3> normals;
-	std::vector<glm::vec3> texcoords;
-
-	// these should all be the same length, the number of triangles
-	std::vector<glm::ivec3> triangle_indices;
-	std::vector<glm::ivec3> normal_indices;
-	std::vector<glm::ivec3> texcoord_indices;
-
 };
 
 #endif

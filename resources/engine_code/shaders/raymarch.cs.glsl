@@ -10,7 +10,7 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 #define MAX_DIST  100.
 #define EPSILON   0.0015 // closest surface distance
 
-#define AA 2
+#define AA 1
 
 uniform vec3 basic_diffuse;
 uniform vec3 fog_color;
@@ -2127,8 +2127,8 @@ void main()
         vec3 sresult3 = vec3(0.);
 
         sresult1 = phong_lighting(1, hitpos, normal, ro) * flickerfactor1;
-        sresult2 = phong_lighting(2, hitpos, normal, ro) * flickerfactor2;
-        sresult3 = phong_lighting(3, hitpos, normal, ro) * flickerfactor3;
+        // sresult2 = phong_lighting(2, hitpos, normal, ro) * flickerfactor2;
+        // sresult3 = phong_lighting(3, hitpos, normal, ro) * flickerfactor3;
 
         // vec3 temp = ((norm(hitpos)/2.)+vec3(0.5)); // visualizing normal vector
 

@@ -20,4 +20,8 @@ void main() {
 	// clamp and writeback - consider doing something logarithmic
 	accumulates = clamp( accumulates, uvec4( 0 ), uvec4( 255 ) );
 	imageStore( RGBCompositeOutput, ivec2( gl_GlobalInvocationID.xy ), accumulates );
+
+	imageStore( RAccumulate, ivec2( gl_GlobalInvocationID.xy ), uvec4( 0 ) );
+	imageStore( GAccumulate, ivec2( gl_GlobalInvocationID.xy ), uvec4( 0 ) );
+	imageStore( BAccumulate, ivec2( gl_GlobalInvocationID.xy ), uvec4( 0 ) );
 }
