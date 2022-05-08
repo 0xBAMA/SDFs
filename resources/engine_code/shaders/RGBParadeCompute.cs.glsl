@@ -11,11 +11,7 @@ void main() {
 
 	if( !( any( greaterThan( gl_GlobalInvocationID.xy, imageSize( current ).xy ) ) || any( lessThanEqual( gl_GlobalInvocationID.xy, ivec2( 0 ) ) ) ) ) {
 		// passes bounds check
-
-		// set alpha channel with the max of r,g,b
-			// sample this as overlayfor the rendered output
-
-		uvec3 intensities = imageLoad( current, gl_GlobalInvocationID.xy ).xyz;
+		uvec3 intensities = imageLoad( current, ivec2( gl_GlobalInvocationID.xy ) ).xyz;
 
 		uint writeX = gl_GlobalInvocationID.x;
 		imageAtomicAdd(   redComposite, ivec2( writeX, intensities.r ), 1 );

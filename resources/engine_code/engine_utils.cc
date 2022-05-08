@@ -826,7 +826,7 @@ void engine::draw_everything() {
     //  ═╩╝┴ ┴ ┴ ┴└─┘┴└─
     // invoke the dither shader
     //  - needs to know mode, and also frame number to cycle the blue noise
-    glUseProgram(dither_shader);
+		glUseProgram(dither_shader);
 
     static unsigned int frame = 0;
     frame++; // increment
@@ -843,14 +843,24 @@ void engine::draw_everything() {
     // num_bits
 
     // invoke on the GPU
-    glDispatchCompute( WIDTH/8, HEIGHT/8, 1 );
+		glDispatchCompute( WIDTH/8, HEIGHT/8, 1 );
 
     // sync to ensure the dithered image is in the texture
-    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+		glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
   }
   auto t_dither_end = std::chrono::high_resolution_clock::now();
   dither_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(t_dither_end - t_dither_start).count();
 
+
+
+	// dispatch the parade shaders
+	glUseProgram( RGBParadeComputeShader );
+	glDispatchCompute( WIDTH / 8, HEIGHT / 8, 1 );
+	glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+	glUseProgram( RGBParadeCompositeShader );
+	glDispatchCompute( WIDTH / 8, 256 / 8, 1 ); // images only 256px tall, for intensity bins
+	glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
   //  ╔╦╗┬┌─┐┌─┐┬  ┌─┐┬ ┬
   //   ║║│└─┐├─┘│  ├─┤└┬┘
