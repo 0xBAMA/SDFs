@@ -33,7 +33,7 @@ target_link_libraries(opengl INTERFACE OpenGL::GL)
 
 
 # FastNoise2
-add_subdirectory(${PROJECT_SOURCE_DIR}/resources/FastNoise2)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/resources/FastNoise2)
 
 # this is for ImGUI
 add_library(imgui
