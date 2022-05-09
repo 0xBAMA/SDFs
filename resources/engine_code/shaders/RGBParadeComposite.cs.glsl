@@ -8,19 +8,30 @@ layout( binding = 5, r32ui ) uniform uimage2D BAccumulate;
 // sample this as overlayfor the rendered output
 layout( binding = 6, rgba8ui ) uniform uimage2D RGBCompositeOutput;
 
+float mapping( uint val ){
+	return log( float( val ) / 10.0 ) + 0.375;
+}
+
 void main() {
 	uvec4 accumulates;
 	accumulates.r = imageLoad( RAccumulate, ivec2( gl_GlobalInvocationID.xy ) ).r;
 	accumulates.g = imageLoad( GAccumulate, ivec2( gl_GlobalInvocationID.xy ) ).r;
 	accumulates.b = imageLoad( BAccumulate, ivec2( gl_GlobalInvocationID.xy ) ).r;
+	accumulates.a = max( max( accumulates.r, accumulates.g ), accumulates.b ); // set alpha channel with the max of r,g,b
 
-	// set alpha channel with the max of r,g,b
-	accumulates.a = max( max( accumulates.r, accumulates.g ), accumulates.b );
+	vec4 Faccumulates; // logarithmic remapping, to try to keep these in visible ranges
+	Faccumulates.r = mapping( accumulates.r );
+	Faccumulates.g = mapping( accumulates.g );
+	Faccumulates.b = mapping( accumulates.b );
+	Faccumulates.a = mapping( accumulates.a );
 
-	// clamp and writeback - consider doing something logarithmic
-	accumulates = clamp( accumulates, uvec4( 0 ), uvec4( 255 ) );
+	Faccumulates = clamp( Faccumulates, vec4( 0.0 ), vec4( 1.0 ) );
+	accumulates = uvec4( Faccumulates * 255 );
+
+	// writeback
 	imageStore( RGBCompositeOutput, ivec2( gl_GlobalInvocationID.xy ), accumulates );
 
+	// reset the accumulator buffers to zero
 	imageStore( RAccumulate, ivec2( gl_GlobalInvocationID.xy ), uvec4( 0 ) );
 	imageStore( GAccumulate, ivec2( gl_GlobalInvocationID.xy ), uvec4( 0 ) );
 	imageStore( BAccumulate, ivec2( gl_GlobalInvocationID.xy ), uvec4( 0 ) );

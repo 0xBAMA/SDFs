@@ -345,10 +345,10 @@ void engine::gl_setup() {
 	// 1x 3-channel [ buffer 6 ]
 	glGenTextures( 1, &RGBParadePresentTex ); // using dual texture/image interface - image for write, tex for filtered read
 	glActiveTexture( GL_TEXTURE0 + 6 );
-	glBindTexture( GL_TEXTURE_2D, RGBParadePresentTex );
-	// glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	// glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, WIDTH, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[ 0 ] );
+	glBindTexture( GL_TEXTURE_RECTANGLE, RGBParadePresentTex );
+	glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, WIDTH, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[ 0 ] );
 	glBindImageTexture( 6, RGBParadePresentTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
 
@@ -478,7 +478,10 @@ void engine::control_window()
     ImGui::Text("");
     ImGui::Text("");
 
+		static int picker = 0;
+		ImGui::SliderInt( "tex picker", &picker, 0, 15 );
 
+		ImGui::Image( ( void * )( intptr_t ) picker, ImVec2( ImGui::GetWindowSize().x, 256 ) );
 
     ImGui::EndTabItem();
   }
@@ -741,36 +744,36 @@ void engine::draw_everything() {
   dither_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(t_dither_end - t_dither_start).count();
 
 
-	static std::vector< uint8_t > imageData;
-	static bool firstTime = false;
-	if( firstTime ) {
-		imageData.resize( WIDTH * HEIGHT * 4, 0 );
-		firstTime = false;
-	} else {
-		// clear the buffers
-
-		glActiveTexture( GL_TEXTURE0 + 3 );
-		glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 0 ] );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &imageData[ 0 ] );
-		glBindImageTexture( 3, RGBParadeAccumulators[ 0 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
-
-		glActiveTexture( GL_TEXTURE0 + 4 );
-		glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 1 ] );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &imageData[ 0 ] );
-		glBindImageTexture( 4, RGBParadeAccumulators[ 1 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
-
-		glActiveTexture( GL_TEXTURE0 + 5 );
-		glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 2 ] );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &imageData[ 0 ] );
-		glBindImageTexture( 5, RGBParadeAccumulators[ 2 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
-
-		glActiveTexture( GL_TEXTURE0 + 6 );
-		glBindTexture( GL_TEXTURE_2D, RGBParadePresentTex );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, WIDTH, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[ 0 ] );
-		glBindImageTexture( 6, RGBParadePresentTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
-
-		glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
-	}
+	// static std::vector< uint8_t > imageData;
+	// static bool firstTime = false;
+	// if( firstTime ) {
+	// 	imageData.resize( WIDTH * HEIGHT * 4, 0 );
+	// 	firstTime = false;
+	// } else {
+	// 	// clear the buffers
+	// 	//
+	// 	// glActiveTexture( GL_TEXTURE0 + 3 );
+	// 	// glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 0 ] );
+	// 	// glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &imageData[ 0 ] );
+	// 	// glBindImageTexture( 3, RGBParadeAccumulators[ 0 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+	// 	//
+	// 	// glActiveTexture( GL_TEXTURE0 + 4 );
+	// 	// glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 1 ] );
+	// 	// glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &imageData[ 0 ] );
+	// 	// glBindImageTexture( 4, RGBParadeAccumulators[ 1 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+	// 	//
+	// 	// glActiveTexture( GL_TEXTURE0 + 5 );
+	// 	// glBindTexture( GL_TEXTURE_2D, RGBParadeAccumulators[ 2 ] );
+	// 	// glTexImage2D( GL_TEXTURE_2D, 0, GL_R32UI, WIDTH, 256, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, &imageData[ 0 ] );
+	// 	// glBindImageTexture( 5, RGBParadeAccumulators[ 2 ], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+	// 	//
+	// 	// glActiveTexture( GL_TEXTURE0 + 6 );
+	// 	// glBindTexture( GL_TEXTURE_2D, RGBParadePresentTex );
+	// 	// glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, WIDTH, 256, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[ 0 ] );
+	// 	// glBindImageTexture( 6, RGBParadePresentTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+	// 	//
+	// 	// glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+	// }
 
 	// dispatch the parade shaders
 	glUseProgram( RGBParadeComputeShader );
@@ -791,6 +794,8 @@ void engine::draw_everything() {
   glUseProgram(display_shader);
   glBindVertexArray(display_vao);
   glBindBuffer(GL_ARRAY_BUFFER, display_vbo);
+
+	glUniform1i( glGetUniformLocation( display_shader, "paradePresent" ), 6 );
 
   // clear the screen - fog color? opacity falloff with depth?
   glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w); // from hsv picker
