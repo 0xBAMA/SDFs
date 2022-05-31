@@ -141,7 +141,9 @@ private:
 	// position
 	glm::vec3 position = glm::vec3(1., 1., 1.);
 
-	glm::vec3 basis_x, basis_y, basis_z;
+	glm::vec3 basisX = glm::vec3( 1.0, 0.0, 0.0 );
+	glm::vec3 basisY = glm::vec3( 0.0, 1.0, 0.0 );
+	glm::vec3 basisZ = glm::vec3( 0.0, 0.0, 1.0 );
 
 	float gamma_correction = 1.244;
 	int current_tmode = 6;

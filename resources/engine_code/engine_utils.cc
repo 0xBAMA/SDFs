@@ -622,15 +622,17 @@ void engine::draw_everything() {
   // glm::quat rotationx = glm::angleAxis(rotation_about_x, basis_x);
   // glm::quat rotationy = glm::angleAxis(rotation_about_y, basis_y);
   // glm::quat rotationz = glm::angleAxis(rotation_about_z, basis_z);
-  glm::quat rotationx = glm::angleAxis(rotation_about_x, glm::vec3(1,0,0));
-  glm::quat rotationy = glm::angleAxis(rotation_about_y, glm::vec3(0,1,0));
-  glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1));
-  glm::mat4 rotation = glm::toMat4(rotationy * rotationx * rotationz);
 
-  // create the basis vectors - these are more static now being retained as member variables
-  basis_x = (rotation*glm::vec4(1,0,0,0)).xyz();
-  basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
-  basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
+	// no
+  // glm::quat rotationx = glm::angleAxis(rotation_about_x, glm::vec3(1,0,0));
+  // glm::quat rotationy = glm::angleAxis(rotation_about_y, glm::vec3(0,1,0));
+  // glm::quat rotationz = glm::angleAxis(rotation_about_z, glm::vec3(0,0,1));
+  // glm::mat4 rotation = glm::toMat4(rotationy * rotationx * rotationz);
+	//
+  // // create the basis vectors - these are more static now being retained as member variables
+  // basis_x = (rotation*glm::vec4(1,0,0,0)).xyz();
+  // basis_y = (rotation*glm::vec4(0,1,0,0)).xyz();
+  // basis_z = (rotation*glm::vec4(0,0,1,0)).xyz();
 
   auto t_raymarch_start = std::chrono::high_resolution_clock::now();
   if(raymarch_stage){ // toggles invocation of the raymarch step
@@ -641,9 +643,9 @@ void engine::draw_everything() {
     glUseProgram(raymarch_shader);
 
     // send basis vectors to the raymarch shader
-    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_x"), basis_x.x, basis_x.y, basis_x.z);
-    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_y"), basis_y.x, basis_y.y, basis_y.z);
-    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_z"), basis_z.x, basis_z.y, basis_z.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_x"), basisX.x, basisX.y, basisX.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_y"), basisY.x, basisY.y, basisY.z);
+    glUniform3f(glGetUniformLocation(raymarch_shader, "basis_z"), basisZ.x, basisZ.y, basisZ.z);
 
     // basic diffuse color
     glUniform3f(glGetUniformLocation(raymarch_shader, "basic_diffuse"), basic_diffuse.x, basic_diffuse.y, basic_diffuse.z);
@@ -888,42 +890,86 @@ void engine::draw_everything() {
       }
 
 
-      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w)
-        rotation_about_x -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
+			// no
+      // if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w)
+      //   rotation_about_x -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
+			//
+      // if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_s)
+      //   rotation_about_x += SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
+			//
+      // if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a)
+      //   rotation_about_y -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
+			//
+      // if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_d)
+      //   rotation_about_y += SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
+			//
+      // if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_e)
+      //   rotation_about_z -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
+			//
+      // if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q)
+      //   rotation_about_z += SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
-      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_s)
-        rotation_about_x += SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
 
-      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a)
-        rotation_about_y -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
+			// quaternion based rotation via retained state in the basis vectors - much easier to use than the arbitrary euler angles
+			if( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_w ) {
+				glm::quat rot = glm::angleAxis( SDL_GetModState() & KMOD_SHIFT ? -0.1f : -0.005f, basisX );	// basisX is the axis, therefore remains untransformed
+				basisY = ( rot * glm::vec4( basisY, 0.0f )).xyz();
+				basisZ = ( rot * glm::vec4( basisZ, 0.0f )).xyz();
+			}
+			if( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_s ) {
+				glm::quat rot = glm::angleAxis( SDL_GetModState() & KMOD_SHIFT ?  0.1f :  0.005f, basisX );
+				basisY = ( rot * glm::vec4( basisY, 0.0f )).xyz();
+				basisZ = ( rot * glm::vec4( basisZ, 0.0f )).xyz();
+			}
+			if( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_a ) {
+				glm::quat rot = glm::angleAxis( SDL_GetModState() & KMOD_SHIFT ? -0.1f : -0.005f, basisY );	// same as above, but basisY is the axis
+				basisX = ( rot * glm::vec4( basisX, 0.0f )).xyz();
+				basisZ = ( rot * glm::vec4( basisZ, 0.0f )).xyz();
+			}
+			if( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_d ) {
+				glm::quat rot = glm::angleAxis( SDL_GetModState() & KMOD_SHIFT ?  0.1f :  0.005f, basisY );
+				basisX = ( rot * glm::vec4( basisX, 0.0f )).xyz();
+				basisZ = ( rot * glm::vec4( basisZ, 0.0f )).xyz();
+			}
+			if( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q ) {
+				glm::quat rot = glm::angleAxis( SDL_GetModState() & KMOD_SHIFT ? -0.1f : -0.005f, basisZ ); // and again for basisZ
+				basisX = ( rot * glm::vec4( basisX, 0.0f )).xyz();
+				basisY = ( rot * glm::vec4( basisY, 0.0f )).xyz();
+			}
+			if( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_e ) {
+				glm::quat rot = glm::angleAxis( SDL_GetModState() & KMOD_SHIFT ?  0.1f :  0.005f, basisZ );
+				basisX = ( rot * glm::vec4( basisX, 0.0f )).xyz();
+				basisY = ( rot * glm::vec4( basisY, 0.0f )).xyz();
+			}
 
-      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_d)
-        rotation_about_y += SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
-
-      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_e)
-        rotation_about_z -= SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
-
-      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q)
-        rotation_about_z += SDL_GetModState() & KMOD_SHIFT ? 0.1 : 0.03;
-
+			// f to reset basis, F to reset basis and home to origin
+			if( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_f ) {
+				if( SDL_GetModState() & KMOD_SHIFT ) {
+					position = glm::vec3( 0.0, 0.0, 0.0 );
+				}
+				// reset to default basis
+				basisX = glm::vec3( 1.0, 0.0, 0.0 );
+				basisY = glm::vec3( 0.0, 1.0, 0.0 );
+				basisZ = glm::vec3( 0.0, 0.0, 1.0 );
+			}
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_UP)
-        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_z;
+        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisZ;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DOWN)
-        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_z;
+        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisZ;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RIGHT)
-        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_x;
+        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisX;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_LEFT)
-        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_x;
+        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisX;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEUP)
-        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_y;
+        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisZ;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEDOWN)
-        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basis_y;
+        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisZ;
     }
   }
   auto t_loop_end =  std::chrono::high_resolution_clock::now();
