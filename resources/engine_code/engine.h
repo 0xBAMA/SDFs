@@ -163,6 +163,7 @@ private:
 	void end_imgui();
 	void control_window();
 	void editor_window( bool &recompile );
+	void validatorWindow();
 
 	// performance reporting
 	int dither_microseconds;

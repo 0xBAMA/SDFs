@@ -582,6 +582,79 @@ void engine::editor_window( bool &recompile ){
   ImGui::End();
 }
 
+void engine::validatorWindow() {
+	ImGui::Begin( "Formatter", NULL, 0 );
+	static char Type[ 128 ] = "Category";
+	static char Author[ 128 ] = "Author";
+	ImGui::InputText( "Category", Type, 128 );
+	ImGui::InputText( "Author Name", Author, 128 );
+
+	static TextEditor editor;
+	// static auto lang = TextEditor::LanguageDefinition::CPlusPlus();
+	static auto lang = TextEditor::LanguageDefinition::GLSL();
+	editor.SetLanguageDefinition( lang );
+
+	auto cpos = editor.GetCursorPosition();
+	// editor.SetPalette(TextEditor::GetLightPalette());
+	editor.SetPalette( TextEditor::GetDarkPalette() );
+	// editor.SetPalette(TextEditor::GetRetroBluePalette());
+
+	// static const char *fileToEdit = "resources/engineCode/shaders/blit.vs.glsl";
+	// std::ifstream t( fileToEdit );
+	static bool initted = false;
+	if ( !initted ) {
+		editor.SetLanguageDefinition( lang );
+		// if ( t.good() ) {
+			// editor.SetText( std::string( ( std::istreambuf_iterator<char>(t)), std::istreambuf_iterator< char >() ) );
+			editor.SetText( std::string( "" ) );
+			initted = true;
+		// }
+	}
+
+	// add dropdown for different shaders?
+	ImGui::Text( "%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1,
+							cpos.mColumn + 1, editor.GetTotalLines(),
+							editor.IsOverwrite() ? "Ovr" : "Ins",
+							editor.CanUndo() ? "*" : " ",
+							editor.GetLanguageDefinition().mName.c_str(),
+							// TextEditor::LanguageDefinition::GLSL(),
+							std::string( "Working Scratch Space" ).c_str() );
+
+	ImGui::SameLine();
+	ImGui::Text("                          ");
+	ImGui::SameLine();
+	if( ImGui::SmallButton( "Dump to CLI" ) ) {
+
+		// parse string - change tab to two spaces, newline to \n, etc
+		std::string fromEditor( editor.GetText() );
+		std::string toCLI;
+
+		for ( auto c : fromEditor ) {
+			if ( c == '\t' ){
+				toCLI += std::string( "  " );
+			} else if ( c == '\n' ) {
+				toCLI += std::string( "\\n" );
+			} else {
+				toCLI += c;
+			}
+    }
+
+
+		// put it on the command line, along with the other accoutrement
+		cout << endl << endl;
+		cout << "{" << endl;
+		cout << "  \"category\": \"" << Author << "\"," << endl;
+		cout << "  \"author\": \"" << Type << "\"," << endl;
+		cout << "  \"code\": \"" << toCLI << "\"," << endl;
+		cout << "  \"image\": \"images/DEC/\"" << endl;
+		cout << "}," << endl << endl;
+
+	}
+
+	editor.Render( "Formatter" );
+	ImGui::End();
+}
+
 void engine::animate_lights(float t){
 
   // use some perlin noise to animate brightness and move position around a little
@@ -833,6 +906,12 @@ void engine::draw_everything() {
     quit_conf(&quitconfirm); // show quit confirm window, if relevant
     control_window(); // do the controls window
     editor_window( shaderRecompile ); // do the window with the text editor
+		validatorWindow(); // for formatting the output, to be used in the DEC
+
+		static bool showDemoWindow = true;
+		if ( showDemoWindow )
+			ImGui::ShowDemoWindow( &showDemoWindow );
+
 
     end_imgui(); // put ImGui stuff in the back buffer
   }
