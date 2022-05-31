@@ -908,9 +908,9 @@ void engine::draw_everything() {
     editor_window( shaderRecompile ); // do the window with the text editor
 		validatorWindow(); // for formatting the output, to be used in the DEC
 
-		static bool showDemoWindow = true;
-		if ( showDemoWindow )
-			ImGui::ShowDemoWindow( &showDemoWindow );
+		// static bool showDemoWindow = true;
+		// if ( showDemoWindow )
+		// 	ImGui::ShowDemoWindow( &showDemoWindow );
 
 
     end_imgui(); // put ImGui stuff in the back buffer
