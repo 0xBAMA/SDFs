@@ -417,26 +417,32 @@ void engine::control_window()
     ImGui::Text("");
     ImGui::SliderFloat("Light 1 Orbit Radius", &orbit1, 0.1, 100.0);
     // what should the visibility only/phong switcher look like?
-    ImGui::Text("");
-    ImGui::ColorEdit3("Light 2 Diffuse", (float*)&lightCol2d);
-    ImGui::ColorEdit3("Light 2 Specular", (float*)&lightCol2s);
-    ImGui::SliderFloat("Light 2 Spec Power", &specpower2, 0.1, 200.0);
-    ImGui::SliderFloat("Light 2 Shadow Sharpness", &shadow2, 0.1, 100.0);
-    ImGui::Text("");
-    ImGui::SliderFloat("Light 2 Orbit Radius", &orbit2, 0.1, 100.0);
-    ImGui::Text("");
-    ImGui::ColorEdit3("Light 3 Diffuse", (float*)&lightCol3d);
-    ImGui::ColorEdit3("Light 3 Specular", (float*)&lightCol3s);
-    ImGui::SliderFloat("Light 3 Spec Power", &specpower3, 0.1, 200.0);
-    ImGui::SliderFloat("Light 3 Shadow Sharpness", &shadow3, 0.1, 100.0);
-    ImGui::Text("");
-    ImGui::SliderFloat("Light 3 Orbit Radius", &orbit3, 0.1, 100.0);
-    ImGui::Text("");
+		// only light 1 is implemented at this time
+    // ImGui::Text("");
+    // ImGui::ColorEdit3("Light 2 Diffuse", (float*)&lightCol2d);
+    // ImGui::ColorEdit3("Light 2 Specular", (float*)&lightCol2s);
+    // ImGui::SliderFloat("Light 2 Spec Power", &specpower2, 0.1, 200.0);
+    // ImGui::SliderFloat("Light 2 Shadow Sharpness", &shadow2, 0.1, 100.0);
+    // ImGui::Text("");
+    // ImGui::SliderFloat("Light 2 Orbit Radius", &orbit2, 0.1, 100.0);
+    // ImGui::Text("");
+    // ImGui::ColorEdit3("Light 3 Diffuse", (float*)&lightCol3d);
+    // ImGui::ColorEdit3("Light 3 Specular", (float*)&lightCol3s);
+    // ImGui::SliderFloat("Light 3 Spec Power", &specpower3, 0.1, 200.0);
+    // ImGui::SliderFloat("Light 3 Shadow Sharpness", &shadow3, 0.1, 100.0);
+    // ImGui::Text("");
+    // ImGui::SliderFloat("Light 3 Orbit Radius", &orbit3, 0.1, 100.0);
+    // ImGui::Text("");
 
     ImGui::EndTabItem();
   }
   if(ImGui::BeginTabItem("Render Settings"))
   {
+		ImGui::Text( "%f", time );
+		ImGui::SameLine();
+		if( ImGui::SmallButton( "Reset Timer" ) ) {
+			time = 0.0;
+		}
     ImGui::Text("");
     ImGui::SliderFloat(" FoV ", &fov, 0.001, 4.);
     ImGui::Text("");
@@ -699,7 +705,8 @@ void engine::draw_everything() {
     glUniform3f(glGetUniformLocation(raymarch_shader, "ray_origin"), position.x, position.y, position.z);
 
     // send a quantitiy representing time
-    glUniform1f(glGetUniformLocation(raymarch_shader, "time"), SDL_GetTicks() * 0.001);
+		time += 0.001;
+    glUniform1f(glGetUniformLocation(raymarch_shader, "time"), time );
 
     // invoke the shader on the GPU
     glDispatchCompute( WIDTH/8, HEIGHT/8, 1 ); //workgroup is 8x8x1, so divide each x and y by 8

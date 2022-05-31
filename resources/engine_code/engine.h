@@ -102,6 +102,8 @@ private:
 	float orbitrate3 = 1.8;
 	float phaseoffset3 = 4.4;
 
+	float time = 0.0;
+
 	// diffuse light colors
 	glm::vec3 lightCol1d = glm::vec3( 0.6f, 0.6f, 0.6f);
 	glm::vec3 lightCol2d = glm::vec3( 0.75f, 0.3f, 0.0f);
@@ -125,8 +127,8 @@ private:
 
 	// light positions
 	glm::vec3 lightPos1 = glm::vec3( 0.1, 0., 0.);
-    glm::vec3 lightPos2 = glm::vec3( 0., 0.1, 0.);
-    glm::vec3 lightPos3 = glm::vec3( 0., 0., 0.1);
+	glm::vec3 lightPos2 = glm::vec3( 0., 0.1, 0.);
+	glm::vec3 lightPos3 = glm::vec3( 0., 0., 0.1);
 
 	float AO_scale = 0.75;
 	float depth_scale = 8.;
@@ -141,9 +143,9 @@ private:
 
 	float gamma_correction = 1.244;
 	int current_tmode = 6;
-    int current_colorspace = CHROMAMAX;
-    int current_noise_func = BAYER;
-    int current_dither_mode = EXPONENTIAL;
+	int current_colorspace = CHROMAMAX;
+	int current_noise_func = BAYER;
+	int current_dither_mode = EXPONENTIAL;
 
 	int num_bits = 4;
 
