@@ -512,7 +512,7 @@ void engine::control_window()
   ImGui::End();
 }
 
-void engine::editor_window(){
+void engine::editor_window( bool &recompile ){
   static TextEditor editor;
   static auto lang = TextEditor::LanguageDefinition::GLSL();
 
@@ -538,11 +538,13 @@ void engine::editor_window(){
               editor.CanUndo() ? "*" : " ",
               editor.GetLanguageDefinition().mName.c_str(), fileToEdit);
 
+
+
   editor.Render("TextEditor", ImVec2(-FLT_MIN, total_screen_height / 2));
 
   ImGui::Text(" ");
   ImGui::SameLine();
-	if( ImGui::SmallButton( " Compile " ) ) {
+	if( ImGui::SmallButton( " Compile " ) || recompile ) {
 		// compile the shader
 		UShader shader = UShader( editor.GetText() );
 		cout << "Shader object declared" << endl;
@@ -554,12 +556,12 @@ void engine::editor_window(){
 			cout << std::string( shader.report ) << endl;
 		}
 
+		recompile = false;
   }
   ImGui::SameLine();
   ImGui::Text(" ");
   ImGui::SameLine();
-  if(ImGui::SmallButton(" Reload "))
-  {
+  if( ImGui::SmallButton(" Reload ") ) {
     std::ifstream t( fileToEdit );
     if (t.good()) {
       editor.SetText(std::string((std::istreambuf_iterator<char>(t)),
@@ -828,7 +830,7 @@ void engine::draw_everything() {
 
     quit_conf(&quitconfirm); // show quit confirm window, if relevant
     control_window(); // do the controls window
-    editor_window(); // do the window with the text editor
+    editor_window( shaderRecompile ); // do the window with the text editor
 
     end_imgui(); // put ImGui stuff in the back buffer
   }
@@ -859,6 +861,11 @@ void engine::draw_everything() {
     if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE &&
         SDL_GetModState() & KMOD_SHIFT)
       pquit = true; // force quit
+
+		if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN && ( SDL_GetModState() & KMOD_ALT )) {
+			shaderRecompile = true; // recompile the shader
+			cout << "recompiling shader now" << endl;
+		}
 
     if(!ImGui::GetIO().WantCaptureKeyboard)
     {// imgui doesn't want the input, so we should use it

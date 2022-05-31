@@ -76,6 +76,8 @@ private:
 	GLuint blue_cycle_shader;
 	GLuint raymarch_shader;
 
+	bool shaderRecompile = false;
+
 // raymarcher state
 	// rotation
 	float rotation_about_x = 0.;
@@ -158,8 +160,7 @@ private:
 	void start_imgui();
 	void end_imgui();
 	void control_window();
-	void editor_window();
-
+	void editor_window( bool &recompile );
 
 	// performance reporting
 	int dither_microseconds;
