@@ -1,5 +1,4 @@
 *.o
 build
 exe
-imgui.ini
 *.gch

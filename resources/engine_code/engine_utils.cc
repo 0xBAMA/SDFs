@@ -540,7 +540,8 @@ void engine::editor_window( bool &recompile ){
 
 
 
-  editor.Render("TextEditor", ImVec2(-FLT_MIN, total_screen_height / 2));
+	editor.Render("TextEditor", ImVec2( -FLT_MIN, ImGui::GetWindowSize().y - 50 ));
+  // editor.Render("TextEditor");
 
   ImGui::Text(" ");
   ImGui::SameLine();
