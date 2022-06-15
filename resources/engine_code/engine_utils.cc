@@ -483,12 +483,6 @@ void engine::control_window()
     ImGui::Text("%d us", total_loop_microseconds);
     ImGui::Text("");
     ImGui::Text("");
-
-		static int picker = 0;
-		ImGui::SliderInt( "tex picker", &picker, 0, 15 );
-
-		ImGui::Image( ( void * )( intptr_t ) picker, ImVec2( ImGui::GetWindowSize().x, 256 ) );
-
     ImGui::EndTabItem();
   }
 
@@ -580,6 +574,9 @@ void engine::editor_window( bool &recompile ){
     file << savetext;
   }
 
+	ImGui::SameLine();
+	ImGui::Checkbox( "Render", &raymarch_stage );
+
   ImGui::End();
 }
 
@@ -639,7 +636,6 @@ void engine::validatorWindow() {
 				toCLI += c;
 			}
     }
-
 
 		// put it on the command line, along with the other accoutrement
 		cout << endl << endl;
