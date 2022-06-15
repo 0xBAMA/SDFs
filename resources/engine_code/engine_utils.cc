@@ -644,8 +644,8 @@ void engine::validatorWindow() {
 		// put it on the command line, along with the other accoutrement
 		cout << endl << endl;
 		cout << "{" << endl;
-		cout << "  \"category\": \"" << Author << "\"," << endl;
-		cout << "  \"author\": \"" << Type << "\"," << endl;
+		cout << "  \"category\": \"" << Type << "\"," << endl;
+		cout << "  \"author\": \"" << Author << "\"," << endl;
 		cout << "  \"code\": \"" << toCLI << "\"," << endl;
 		cout << "  \"image\": \"images/DEC/\"" << endl;
 		cout << "}," << endl << endl;
