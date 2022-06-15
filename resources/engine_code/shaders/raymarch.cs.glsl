@@ -1770,50 +1770,6 @@ float fractal_de63(vec3 p){
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-// by gaz - hard crash on desktop
-float fractal_de123(vec3 p){
-    float i,g,e,s,l;
-    vec3 q;
-    s=2.;
-    p=abs(mod(p-1.,2.)-1.)-1.;
-    for(int j=0;j<8;j++)
-        p=1.-abs(abs(abs(p-5.)-2.)-2.),
-        p=p*(l=-1.4/dot(p,p))-vec3(.2),
-        s*=abs(l);
-    return length(p.xy)/s;
-}
-
-
-
-
-
-
-// by gaz - hard crash on desktop
-float fractal_de129(vec3 p){
-    float i,g,e,s,l;
-    vec3 q;
-    q=p;
-    s=1.;
-    for(int j=0;j++<4;)
-        p=mod(p-1.,2.)-1.,
-        l=2./dot(p,p),
-        p*=l,
-        s*=l;
-    return length(p.xy)/s;
-}
-
 // by iq - 'Fractal Cave'
 float maxcomp132(in vec3 p ) { return max(p.x,max(p.y,p.z));}
 float sdBox132( vec3 p, vec3 b ){
@@ -1899,10 +1855,8 @@ float JosKleinian(vec3 z) {
 
 
 
-float de(vec3 p){
-
-    return JosKleinian(p);
-
+float de ( vec3 p ) {
+return JosKleinian(p);
 }
 
 
@@ -2277,3 +2231,6 @@ void main()
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }
+
+
+

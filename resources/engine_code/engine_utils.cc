@@ -1046,10 +1046,10 @@ void engine::draw_everything() {
         position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisX;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEUP)
-        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisZ;
+        position += (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisY;
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_PAGEDOWN)
-        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisZ;
+        position -= (SDL_GetModState() & KMOD_SHIFT ? 0.5f : 0.07f) * basisY;
     }
   }
   auto t_loop_end =  std::chrono::high_resolution_clock::now();
