@@ -5,7 +5,8 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include "includes.h"
+#define STB_INCLUDE_IMPLEMENTATION
+#include "../../includes.h"
 
 #include <vector>
 #include <cmath>
@@ -61,7 +62,6 @@ class Shader
         {
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
         }
-
 
         const GLchar *vShaderCode = vertexCode.c_str( );
         const GLchar *fShaderCode = fragmentCode.c_str( );
@@ -134,33 +134,40 @@ class CShader //very similar to above, but for compute shader instead of vertex/
   public:
     GLuint Program;
     // Constructor generates the shader on the fly
-    CShader( const GLchar *Path, bool verbose=false)
+    CShader( GLchar *Path, bool verbose=false)
     {
 
-        // 1. Retrieve the compute shader source code from Path
-        std::string Code;
-        std::ifstream File;
-        // ensures ifstream objects can throw exceptions:
-        File.exceptions ( std::ifstream::badbit );
-        try
-        {
-            // Open files
-            File.open( Path );
-            std::stringstream ShaderStream;
-            // Read file's buffer contents into streams
-            ShaderStream << File.rdbuf( );
-            // close file handlers
-            File.close( );
-            // Convert stream into string
-            Code = ShaderStream.str( );
-        }
-        catch ( std::ifstream::failure &e )
-        {
-            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
-        }
+        // // 1. Retrieve the compute shader source code from Path
+        // std::string Code;
+        // std::ifstream File;
+        // // ensures ifstream objects can throw exceptions:
+        // File.exceptions ( std::ifstream::badbit );
+        // try
+        // {
+        //     // Open files
+        //     File.open( Path );
+        //     std::stringstream ShaderStream;
+        //     // Read file's buffer contents into streams
+        //     ShaderStream << File.rdbuf( );
+        //     // close file handlers
+        //     File.close( );
+        //     // Convert stream into string
+        //     Code = ShaderStream.str( );
+        // }
+        // catch ( std::ifstream::failure &e )
+        // {
+        //     std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+        // }
 
-        const GLchar *cstrCode = Code.c_str( );
-        // 2. Compile shaders
+				// process #includes
+				// char * writableCode = new char[ Code.size() + 1 ];
+				// std::copy( Code.begin(), Code.end(), writableCode );
+
+				char includeError[ 256 ];
+				char * inject = nullptr;
+				char *cstrCode = stb_include_file( static_cast< char* >( Path ), inject, const_cast< char* >( "resources/engine_code/shaders/lib" ), includeError );
+
+				// 2. Compile shaders
         GLuint shader;
         GLint success;
         GLchar infoLog[512];
@@ -193,6 +200,8 @@ class CShader //very similar to above, but for compute shader instead of vertex/
         // Delete the shaders as they're linked into our program now and no longer necessery
         glDeleteShader( shader );
 
+				free( cstrCode );
+
     }
     // Uses the current shader
     void Use( )
@@ -213,8 +222,18 @@ public:
 
 		auto t1 = std::chrono::high_resolution_clock::now();
 
-		const GLchar *cstrCode = text.c_str();
+		// char * writableCode = new char[ Code.size() + 1 ];
+		// std::copy( Code.begin(), Code.end(), writableCode );
+
+		// GLchar *cstrCode = text.c_str();
 		std::stringstream ss;
+
+		char includeError[ 256 ];
+		char * inject = nullptr;
+		char * filename = nullptr;
+		char * cstrCode = stb_include_string( &text[0], inject, const_cast< char* >( "resources/engine_code/shaders/lib" ), filename, includeError );
+
+		cout << endl << endl << cstrCode << endl << endl;
 
 		// 2. Compile shaders
 		GLuint shader;
@@ -223,7 +242,7 @@ public:
 
 		// Compute Shader
 		shader = glCreateShader( GL_COMPUTE_SHADER );
-		const GLint shaderLength = int( text.size() ) - 1;
+		const GLint shaderLength = int( strlen( cstrCode ) );
 		glShaderSource( shader, 1, &cstrCode, &shaderLength );
 		glCompileShader( shader );
 
@@ -274,6 +293,8 @@ public:
     ss << std::setw(4) << " (" << time_microseconds / 1000. << " ms)" << endl;
 
     report = ss.str();
+		free( cstrCode );
+		
   }
   // Uses the current shader
   void Use() { glUseProgram(this->Program); }

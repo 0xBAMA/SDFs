@@ -1,3 +1,5 @@
+#define STB_INCLUDE_IMPLEMENTATION
+#define STB_INCLUDE_LINE_GLSL
 #include "engine.h"
 // This contains the lower level code
 

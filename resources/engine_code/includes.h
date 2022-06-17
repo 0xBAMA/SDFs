@@ -63,8 +63,11 @@ constexpr double pi = 3.14159265358979323846;
 // png loading library - very powerful
 #include "../lodev_lodePNG/lodepng.h"
 
+// shader #include prepreocessor
+#include "shaders/lib/stb_include.h"
+
 // shader compilation wrapper
-#include "shader.h"
+#include "shaders/lib/shader.h"
 
 // up to 3d perlin noise generation
 #include "../perlin/perlin.h"

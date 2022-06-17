@@ -31,7 +31,7 @@
 // 3. Use the tools in this library to build your distance bound f().
 // 4. ???
 // 5. Win a compo.
-// 
+//
 // (6. Buy us a beer or a good vodka or something, if you like.)
 //
 ////////////////////////////////////////////////////////////////
@@ -284,7 +284,7 @@ float fLineSegment(vec3 p, vec3 a, vec3 b) {
 	return length((ab*t + a) - p);
 }
 
-// Capsule version 2: between two end points <a> and <b> with radius r 
+// Capsule version 2: between two end points <a> and <b> with radius r
 float fCapsule(vec3 p, vec3 a, vec3 b, float r) {
 	return fLineSegment(p, a, b) - r;
 }
@@ -328,12 +328,12 @@ float fCone(vec3 p, float radius, float height) {
 	float mantle = dot(tip, mantleDir);
 	float d = max(mantle, -q.y);
 	float projected = dot(tip, vec2(mantleDir.y, -mantleDir.x));
-	
+
 	// distance to tip
 	if ((q.y > height) && (projected < 0)) {
 		d = max(d, length(tip));
 	}
-	
+
 	// distance to base ring
 	if ((q.x > radius) && (projected > length(vec2(height, radius)))) {
 		d = max(d, length(q - vec2(radius, 0)));
