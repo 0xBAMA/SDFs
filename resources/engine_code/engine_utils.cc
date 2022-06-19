@@ -360,18 +360,18 @@ void engine::gl_setup() {
 //  ╚═╝└─┘┴ ┴┴  └─┘ ┴ └─┘  ╚═╝┴ ┴┴ ┴─┴┘└─┘┴└─└─┘
 	{// raymarch shader
 		cout << "compiling raymarch shader... " << std::flush;
-		raymarch_shader = CShader("resources/engine_code/shaders/raymarch.cs.glsl").Program;
+		raymarch_shader = CShader(std::string("resources/engine_code/shaders/raymarch.cs.glsl").c_str()).Program;
 		cout << "done." << endl << std::flush;
 
 		// monolithicc dither shader
 		// contains all color space conversions, and the bitcrush logic
 		cout << "compiling dither shader... " << std::flush;
-		dither_shader = CShader("resources/engine_code/shaders/dither.cs.glsl").Program;
+		dither_shader = CShader(std::string("resources/engine_code/shaders/dither.cs.glsl").c_str()).Program;
 		cout << "done." << endl << std::flush;
 
 		cout << "compiling RGB parade shaders... " << std::flush;
-		RGBParadeComputeShader = CShader( "resources/engine_code/shaders/RGBParadeCompute.cs.glsl" ).Program;
-		RGBParadeCompositeShader = CShader( "resources/engine_code/shaders/RGBParadeComposite.cs.glsl" ).Program;
+		RGBParadeComputeShader = CShader( std::string("resources/engine_code/shaders/RGBParadeCompute.cs.glsl").c_str() ).Program;
+		RGBParadeCompositeShader = CShader( std::string("resources/engine_code/shaders/RGBParadeComposite.cs.glsl").c_str() ).Program;
 		cout << "done." << endl << std::flush;
 
   }

@@ -134,7 +134,7 @@ class CShader //very similar to above, but for compute shader instead of vertex/
   public:
     GLuint Program;
     // Constructor generates the shader on the fly
-    CShader( GLchar *Path, bool verbose=false)
+    CShader( const char *Path, bool verbose=false)
     {
 
         // // 1. Retrieve the compute shader source code from Path
@@ -165,7 +165,7 @@ class CShader //very similar to above, but for compute shader instead of vertex/
 
 				char includeError[ 256 ];
 				char * inject = nullptr;
-				char *cstrCode = stb_include_file( static_cast< char* >( Path ), inject, const_cast< char* >( "resources/engine_code/shaders/lib" ), includeError );
+				char *cstrCode = stb_include_file( Path, inject, const_cast< char* >( "resources/engine_code/shaders/lib" ), includeError );
 
 				// 2. Compile shaders
         GLuint shader;
@@ -294,7 +294,7 @@ public:
 
     report = ss.str();
 		free( cstrCode );
-		
+
   }
   // Uses the current shader
   void Use() { glUseProgram(this->Program); }
