@@ -233,8 +233,6 @@ public:
 		char * filename = nullptr;
 		char * cstrCode = stb_include_string( &text[0], inject, const_cast< char* >( "resources/engine_code/shaders/lib" ), filename, includeError );
 
-		cout << endl << endl << cstrCode << endl << endl;
-
 		// 2. Compile shaders
 		GLuint shader;
 		GLchar infoLog[ 512 ];

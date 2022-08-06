@@ -950,12 +950,12 @@ void engine::draw_everything() {
     if(!ImGui::GetIO().WantCaptureKeyboard)
     {// imgui doesn't want the input, so we should use it
 
-      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_f)
-      {
-        cout << endl;
-        cout << "position: " << to_string(position) << endl;
-        cout << "rotation: " << rotation_about_x << " " << rotation_about_y << " " << rotation_about_z << endl;
-      }
+      // if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_f)
+      // {
+      //   cout << endl;
+      //   cout << "position: " << to_string(position) << endl;
+      //   cout << "rotation: " << rotation_about_x << " " << rotation_about_y << " " << rotation_about_z << endl;
+      // }
 
       if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_p)
       {
@@ -1022,6 +1022,10 @@ void engine::draw_everything() {
 
 			// f to reset basis, F to reset basis and home to origin
 			if( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_f ) {
+				cout << endl;
+        cout << "position: " << to_string(position) << endl;
+        cout << "rotation: " << rotation_about_x << " " << rotation_about_y << " " << rotation_about_z << endl;
+
 				if( SDL_GetModState() & KMOD_SHIFT ) {
 					position = glm::vec3( 0.0, 0.0, 0.0 );
 				}
