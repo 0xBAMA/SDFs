@@ -735,10 +735,11 @@ void main()
         aspect_ratio = float(imageSize(current).x) / float(imageSize(current).y);
         pixcoord.x *= aspect_ratio;
         
-        // vec3 rd = normalize(pixcoord.x*basis_x + pixcoord.y*basis_y + (1./fov)*basis_z);
+        vec3 rd = normalize(pixcoord.x*basis_x + pixcoord.y*basis_y + (1./fov)*basis_z);
 
-		vec3 rd = getRdSpherical( pixcoord * 0.75 );
-		rd = rd.x * basis_x + rd.y * basis_y + rd.z * basis_z;
+		// spherical rays
+		// vec3 rd = getRdSpherical( pixcoord * 0.75 );
+		// rd = rd.x * basis_x + rd.y * basis_y + rd.z * basis_z;
 
         escape = 0.;
         float dresult = raymarch(ro, rd);
@@ -907,4 +908,5 @@ void main()
 
     imageStore(current, ivec2(gl_GlobalInvocationID.xy), uvec4( col.r*255, col.g*255, col.b*255, col.a*255 ));
 }
+
 
